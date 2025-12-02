@@ -281,9 +281,6 @@ declare global {
 
     // deno-lint-ignore no-explicit-any
     interface IntrinsicElements {
-      // Fallback for any element not explicitly typed
-      [elemName: string]: GlobalAttrs & ExtensibleAttrs;
-
       // Form elements with HSX support
       form: FormAttrs & HsxAttrs & ExtensibleAttrs;
       button: ButtonAttrs & HsxAttrs & ExtensibleAttrs;

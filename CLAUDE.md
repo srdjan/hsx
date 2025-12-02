@@ -26,9 +26,15 @@ deno run --allow-net --allow-read examples/todos/server.ts
 
 **Type System:**
 - `hsx-types.ts` - `Route<Path, Params>` for type-safe URLs, `Id<Name>` branded `#name` strings, `HsxSwap`/`HsxTrigger` unions
-- `hsx-jsx.d.ts` - Augments JSX.IntrinsicElements for `form`, `button`, `a`, `div` with HSX attributes
+- `hsx-jsx.d.ts` - Augments JSX.IntrinsicElements for `form`, `button`, `a`, `div` with HSX attributes (index signature removed to catch tag typos)
 
 **Rule:** Manual `hx-*` attributes are not allowed; render throws if they are present. Always use HSX aliases (`get/post/put/patch/delete`, `target`, `swap`, `trigger`, `vals`, `headers`, `behavior="boost"`).
+
+**Render options:** `render` / `renderHtml` accept `injectHtmx?: boolean` to force or suppress the injected HTMX script; default is auto based on HSX usage.
+
+**Styling:** Style objects are supported; they render to inline CSS (`backgroundColor` → `background-color`).
+
+**Safety:** `script`/`style` children are emitted verbatim (no escaping); never pass user input there.
 
 **Entry Point:**
 - `index.ts` exports: `render()` (returns Response), `renderHtml()` (returns string), `route()`, `id()`, `Fragment`

@@ -1,8 +1,11 @@
 /** Props type for JSX elements */
 export type JsxProps = Record<string, unknown> & { children?: Renderable };
 
+/** Props passed to a component, always include optional children */
+export type ComponentProps<P> = P & { children?: Renderable };
+
 /** A function component that renders JSX */
-export type ComponentType<P = JsxProps> = (props: P) => Renderable;
+export type ComponentType<P = {}> = (props: ComponentProps<P>) => Renderable;
 
 /** The type of a VNode - either an HTML tag name or a component function */
 export type VNodeType = string | ComponentType;
@@ -10,7 +13,7 @@ export type VNodeType = string | ComponentType;
 /** A virtual node in the JSX tree */
 export interface VNode<P = JsxProps> {
   type: VNodeType;
-  props: P & { children?: Renderable };
+  props: ComponentProps<P>;
 }
 
 /** Any value that can be rendered in JSX */

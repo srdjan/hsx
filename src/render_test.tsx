@@ -82,6 +82,16 @@ Deno.test("render: className becomes class", () => {
   assertEquals(html, '<div class="container"></div>');
 });
 
+Deno.test("render: style object renders CSS", () => {
+  const html = renderHtml(
+    <div style={{ backgroundColor: "red", marginTop: 8 }} />,
+  );
+  assertEquals(
+    html,
+    '<div style="background-color:red;margin-top:8;"></div>',
+  );
+});
+
 Deno.test("render: numbers in content", () => {
   const html = renderHtml(<div>{42}</div>);
   assertEquals(html, "<div>42</div>");
@@ -297,6 +307,30 @@ Deno.test("htmx: script injected before </body>", () => {
     html.endsWith('<script src="/static/htmx.js"></script></body></html>'),
     true
   );
+});
+
+Deno.test("htmx: injection can be forced", () => {
+  const html = renderHtml(
+    <html>
+      <body>
+        <div>No HSX</div>
+      </body>
+    </html>,
+    { injectHtmx: true }
+  );
+  assertEquals(html.includes('htmx.js'), true);
+});
+
+Deno.test("htmx: injection can be disabled", () => {
+  const html = renderHtml(
+    <html>
+      <body>
+        <button get="/api">Load</button>
+      </body>
+    </html>,
+    { injectHtmx: false }
+  );
+  assertEquals(html.includes('htmx.js'), false);
 });
 
 // ============================================================================

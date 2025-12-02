@@ -371,10 +371,11 @@ function TodoItem(props: { todo: Todo }) {
         type="checkbox"
         id={inputId}
         checked={todo.done}
-        hx-post={routes.todos.toggle.build({ id: todo.id })}
-        hx-target={ids.app}
-        hx-swap="innerHTML"
-        hx-trigger="change"
+        post={routes.todos.toggle}
+        params={{ id: todo.id }}
+        target={ids.app}
+        swap="innerHTML"
+        trigger="change"
       />
       <label htmlFor={inputId}>{todo.text}</label>
       <button

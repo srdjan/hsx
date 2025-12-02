@@ -129,6 +129,30 @@ The browser only ever sees **standard HTML + HTMX attributes**.
 - **Manual `hx-*` attributes are rejected**: use HSX aliases (`get`,
   `post`, `target`, `swap`, `trigger`, `vals`, `headers`, `behavior`)
   instead of writing `hx-*` directly.
+
+## 4. Configuring JSX in your app
+
+Add to `deno.json` (or `tsconfig.json` if you use one):
+
+```jsonc
+{
+  "imports": { "hsx/jsx-runtime": "jsr:@your-scope/hsx-ssr-renderer/jsx-runtime" },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hsx",          // points to this library
+    "types": ["jsr:@your-scope/hsx-ssr-renderer/hsx-jsx"],
+    "lib": ["dom", "dom.iterable", "deno.ns"],
+    "strict": true
+  }
+}
+```
+
+## 5. Safety notes
+
+- `script` and `style` children are rendered **without escaping** by design. Do not pass user input into these tags.
+- Manual `hx-*` attributes throw at render time; always use HSX aliases.
+- Pass `injectHtmx: false` to `render/renderHtml` to suppress the auto-injected `<script>` when you bundle HTMX yourself, or `injectHtmx: true` to force injection even without HSX usage.
+- Style objects are supported: `<div style={{ backgroundColor: "red" }} />` renders `style="background-color:red;"`.
 - `examples/` – runnable Deno examples (`todos`, `identity-widget`).
 - `vendor/htmx/htmx.js` – vendored HTMX v4 placeholder.
 

@@ -47,6 +47,16 @@ function escapeAttr(text: string): string {
   return escapeHtml(text);
 }
 
+function styleObjectToCss(style: Record<string, string | number>): string {
+  return Object.entries(style)
+    .map(([k, v]) => {
+      // convert camelCase to kebab-case
+      const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+      return `${prop}:${v};`;
+    })
+    .join("");
+}
+
 function propsToAttrs(props: Props): string {
   const parts: string[] = [];
   for (const [key, value] of Object.entries(props)) {
@@ -61,6 +71,11 @@ function propsToAttrs(props: Props): string {
 
     if (typeof value === "boolean") {
       if (value) parts.push(` ${attrName}`);
+      continue;
+    }
+
+    if (key === "style" && value && typeof value === "object" && !Array.isArray(value)) {
+      parts.push(` style="${escapeAttr(styleObjectToCss(value as Record<string, string | number>))}"`);
       continue;
     }
 
@@ -102,10 +117,14 @@ function assertNoManualHxProps(tag: string, props: Props): void {
  */
 function enforceLimits(ctx: RenderContext): void {
   if (ctx.maxDepth !== undefined && ctx.depth >= ctx.maxDepth) {
-    throw new Error(`Maximum render depth exceeded: ${ctx.maxDepth}`);
+    throw new Error(
+      `Maximum render depth exceeded: ${ctx.maxDepth} (at depth ${ctx.depth})`,
+    );
   }
   if (ctx.maxNodes !== undefined && ctx.nodes >= ctx.maxNodes) {
-    throw new Error(`Maximum node count exceeded: ${ctx.maxNodes}`);
+    throw new Error(
+      `Maximum node count exceeded: ${ctx.maxNodes} (at node ${ctx.nodes})`,
+    );
   }
   ctx.nodes++;
 }
@@ -194,7 +213,12 @@ function renderElement(node: VNode, ctx: RenderContext): string {
 
     // Special handling for <body>: inject HTMX script if needed
     if (tag === "body") {
-      const script = ctx.usesHtmx
+      const shouldInject = ctx.injectHtmxOverride === true
+        ? true
+        : ctx.injectHtmxOverride === false
+          ? false
+          : ctx.usesHtmx;
+      const script = shouldInject
         ? `<script src="/static/htmx.js"></script>`
         : "";
       return `<body${attrs}>${inner}${script}</body>`;
@@ -258,6 +282,14 @@ export interface RenderHtmlOptions {
    * @default undefined (no limit)
    */
   maxNodes?: number;
+
+  /**
+   * Control HTMX script injection.
+   * - true: always inject
+   * - false: never inject
+   * - undefined: auto (inject when HSX is used)
+   */
+  injectHtmx?: boolean;
 }
 
 /**
@@ -270,6 +302,7 @@ export interface RenderHtmlOptions {
  *
  * @param node - The JSX element or component to render
  * @param options - Rendering options (maxDepth, maxNodes)
+ * @param options.injectHtmx - Force (true) or suppress (false) HTMX script injection. Default auto based on HSX usage.
  * @returns The rendered HTML string
  *
  * @throws {Error} If maxDepth is exceeded
@@ -302,6 +335,7 @@ export function renderHtml(
     maxDepth: options.maxDepth,
     maxNodes: options.maxNodes,
     usesHtmx: false,
+    injectHtmxOverride: options.injectHtmx,
   };
   return renderNode(node, ctx);
 }
@@ -318,6 +352,7 @@ export function renderHtml(
  * @param options.headers - Additional headers to include
  * @param options.maxDepth - Maximum nesting depth
  * @param options.maxNodes - Maximum node count
+ * @param options.injectHtmx - Force (true) or suppress (false) HTMX script injection. Default auto.
  * @returns HTTP Response with HTML content
  *
  * @example

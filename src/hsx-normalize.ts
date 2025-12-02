@@ -6,6 +6,8 @@ export interface RenderContext {
   maxDepth?: number;
   maxNodes?: number;
   usesHtmx: boolean;
+  /** override for HTMX script injection (true = force, false = disable) */
+  injectHtmxOverride?: boolean;
 }
 
 export type Props = Record<string, unknown>;
