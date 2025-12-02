@@ -14,6 +14,11 @@
     "test": "deno test src/ --allow-read",
     "check": "deno check src/index.ts",
     "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
-    "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.tsx"
+    "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.tsx",
+    "example:active-search": "deno run --allow-net --allow-read examples/active-search/server.tsx",
+    "example:lazy-loading": "deno run --allow-net --allow-read examples/lazy-loading/server.tsx",
+    "example:tabs-modal": "deno run --allow-net --allow-read examples/tabs-modal/server.tsx",
+    "example:form-validation": "deno run --allow-net --allow-read examples/form-validation/server.tsx",
+    "example:polling": "deno run --allow-net --allow-read examples/polling/server.tsx"
   }
 }
