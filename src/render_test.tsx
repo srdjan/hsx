@@ -300,6 +300,37 @@ Deno.test("htmx: script injected before </body>", () => {
 });
 
 // ============================================================================
+// Manual hx-* Rejection Tests
+// ============================================================================
+
+Deno.test("manual hx-* props throw", () => {
+  assertThrows(
+    () => renderHtml(<button hx-get="/api">Load</button>),
+    Error,
+    "hx-get"
+  );
+});
+
+Deno.test("manual hx-* on generic element throws", () => {
+  assertThrows(
+    () => renderHtml(<div hx-target="#t">X</div>),
+    Error,
+    "hx-target"
+  );
+});
+
+Deno.test("HSX attrs still allowed", () => {
+  const html = renderHtml(
+    <html>
+      <body>
+        <button get="/api">OK</button>
+      </body>
+    </html>
+  );
+  assertEquals(html.includes('hx-get="/api"'), true);
+});
+
+// ============================================================================
 // Depth/Node Limit Tests
 // ============================================================================
 

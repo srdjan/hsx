@@ -86,6 +86,16 @@ function isVNode(x: unknown): x is VNode {
   );
 }
 
+function assertNoManualHxProps(tag: string, props: Props): void {
+  for (const key of Object.keys(props)) {
+    if (key.startsWith("hx-")) {
+      throw new Error(
+        `Manual hx-* props are disallowed; use HSX aliases (get/post/target/...) instead. Found ${key} on <${tag}>.`,
+      );
+    }
+  }
+}
+
 /**
  * Enforce render limits to prevent DoS attacks.
  * Throws if maxDepth or maxNodes is exceeded.
@@ -158,6 +168,10 @@ function renderRawText(node: Renderable): string {
 function renderElement(node: VNode, ctx: RenderContext): string {
   const tag = node.type as string;
   const rawProps = (node.props ?? {}) as Props;
+
+  // Reject manual hx-* usage; HSX normalization is the only allowed path.
+  assertNoManualHxProps(tag, rawProps);
+
   const props = normalizeProps(tag, rawProps, ctx);
   const attrs = propsToAttrs(props);
   const children = props.children as Renderable;

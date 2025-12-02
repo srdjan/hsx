@@ -126,6 +126,9 @@ The browser only ever sees **standard HTML + HTMX attributes**.
 - `src/hsx-normalize.ts` – logic to map HSX attributes to `hx-*`.
 - `src/hsx-jsx.d.ts` – JSX typings that augment `form`, `button`, `a`,
   `div` with HSX attributes.
+- **Manual `hx-*` attributes are rejected**: use HSX aliases (`get`,
+  `post`, `target`, `swap`, `trigger`, `vals`, `headers`, `behavior`)
+  instead of writing `hx-*` directly.
 - `examples/` – runnable Deno examples (`todos`, `identity-widget`).
 - `vendor/htmx/htmx.js` – vendored HTMX v4 placeholder.
 
