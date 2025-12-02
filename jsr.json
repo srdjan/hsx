@@ -1,8 +1,0 @@
-{
-  "name": "@your-scope/hsx-ssr-renderer",
-  "version": "0.1.0",
-  "exports": {
-    ".": "./src/index.ts",
-    "./jsx-runtime": "./src/jsx-runtime.ts"
-  }
-}

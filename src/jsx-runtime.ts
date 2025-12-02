@@ -34,6 +34,6 @@ export function jsx(type: VNodeType, props: JsxProps): VNode {
 export const jsxs = jsx;
 export const jsxDEV = jsx;
 
-export function Fragment(props: { children?: Renderable }) {
+export function Fragment(props: { children?: Renderable }): Renderable {
   return props.children ?? null;
 }

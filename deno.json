@@ -1,4 +1,10 @@
 {
+  "name": "@srdjan/hsx",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./jsx-runtime": "./src/jsx-runtime.ts"
+  },
   "imports": {
     "hsx/jsx-runtime": "./src/jsx-runtime.ts"
   },
@@ -14,7 +20,6 @@
     "test": "deno test src/ --allow-read",
     "check": "deno check src/index.ts",
     "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
-    "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.tsx",
     "example:active-search": "deno run --allow-net --allow-read examples/active-search/server.tsx",
     "example:lazy-loading": "deno run --allow-net --allow-read examples/lazy-loading/server.tsx",
     "example:tabs-modal": "deno run --allow-net --allow-read examples/tabs-modal/server.tsx",
