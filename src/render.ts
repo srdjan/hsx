@@ -14,14 +14,29 @@ const VOID_ELEMENTS = new Set([
   "meta","param","source","track","wbr"
 ]);
 
+/** Map of characters to their HTML entity equivalents */
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#x27;",
+};
+
+const HTML_ESCAPE_RE = /[&<>"']/g;
+
+/**
+ * Escape HTML special characters in text content.
+ * Uses single-pass regex for performance.
+ */
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return text.replace(HTML_ESCAPE_RE, (char) => HTML_ESCAPE_MAP[char]);
 }
 
+/**
+ * Escape characters for safe use in HTML attributes.
+ * Includes single quote escaping for attributes using single quotes.
+ */
 function escapeAttr(text: string): string {
   return escapeHtml(text);
 }
@@ -56,107 +71,234 @@ function propsToAttrs(props: Props): string {
   return parts.join("");
 }
 
-function isVNode(x: any): x is VNode {
-  return x && typeof x.type !== "undefined" && "props" in x;
+function isVNode(x: unknown): x is VNode {
+  return (
+    typeof x === "object" &&
+    x !== null &&
+    "type" in x &&
+    "props" in x
+  );
 }
 
-function renderNode(node: Renderable, ctx: RenderContext): string {
-  if (node === null || node === undefined || typeof node === "boolean") {
-    return "";
+/**
+ * Enforce render limits to prevent DoS attacks.
+ * Throws if maxDepth or maxNodes is exceeded.
+ */
+function enforceLimits(ctx: RenderContext): void {
+  if (ctx.maxDepth !== undefined && ctx.depth >= ctx.maxDepth) {
+    throw new Error(`Maximum render depth exceeded: ${ctx.maxDepth}`);
   }
-
-  if (Array.isArray(node)) {
-    return node.map((n) => renderNode(n, ctx)).join("");
+  if (ctx.maxNodes !== undefined && ctx.nodes >= ctx.maxNodes) {
+    throw new Error(`Maximum node count exceeded: ${ctx.maxNodes}`);
   }
+  ctx.nodes++;
+}
 
-  if (typeof node === "string" || typeof node === "number") {
-    return escapeHtml(String(node));
+/**
+ * Normalize props based on element type.
+ * Maps HSX attributes to hx-* attributes.
+ */
+function normalizeProps(tag: string, props: Props, ctx: RenderContext): Props {
+  switch (tag) {
+    case "form":
+      return normalizeFormProps(props, ctx);
+    case "button":
+      return normalizeButtonProps(props, ctx);
+    case "a":
+      return normalizeAnchorProps(props, ctx);
+    default:
+      return normalizeGenericHsxProps(props, ctx);
   }
+}
 
-  if (!isVNode(node)) {
-    return escapeHtml(String(node));
-  }
-
-  // Component
-  if (typeof node.type === "function") {
+/**
+ * Render a function component (including Fragment).
+ */
+function renderComponent(node: VNode, ctx: RenderContext): string {
+  ctx.depth++;
+  try {
     if (node.type === Fragment) {
       return renderNode(node.props.children, ctx);
     }
-    const rendered = node.type(node.props);
-    return renderNode(rendered as Renderable, ctx);
+    const component = node.type as (props: unknown) => Renderable;
+    const rendered = component(node.props);
+    return renderNode(rendered, ctx);
+  } finally {
+    ctx.depth--;
   }
+}
 
-  // Native element
-  const tag = node.type;
+/**
+ * Render a native HTML element.
+ */
+function renderElement(node: VNode, ctx: RenderContext): string {
+  const tag = node.type as string;
   const rawProps = (node.props ?? {}) as Props;
-  let props = rawProps;
-
-  if (tag === "form") {
-    props = normalizeFormProps(rawProps, ctx);
-  } else if (tag === "button") {
-    props = normalizeButtonProps(rawProps, ctx);
-  } else if (tag === "a") {
-    props = normalizeAnchorProps(rawProps, ctx);
-  } else {
-    props = normalizeGenericHsxProps(rawProps, ctx);
-  }
-
+  const props = normalizeProps(tag, rawProps, ctx);
   const attrs = propsToAttrs(props);
   const children = props.children as Renderable;
 
+  // Void elements have no children or closing tag
   if (VOID_ELEMENTS.has(tag)) {
     return `<${tag}${attrs}>`;
   }
 
-  if (tag === "body") {
+  // Render children with incremented depth
+  ctx.depth++;
+  try {
     const inner = renderNode(children, ctx);
-    const script = ctx.usesHtmx
-      ? `<script src="/static/htmx.js"></script>`
-      : "";
-    return `<body${attrs}>${inner}${script}</body>`;
-  }
 
-  const inner = renderNode(children, ctx);
-  return `<${tag}${attrs}>${inner}</${tag}>`;
+    // Special handling for <body>: inject HTMX script if needed
+    if (tag === "body") {
+      const script = ctx.usesHtmx
+        ? `<script src="/static/htmx.js"></script>`
+        : "";
+      return `<body${attrs}>${inner}${script}</body>`;
+    }
+
+    return `<${tag}${attrs}>${inner}</${tag}>`;
+  } finally {
+    ctx.depth--;
+  }
 }
 
+/**
+ * Render a node (element, component, or primitive) to an HTML string.
+ */
+function renderNode(node: Renderable, ctx: RenderContext): string {
+  enforceLimits(ctx);
+
+  // Primitives: null, undefined, boolean render as empty
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return "";
+  }
+
+  // Arrays: render each child and concatenate
+  if (Array.isArray(node)) {
+    return node.map((n) => renderNode(n, ctx)).join("");
+  }
+
+  // Text: escape and return
+  if (typeof node === "string" || typeof node === "number") {
+    return escapeHtml(String(node));
+  }
+
+  // Non-VNode objects: convert to string and escape
+  if (!isVNode(node)) {
+    return escapeHtml(String(node));
+  }
+
+  // Function components
+  if (typeof node.type === "function") {
+    return renderComponent(node, ctx);
+  }
+
+  // Native HTML elements
+  return renderElement(node, ctx);
+}
+
+/**
+ * Options for controlling the rendering process.
+ */
 export interface RenderHtmlOptions {
+  /**
+   * Maximum nesting depth allowed before throwing an error.
+   * Prevents stack overflow from deeply nested component trees.
+   * @default undefined (no limit)
+   */
   maxDepth?: number;
+
+  /**
+   * Maximum number of nodes to render before throwing an error.
+   * Prevents DoS attacks from extremely large trees.
+   * @default undefined (no limit)
+   */
   maxNodes?: number;
 }
 
 /**
- * Render a tree to a full HTML document string.
- * Caller is responsible for including <!DOCTYPE html> if desired.
+ * Render a JSX tree to an HTML string.
+ *
+ * Processes the JSX tree, normalizes HSX attributes to hx-* attributes,
+ * and automatically injects the HTMX script tag when HTMX features are used.
+ *
+ * Note: Does NOT include `<!DOCTYPE html>`. Add it manually if needed.
+ *
+ * @param node - The JSX element or component to render
+ * @param options - Rendering options (maxDepth, maxNodes)
+ * @returns The rendered HTML string
+ *
+ * @throws {Error} If maxDepth is exceeded
+ * @throws {Error} If maxNodes is exceeded
+ *
+ * @example
+ * ```tsx
+ * function Page() {
+ *   return (
+ *     <html>
+ *       <body>
+ *         <h1>Hello</h1>
+ *         <button get="/api/data">Load</button>
+ *       </body>
+ *     </html>
+ *   );
+ * }
+ *
+ * const html = renderHtml(<Page />);
+ * // Returns: <html><body><h1>Hello</h1><button hx-get="/api/data">Load</button><script src="/static/htmx.js"></script></body></html>
+ * ```
  */
 export function renderHtml(
   node: Renderable,
-  _options: RenderHtmlOptions = {},
+  options: RenderHtmlOptions = {},
 ): string {
   const ctx: RenderContext = {
     depth: 0,
     nodes: 0,
-    maxDepth: _options.maxDepth,
-    maxNodes: _options.maxNodes,
+    maxDepth: options.maxDepth,
+    maxNodes: options.maxNodes,
     usesHtmx: false,
   };
   return renderNode(node, ctx);
 }
 
 /**
- * Convenience helper: wrap the rendered HTML in a Response.
+ * Render a JSX tree directly to an HTTP Response.
+ *
+ * Convenience wrapper around `renderHtml` that returns a Response object
+ * suitable for use with Deno.serve() or similar HTTP frameworks.
+ *
+ * @param node - The JSX element or component to render
+ * @param options - Rendering and response options
+ * @param options.status - HTTP status code (default: 200)
+ * @param options.headers - Additional headers to include
+ * @param options.maxDepth - Maximum nesting depth
+ * @param options.maxNodes - Maximum node count
+ * @returns HTTP Response with HTML content
+ *
+ * @example
+ * ```tsx
+ * Deno.serve((_req) => render(<Page />));
+ *
+ * // With custom status:
+ * return render(<NotFound />, { status: 404 });
+ *
+ * // With custom headers:
+ * return render(<Page />, {
+ *   headers: { "X-Custom-Header": "value" }
+ * });
+ * ```
  */
 export function render(
   node: Renderable,
-  _options: RenderHtmlOptions & { status?: number; headers?: HeadersInit } =
-    {},
+  options: RenderHtmlOptions & { status?: number; headers?: HeadersInit } = {},
 ): Response {
-  const html = renderHtml(node, _options);
+  const html = renderHtml(node, options);
   return new Response(html, {
-    status: _options.status ?? 200,
+    status: options.status ?? 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
-      ...(typeof _options.headers === "object" ? _options.headers : {}),
+      ...(typeof options.headers === "object" ? options.headers : {}),
     },
   });
 }

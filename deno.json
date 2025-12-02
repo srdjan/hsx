@@ -1,13 +1,18 @@
 {
+  "imports": {
+    "hsx/jsx-runtime": "./src/jsx-runtime.ts"
+  },
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "./src",
+    "jsxImportSource": "hsx",
     "types": ["./src/hsx-jsx.d.ts"],
     "lib": ["dom", "dom.iterable", "deno.ns"],
     "strict": true,
     "module": "esnext"
   },
   "tasks": {
+    "test": "deno test src/ --allow-read",
+    "check": "deno check src/index.ts",
     "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
     "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.tsx"
   }

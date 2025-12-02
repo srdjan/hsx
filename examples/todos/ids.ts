@@ -1,4 +1,4 @@
-import { id } from "../src/hsx-types.ts";
+import { id } from "../../src/hsx-types.ts";
 
 export const ids = {
   list: id("todo-list"),

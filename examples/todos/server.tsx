@@ -1,7 +1,6 @@
-/** @jsxImportSource ../../src */
 import { render } from "../../src/index.ts";
-import { routes } from "../routes.ts";
-import { ids } from "../ids.ts";
+import { routes } from "./routes.ts";
+import { ids } from "./ids.ts";
 
 type Todo = { id: number; text: string; done: boolean };
 
@@ -16,8 +15,7 @@ function TodoList(props: { items: Todo[] }) {
       {props.items.map((t) => (
         <li>
           <label>
-            <input type="checkbox" checked={t.done} disabled />{" "}
-            {t.text}
+            <input type="checkbox" checked={t.done} disabled /> {t.text}
           </label>
         </li>
       ))}

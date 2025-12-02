@@ -1,14 +1,21 @@
-export type ComponentType<P = any> = (props: P) => Renderable;
+/** Props type for JSX elements */
+export type JsxProps = Record<string, unknown> & { children?: Renderable };
 
-export type VNodeType = string | ComponentType<any>;
+/** A function component that renders JSX */
+export type ComponentType<P = JsxProps> = (props: P) => Renderable;
 
-export interface VNode<P = any> {
+/** The type of a VNode - either an HTML tag name or a component function */
+export type VNodeType = string | ComponentType;
+
+/** A virtual node in the JSX tree */
+export interface VNode<P = JsxProps> {
   type: VNodeType;
   props: P & { children?: Renderable };
 }
 
+/** Any value that can be rendered in JSX */
 export type Renderable =
-  | VNode<any>
+  | VNode
   | string
   | number
   | boolean
@@ -17,7 +24,7 @@ export type Renderable =
   | Renderable[];
 
 // JSX runtime entrypoints for `jsx: "react-jsx"`
-export function jsx(type: VNodeType, props: any): VNode {
+export function jsx(type: VNodeType, props: JsxProps): VNode {
   return { type, props };
 }
 
