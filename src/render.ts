@@ -14,6 +14,12 @@ const VOID_ELEMENTS = new Set([
   "meta","param","source","track","wbr"
 ]);
 
+/**
+ * Raw text elements per HTML spec - content is NOT HTML-escaped.
+ * @see https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements
+ */
+const RAW_TEXT_ELEMENTS = new Set(["script", "style"]);
+
 /** Map of characters to their HTML entity equivalents */
 const HTML_ESCAPE_MAP: Record<string, string> = {
   "&": "&amp;",
@@ -129,6 +135,24 @@ function renderComponent(node: VNode, ctx: RenderContext): string {
 }
 
 /**
+ * Render raw text content (for script/style elements) without HTML escaping.
+ * Only accepts string/number children - other types are ignored.
+ */
+function renderRawText(node: Renderable): string {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return "";
+  }
+  if (Array.isArray(node)) {
+    return node.map(renderRawText).join("");
+  }
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  // Non-string content in raw text elements is ignored
+  return "";
+}
+
+/**
  * Render a native HTML element.
  */
 function renderElement(node: VNode, ctx: RenderContext): string {
@@ -141,6 +165,12 @@ function renderElement(node: VNode, ctx: RenderContext): string {
   // Void elements have no children or closing tag
   if (VOID_ELEMENTS.has(tag)) {
     return `<${tag}${attrs}>`;
+  }
+
+  // Raw text elements (script, style): do NOT escape content
+  if (RAW_TEXT_ELEMENTS.has(tag)) {
+    const inner = renderRawText(children);
+    return `<${tag}${attrs}>${inner}</${tag}>`;
   }
 
   // Render children with incremented depth

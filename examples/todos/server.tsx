@@ -18,11 +18,11 @@ const todos: Todo[] = [
 let nextId = 4;
 
 // =============================================================================
-// CSS Styles (Modern CSS with layers, custom properties, modern selectors)
+// Semantic CSS - no nesting, explicit selectors for compatibility
 // =============================================================================
 
 const styles = `
-@layer reset, tokens, base, components, utilities;
+@layer reset, tokens, base, layout, components, utilities;
 
 @layer reset {
   *, *::before, *::after {
@@ -102,22 +102,26 @@ const styles = `
     outline: 2px solid var(--color-border-focus);
     outline-offset: 2px;
   }
+
+  ul, ol, menu {
+    list-style: none;
+  }
 }
 
-@layer components {
-  /* App Container */
-  .todo-app {
+@layer layout {
+  /* Main app container */
+  main {
     max-inline-size: 32rem;
     margin-inline: auto;
   }
 
-  /* Header */
-  .todo-header {
+  /* App header with title */
+  main > header {
     text-align: center;
     margin-block-end: var(--space-xl);
   }
 
-  .todo-title {
+  main > header > h1 {
     font-size: var(--font-size-xl);
     font-weight: 300;
     letter-spacing: 0.05em;
@@ -125,21 +129,23 @@ const styles = `
     text-transform: lowercase;
   }
 
-  /* Main Card */
-  .todo-card {
+  /* Todo card section */
+  main > section {
     background: var(--color-surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     overflow: hidden;
   }
+}
 
-  /* Input Form */
-  .todo-form {
+@layer components {
+  /* ===== Input Form ===== */
+  section > form {
     display: flex;
     border-block-end: 1px solid var(--color-border);
   }
 
-  .todo-input {
+  section > form > input[type="text"] {
     flex: 1;
     padding: var(--space-md) var(--space-lg);
     font: inherit;
@@ -148,17 +154,17 @@ const styles = `
     background: transparent;
   }
 
-  .todo-input::placeholder {
+  section > form > input[type="text"]::placeholder {
     color: var(--color-text-placeholder);
     font-style: italic;
   }
 
-  .todo-input:focus {
+  section > form > input[type="text"]:focus {
     outline: none;
     background: rgba(139, 115, 85, 0.03);
   }
 
-  .todo-submit {
+  section > form > button[type="submit"] {
     padding: var(--space-md) var(--space-lg);
     font: inherit;
     font-weight: 500;
@@ -169,16 +175,12 @@ const styles = `
     transition: background var(--transition-fast);
   }
 
-  .todo-submit:hover {
+  section > form > button[type="submit"]:hover {
     background: rgba(139, 115, 85, 0.08);
   }
 
-  /* Todo List */
-  .todo-list {
-    list-style: none;
-  }
-
-  .todo-list:empty::before {
+  /* ===== Todo List (menu element) ===== */
+  section > menu:empty::before {
     content: "No todos yet. Add one above!";
     display: block;
     padding: var(--space-xl);
@@ -187,8 +189,8 @@ const styles = `
     font-style: italic;
   }
 
-  /* Todo Item */
-  .todo-item {
+  /* ===== Todo Item ===== */
+  section > menu > li {
     display: flex;
     align-items: center;
     gap: var(--space-md);
@@ -197,16 +199,16 @@ const styles = `
     transition: background var(--transition-fast);
   }
 
-  .todo-item:hover {
+  section > menu > li:hover {
     background: rgba(0, 0, 0, 0.02);
   }
 
-  .todo-item:last-child {
+  section > menu > li:last-child {
     border-block-end: none;
   }
 
   /* Checkbox */
-  .todo-checkbox {
+  section > menu > li > input[type="checkbox"] {
     appearance: none;
     inline-size: 1.25rem;
     block-size: 1.25rem;
@@ -217,11 +219,11 @@ const styles = `
     flex-shrink: 0;
   }
 
-  .todo-checkbox:hover {
+  section > menu > li > input[type="checkbox"]:hover {
     border-color: var(--color-accent);
   }
 
-  .todo-checkbox:checked {
+  section > menu > li > input[type="checkbox"]:checked {
     background: var(--color-success);
     border-color: var(--color-success);
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
@@ -230,21 +232,23 @@ const styles = `
     background-repeat: no-repeat;
   }
 
-  /* Todo Text */
-  .todo-text {
+  /* Todo text label */
+  section > menu > li > label {
     flex: 1;
     font-size: var(--font-size-base);
     transition: all var(--transition-fast);
+    cursor: pointer;
   }
 
-  .todo-item:has(.todo-checkbox:checked) .todo-text {
+  /* Strikethrough for completed todos using :has() */
+  section > menu > li:has(input:checked) > label {
     color: var(--color-text-muted);
     text-decoration: line-through;
     text-decoration-color: var(--color-border);
   }
 
-  /* Delete Button */
-  .todo-delete {
+  /* Delete button */
+  section > menu > li > button[type="button"] {
     opacity: 0;
     padding: var(--space-xs) var(--space-sm);
     font: inherit;
@@ -257,17 +261,17 @@ const styles = `
     transition: all var(--transition-fast);
   }
 
-  .todo-item:hover .todo-delete,
-  .todo-delete:focus-visible {
+  section > menu > li:hover > button[type="button"],
+  section > menu > li > button[type="button"]:focus-visible {
     opacity: 1;
   }
 
-  .todo-delete:hover {
+  section > menu > li > button[type="button"]:hover {
     background: rgba(196, 92, 92, 0.1);
   }
 
-  /* Footer */
-  .todo-footer {
+  /* ===== Footer ===== */
+  section > footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -279,23 +283,23 @@ const styles = `
     background: rgba(0, 0, 0, 0.02);
   }
 
-  /* Count */
-  .todo-count {
+  /* Item count */
+  section > footer > data {
     font-variant-numeric: tabular-nums;
   }
 
-  .todo-count strong {
+  section > footer > data > strong {
     font-weight: 600;
     color: var(--color-text);
   }
 
-  /* Filters */
-  .todo-filters {
+  /* Filter nav */
+  section > footer > nav {
     display: flex;
     gap: var(--space-xs);
   }
 
-  .filter-btn {
+  section > footer > nav > button {
     padding: var(--space-xs) var(--space-sm);
     font: inherit;
     font-size: var(--font-size-sm);
@@ -307,17 +311,17 @@ const styles = `
     transition: all var(--transition-fast);
   }
 
-  .filter-btn:hover {
+  section > footer > nav > button:hover {
     border-color: var(--color-border);
   }
 
-  .filter-btn[aria-pressed="true"] {
+  section > footer > nav > button[aria-pressed="true"] {
     border-color: var(--color-accent);
     color: var(--color-accent);
   }
 
-  /* Clear Completed */
-  .clear-btn {
+  /* Clear completed button */
+  section > footer > button {
     padding: var(--space-xs) var(--space-sm);
     font: inherit;
     font-size: var(--font-size-sm);
@@ -328,19 +332,13 @@ const styles = `
     transition: color var(--transition-fast);
   }
 
-  .clear-btn:hover {
+  section > footer > button:hover {
     color: var(--color-danger);
   }
 
-  .clear-btn:disabled {
+  section > footer > button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-
-  /* Empty state when all completed */
-  .todo-list:has(.todo-checkbox:checked):not(:has(.todo-checkbox:not(:checked))) + .todo-footer .todo-count::after {
-    content: " - All done!";
-    color: var(--color-success);
   }
 }
 
@@ -360,28 +358,27 @@ const styles = `
 `;
 
 // =============================================================================
-// Components
+// Components - Using semantic HTML elements
 // =============================================================================
 
 function TodoItem(props: { todo: Todo }) {
   const { todo } = props;
+  const inputId = `todo-${todo.id}`;
+
   return (
-    <li class="todo-item">
+    <li>
       <input
         type="checkbox"
-        class="todo-checkbox"
+        id={inputId}
         checked={todo.done}
-        post={routes.todos.toggle}
-        params={{ id: todo.id }}
-        target={ids.app}
-        swap="innerHTML"
-        trigger="change"
-        aria-label={`Mark "${todo.text}" as ${todo.done ? "not done" : "done"}`}
+        hx-post={routes.todos.toggle.build({ id: todo.id })}
+        hx-target={ids.app}
+        hx-swap="innerHTML"
+        hx-trigger="change"
       />
-      <span class="todo-text">{todo.text}</span>
+      <label htmlFor={inputId}>{todo.text}</label>
       <button
         type="button"
-        class="todo-delete"
         post={routes.todos.delete}
         params={{ id: todo.id }}
         target={ids.app}
@@ -404,11 +401,11 @@ function TodoList(props: { items: Todo[]; filter: Filter }) {
   });
 
   return (
-    <ul id="todo-list" class="todo-list">
+    <menu id="todo-list">
       {filtered.map((t) => (
         <TodoItem todo={t} />
       ))}
-    </ul>
+    </menu>
   );
 }
 
@@ -416,9 +413,9 @@ function TodoCount(props: { items: Todo[] }) {
   const active = props.items.filter((t) => !t.done).length;
   const word = active === 1 ? "item" : "items";
   return (
-    <span id="todo-count" class="todo-count">
+    <data id="todo-count" value={String(active)}>
       <strong>{active}</strong> {word} left
-    </span>
+    </data>
   );
 }
 
@@ -427,11 +424,10 @@ function TodoFilters(props: { current: Filter }) {
   const filters: Filter[] = ["all", "active", "completed"];
 
   return (
-    <div id="todo-filters" class="todo-filters" role="group" aria-label="Filter todos">
+    <nav id="todo-filters" aria-label="Filter todos">
       {filters.map((f) => (
         <button
           type="button"
-          class="filter-btn"
           get={routes.todos.list}
           target={ids.app}
           swap="innerHTML"
@@ -441,7 +437,7 @@ function TodoFilters(props: { current: Filter }) {
           {f.charAt(0).toUpperCase() + f.slice(1)}
         </button>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -451,7 +447,6 @@ function ClearCompleted(props: { items: Todo[] }) {
     <button
       type="button"
       id="clear-completed"
-      class="clear-btn"
       post={routes.todos.clearCompleted}
       target={ids.app}
       swap="innerHTML"
@@ -467,7 +462,6 @@ function TodoApp(props: { items: Todo[]; filter: Filter }) {
   return (
     <>
       <form
-        class="todo-form"
         post={routes.todos.list}
         target={ids.app}
         swap="innerHTML"
@@ -475,18 +469,17 @@ function TodoApp(props: { items: Todo[]; filter: Filter }) {
         <input
           type="text"
           name="text"
-          class="todo-input"
           placeholder="What needs to be done?"
           required
           autofocus
         />
-        <button type="submit" class="todo-submit">Add</button>
+        <button type="submit">Add</button>
       </form>
 
       <TodoList items={items} filter={filter} />
 
       {items.length > 0 && (
-        <footer class="todo-footer">
+        <footer>
           <TodoCount items={items} />
           <TodoFilters current={filter} />
           <ClearCompleted items={items} />
@@ -506,12 +499,12 @@ function Page(props: { filter: Filter }) {
         <style>{styles}</style>
       </head>
       <body>
-        <main class="todo-app">
-          <header class="todo-header">
-            <h1 class="todo-title">todos</h1>
+        <main>
+          <header>
+            <h1>todos</h1>
           </header>
 
-          <section class="todo-card" id="todo-app" aria-label="Todo list">
+          <section id="todo-app" aria-label="Todo list">
             <TodoApp items={todos} filter={props.filter} />
           </section>
         </main>
