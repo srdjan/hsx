@@ -43,6 +43,10 @@ function IdentityWidgetShell(props: { boot: WidgetBoot }) {
 Deno.serve((req) => {
   const url = new URL(req.url);
 
+  if (url.pathname === "/favicon.ico") {
+    return new Response(null, { status: 204 });
+  }
+
   if (url.pathname === "/hosted/identity") {
     const boot: WidgetBoot = {
       tenantId: "tenant-123",

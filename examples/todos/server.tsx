@@ -84,6 +84,11 @@ async function handleTodos(req: Request): Promise<Response> {
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
+  if (url.pathname === "/favicon.ico") {
+    // Silence browser favicon fetch; no icon bundled.
+    return new Response(null, { status: 204 });
+  }
+
   if (url.pathname === "/") {
     return render(<Page />);
   }

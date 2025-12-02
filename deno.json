@@ -2,12 +2,13 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "./src",
+    "types": ["./src/hsx-jsx.d.ts"],
+    "lib": ["dom", "dom.iterable", "deno.ns"],
     "strict": true,
-    "target": "ES2022",
     "module": "esnext"
   },
   "tasks": {
-    "example:todos": "deno run --allow-net --allow-read examples/todos/server.ts",
-    "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.ts"
+    "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
+    "example:identity": "deno run --allow-net --allow-read examples/identity-widget/server.tsx"
   }
 }
