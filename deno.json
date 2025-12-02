@@ -1,10 +1,11 @@
 {
   "name": "@srdjan/hsx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "exports": {
     ".": "./src/index.ts",
     "./jsx-runtime": "./src/jsx-runtime.ts"
   },
+  "license": "MIT",
   "imports": {
     "hsx/jsx-runtime": "./src/jsx-runtime.ts"
   },
