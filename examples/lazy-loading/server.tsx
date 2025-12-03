@@ -8,6 +8,7 @@
  * - Loading skeleton placeholders
  */
 import { render, renderHtml } from "../../src/index.ts";
+import { Card, Subtitle, UserList } from "./components.tsx";
 import { routes } from "./routes.ts";
 import { ids } from "./ids.ts";
 
@@ -152,36 +153,34 @@ function Page() {
       <body>
         <main>
           <h1>Dashboard</h1>
-          <p class="subtitle">Content loads lazily as it appears in viewport</p>
+          <Subtitle>Content loads lazily as it appears in viewport</Subtitle>
           {/* Load immediately when rendered (trigger="load") */}
-          <div
-            class="card"
+          <Card
             get={routes.content.stats}
             trigger="load"
             swap="innerHTML"
           >
             <h2>Statistics</h2>
             <LoadingSkeleton type="stats" />
-          </div>
-          <div
-            class="card"
+          </Card>
+          <Card
             get={routes.content.chart}
             trigger="load"
             swap="innerHTML"
           >
             <h2>Activity</h2>
             <LoadingSkeleton type="chart" />
-          </div>
+          </Card>
           {/* Infinite scroll: load more when trigger element is revealed */}
-          <div class="card">
+          <Card>
             <h2>Team Members</h2>
-            <ul class="user-list" id="user-list">
+            <UserList>
               <UserItem name="Alice Johnson" email="alice@example.com" />
               <UserItem name="Bob Smith" email="bob@example.com" />
               <UserItem name="Carol Williams" email="carol@example.com" />
               <LoadMoreTrigger page={2} />
-            </ul>
-          </div>
+            </UserList>
+          </Card>
         </main>
       </body>
     </html>

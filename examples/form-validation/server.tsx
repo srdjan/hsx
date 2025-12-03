@@ -10,6 +10,7 @@
  * - `vals` for passing additional context
  */
 import { render, renderHtml } from "../../src/index.ts";
+import { Card, Subtitle } from "./components.tsx";
 import { routes } from "./routes.ts";
 import { ids } from "./ids.ts";
 
@@ -95,8 +96,8 @@ function Page() {
       <body>
         <main>
           <h1>Create Account</h1>
-          <p class="subtitle">Real-time validation as you type</p>
-          <div class="card">
+          <Subtitle>Real-time validation as you type</Subtitle>
+          <Card>
             <form
               post={routes.register}
               target={ids.formResult}
@@ -152,7 +153,7 @@ function Page() {
               <button type="submit" class="btn">Create Account</button>
               <div id="form-result"></div>
             </form>
-          </div>
+          </Card>
         </main>
       </body>
     </html>

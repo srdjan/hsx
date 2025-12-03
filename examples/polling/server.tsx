@@ -8,6 +8,7 @@
  * - Live updating statistics and activity feeds
  */
 import { render, renderHtml } from "../../src/index.ts";
+import { Card, Subtitle } from "./components.tsx";
 import { routes } from "./routes.ts";
 import { ids } from "./ids.ts";
 
@@ -169,25 +170,22 @@ function Page() {
       <body>
         <main>
           <h1>Live Dashboard</h1>
-          <p class="subtitle">Data updates automatically via polling</p>
+          <Subtitle>Data updates automatically via polling</Subtitle>
           <div class="grid">
-            <div class="card">
-              <h2>Real-time Stats (every 2s)</h2>
+            <Card title="Real-time Stats (every 2s)">
               <div get={routes.stats} trigger="load, every 2s" swap="outerHTML">
                 <LiveStats />
               </div>
-            </div>
-            <div class="card">
-              <h2>Activity Feed (every 3s)</h2>
+            </Card>
+            <Card title="Activity Feed (every 3s)">
               <div get={routes.feed} trigger="load, every 3s" swap="outerHTML">
                 <ActivityFeed />
               </div>
-            </div>
+            </Card>
           </div>
-          <div class="card">
-            <h2>Background Process (stops at 100%)</h2>
+          <Card title="Background Process (stops at 100%)">
             <ProcessStatus />
-          </div>
+          </Card>
         </main>
       </body>
     </html>
