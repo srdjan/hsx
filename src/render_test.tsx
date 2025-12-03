@@ -1,6 +1,6 @@
 /** @jsxImportSource hsx */
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { renderHtml, render, Fragment, route, id } from "./index.ts";
+import { renderHtml, render, Fragment, route, id, type Renderable } from "./index.ts";
 
 // ============================================================================
 // HTML Escaping Tests
@@ -369,7 +369,7 @@ Deno.test("HSX attrs still allowed", () => {
 // ============================================================================
 
 Deno.test("limits: maxDepth throws when exceeded", () => {
-  function Deep(props: { level: number }): JSX.Element {
+  function Deep(props: { level: number }): Renderable {
     if (props.level === 0) return <span>bottom</span>;
     return (
       <div>
@@ -386,7 +386,7 @@ Deno.test("limits: maxDepth throws when exceeded", () => {
 });
 
 Deno.test("limits: maxDepth allows within limit", () => {
-  function Deep(props: { level: number }): JSX.Element {
+  function Deep(props: { level: number }): Renderable {
     if (props.level === 0) return <span>bottom</span>;
     return (
       <div>
