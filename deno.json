@@ -1,6 +1,6 @@
 {
   "name": "@srdjan/hsx",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "exports": {
     ".": "./src/index.ts",
     "./jsx-runtime": "./src/jsx-runtime.ts"
@@ -12,10 +12,8 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "hsx",
-    "types": ["./src/hsx-jsx.d.ts"],
     "lib": ["dom", "dom.iterable", "deno.ns"],
-    "strict": true,
-    "module": "esnext"
+    "strict": true
   },
   "tasks": {
     "test": "deno test src/ --allow-read",

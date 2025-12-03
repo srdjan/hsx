@@ -191,7 +191,7 @@ This pattern keeps your page components clean while maintaining full access to H
 
 ## Configuration
 
-### deno.json
+Add this to your `deno.json`:
 
 ```jsonc
 {
@@ -200,12 +200,12 @@ This pattern keeps your page components clean while maintaining full access to H
   },
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "hsx",
-    "lib": ["dom", "dom.iterable", "deno.ns"],
-    "strict": true
+    "jsxImportSource": "hsx"
   }
 }
 ```
+
+JSX intrinsic element types (`<div>`, `<form>`, `<button>`, etc.) are automatically included via the jsx-runtime import—no additional type configuration needed.
 
 ### Serving HTMX
 

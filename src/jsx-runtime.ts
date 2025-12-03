@@ -1,3 +1,5 @@
+/// <reference path="./hsx-jsx.d.ts" />
+
 /**
  * HSX JSX Runtime - Internal module for JSX transformation.
  *

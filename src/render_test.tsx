@@ -1,4 +1,4 @@
-/** @jsxImportSource . */
+/** @jsxImportSource hsx */
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { renderHtml, render, Fragment, route, id } from "./index.ts";
 
