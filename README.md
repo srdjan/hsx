@@ -141,6 +141,54 @@ const ids = {
 // Renders: <button hx-get="/todos" hx-target="#todo-list" hx-swap="innerHTML">
 ```
 
+## Wrapper Components
+
+Create reusable wrapper components that pass through HSX attributes for cleaner JSX:
+
+```tsx
+import type { HsxSwap, Urlish } from "jsr:@srdjan/hsx";
+
+function Card(props: {
+  children: unknown;
+  title?: string;
+  get?: Urlish;
+  trigger?: string;
+  swap?: HsxSwap;
+}) {
+  return (
+    <div class="card" get={props.get} trigger={props.trigger} swap={props.swap}>
+      {props.title && <h2>{props.title}</h2>}
+      {props.children}
+    </div>
+  );
+}
+
+function Subtitle(props: { children: string }) {
+  return <p class="subtitle">{props.children}</p>;
+}
+```
+
+**Usage:**
+
+```tsx
+function Page() {
+  return (
+    <main>
+      <h1>Dashboard</h1>
+      <Subtitle>Content loads lazily</Subtitle>
+      <Card get={routes.stats} trigger="load" swap="innerHTML" title="Statistics">
+        <LoadingSkeleton />
+      </Card>
+      <Card title="Team Members">
+        <UserList />
+      </Card>
+    </main>
+  );
+}
+```
+
+This pattern keeps your page components clean while maintaining full access to HSX attributes. See the `examples/*/components.tsx` files for more examples.
+
 ## Configuration
 
 ### deno.json
