@@ -40,6 +40,7 @@ deno run --allow-net --allow-read examples/todos/server.ts
 - `index.ts` (`.`) - Everything: `render`, `renderHtml`, `route`, `id`, `Fragment`, `hsxComponent`, `hsxPage`
 - `core.ts` (`./core`) - Core rendering: `render`, `renderHtml`, `route`, `id`, `Fragment`, types
 - `component-model.ts` (`./component-model`) - Higher-level: `hsxComponent`, `hsxPage`
+- `styles.ts` (`./styles`) - Optional CSS: `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
 - `jsx-runtime.ts` (`./jsx-runtime`) - JSX compiler requirement (not for direct import)
 
 ## Key Patterns

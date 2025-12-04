@@ -1,52 +1,6 @@
-/** @jsxImportSource ../../src */
 import { hsxComponent, hsxPage } from "../../src/index.ts";
+import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
 import { Card, Subtitle, UserList } from "./components.tsx";
-
-// =============================================================================
-// Styles
-// =============================================================================
-
-const styles = `
-:root { --accent: #10b981; --bg: #f0fdf4; --surface: #fff; --border: #d1fae5; --text: #064e3b; --muted: #6b7280; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
-main { max-width: 50rem; margin: 0 auto; }
-h1 { font-weight: 300; margin-bottom: 0.5rem; }
-.subtitle { color: var(--muted); margin-bottom: 2rem; }
-.subtitle p { margin: 0; }
-
-/* Cards */
-.card { background: var(--surface); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-.card h2 { font-size: 1rem; color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
-
-/* Loading skeleton */
-.skeleton { background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.skeleton-text { height: 1rem; width: 60%; margin-bottom: 0.5rem; }
-.skeleton-stat { height: 2.5rem; width: 40%; }
-.skeleton-chart { height: 120px; width: 100%; }
-
-/* Stats grid */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.stat { text-align: center; }
-.stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 0.875rem; color: var(--muted); }
-
-/* Chart placeholder */
-.chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 120px; }
-.bar { background: var(--accent); border-radius: 4px 4px 0 0; flex: 1; transition: height 0.3s; }
-
-/* User list for infinite scroll */
-.user-list ul { list-style: none; padding: 0; margin: 0; }
-.user-list li { padding: 0; margin: 0; }
-.user-row { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-.user-row:last-child { border-bottom: none; }
-.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; }
-.user-info { flex: 1; }
-.user-name { font-weight: 500; }
-.user-email { font-size: 0.875rem; color: var(--muted); }
-.load-more { text-align: center; padding: 1rem; color: var(--muted); }
-`;
 
 // =============================================================================
 // Helpers
@@ -216,7 +170,8 @@ const Page = hsxPage(() => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Lazy Loading - HSX Example</title>
-      <style>{styles}</style>
+      <link rel="stylesheet" href={HSX_STYLES_PATH} />
+      <style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; --hsx-border: #d1fae5; --hsx-text: #064e3b; }`}</style>
     </head>
     <body>
       <main>
@@ -277,6 +232,12 @@ Deno.serve(async (req) => {
         headers: { "content-type": "text/javascript" },
       });
     }
+  }
+
+  if (pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStyles, {
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
   }
 
   return new Response("Not found", { status: 404 });

@@ -1,46 +1,6 @@
-/** @jsxImportSource ../../src */
 import { hsxComponent, hsxPage } from "../../src/index.ts";
+import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
 import { Card, Subtitle } from "./components.tsx";
-
-const styles = `
-:root { --accent: #f97316; --bg: #fff7ed; --surface: #fff; --border: #fed7aa; --text: #7c2d12; --muted: #9a3412; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
-main { max-width: 50rem; margin: 0 auto; }
-h1 { font-weight: 300; margin-bottom: 0.5rem; }
-.subtitle { color: var(--muted); margin-bottom: 2rem; }
-.subtitle p { margin: 0; }
-
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
-.card { background: var(--surface); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-.card h2 { font-size: 0.875rem; color: var(--muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
-
-.stats { display: flex; gap: 2rem; }
-.stat { text-align: center; }
-.stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-.stat-label { font-size: 0.875rem; color: var(--muted); }
-.stat-change { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 99px; display: inline-block; margin-top: 0.25rem; }
-.stat-change.up { background: #dcfce7; color: #16a34a; }
-.stat-change.down { background: #fee2e2; color: #dc2626; }
-
-.feed { list-style: none; padding: 0; margin: 0; }
-.feed-item { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-.feed-item:last-child { border-bottom: none; }
-.feed-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.875rem; flex-shrink: 0; }
-.feed-content { flex: 1; }
-.feed-text { font-size: 0.875rem; }
-.feed-time { font-size: 0.75rem; color: var(--muted); }
-
-.status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
-.status-dot.online { background: #22c55e; }
-.status-dot.processing { background: #f59e0b; }
-.status-dot.complete { background: #3b82f6; animation: none; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.progress { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
-.progress-bar { height: 100%; background: var(--accent); transition: width 0.5s ease; }
-`;
 
 // Simulated live data
 let visitors = 1247;
@@ -101,27 +61,33 @@ function ActivityFeed() {
     return s < 60 ? "just now" : `${Math.floor(s / 60)}m ago`;
   };
   return (
-    <ul class="feed" id="activity-feed">
-      {recent.length === 0
-        ? (
-          <li class="feed-item">
-            <div class="feed-text" style={{ color: "var(--muted)" }}>
-              Waiting for activity...
-            </div>
-          </li>
-        )
-        : recent.map((a) => (
-          <li class="feed-item">
-            <div class="feed-avatar">{a.user[0]}</div>
-            <div class="feed-content">
-              <div class="feed-text">
-                <strong>{a.user}</strong> {a.action}
+    <div class="feed" id="activity-feed">
+      <ul>
+        {recent.length === 0
+          ? (
+            <li>
+              <div class="feed-item">
+                <div class="feed-text" style={{ color: "var(--muted)" }}>
+                  Waiting for activity...
+                </div>
               </div>
-              <div class="feed-time">{timeAgo(a.time)}</div>
-            </div>
-          </li>
-        ))}
-    </ul>
+            </li>
+          )
+          : recent.map((a) => (
+            <li>
+              <div class="feed-item">
+                <div class="feed-avatar">{a.user[0]}</div>
+                <div class="feed-content">
+                  <div class="feed-text">
+                    <strong>{a.user}</strong> {a.action}
+                  </div>
+                  <div class="feed-time">{timeAgo(a.time)}</div>
+                </div>
+              </div>
+            </li>
+          ))}
+      </ul>
+    </div>
   );
 }
 
@@ -187,7 +153,6 @@ const Status = hsxComponent("/status", {
 // Page
 
 const Page = hsxPage(() => {
-  // Reset state per full-page load
   visitors = 1247;
   activeUsers = 89;
   requests = 5678;
@@ -200,7 +165,8 @@ const Page = hsxPage(() => {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Live Polling - HSX Example</title>
-        <style>{styles}</style>
+        <link rel="stylesheet" href={HSX_STYLES_PATH} />
+        <style>{`:root { --hsx-accent: #f97316; --hsx-bg: #fff7ed; --hsx-border: #fed7aa; --hsx-text: #7c2d12; --hsx-muted: #9a3412; }`}</style>
       </head>
       <body>
         <main>
@@ -260,6 +226,12 @@ Deno.serve(async (req) => {
         headers: { "content-type": "text/javascript" },
       });
     }
+  }
+
+  if (pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStyles, {
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
   }
 
   return new Response("Not found", { status: 404 });

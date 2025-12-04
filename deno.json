@@ -5,7 +5,8 @@
     ".": "./src/index.ts",
     "./jsx-runtime": "./src/jsx-runtime.ts",
     "./core": "./src/core.ts",
-    "./component-model": "./src/component-model.ts"
+    "./component-model": "./src/component-model.ts",
+    "./styles": "./src/styles.ts"
   },
   "license": "MIT",
   "imports": {

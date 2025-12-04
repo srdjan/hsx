@@ -10,6 +10,7 @@
  * - CSS indicator class for loading states
  */
 import { hsxComponent, hsxPage, id } from "../../src/index.ts";
+import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
 
 // =============================================================================
 // Sample Data
@@ -35,35 +36,6 @@ const contacts: Contact[] = [
 // =============================================================================
 // Styles
 // =============================================================================
-
-const styles = `
-:root { --accent: #4f46e5; --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --text: #1e293b; --muted: #64748b; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
-main { max-width: 40rem; margin: 0 auto; }
-h1 { font-weight: 300; margin-bottom: 1.5rem; color: var(--muted); }
-
-/* Search input with indicator */
-.search-form { position: relative; margin-bottom: 1rem; }
-.search-form input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 1rem; border: 2px solid var(--border); border-radius: 8px; transition: border-color 0.2s; }
-.search-form input:focus { outline: none; border-color: var(--accent); }
-.search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); }
-
-/* Loading indicator - shown when htmx-request class is present */
-.indicator { display: none; position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); }
-.htmx-request .indicator { display: inline-block; }
-.spinner { width: 1.25rem; height: 1.25rem; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Results table */
-table { width: 100%; background: var(--surface); border-radius: 8px; border-collapse: collapse; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-th { font-weight: 600; color: var(--muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--bg); }
-.no-results { padding: 2rem; text-align: center; color: var(--muted); }
-mark { background: #fef08a; padding: 0.1em 0.2em; border-radius: 2px; }
-`;
 
 // =============================================================================
 // Components
@@ -130,7 +102,7 @@ const Page = hsxPage(() => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Active Search - HSX Example</title>
-      <style>{styles}</style>
+      <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
       <main>
@@ -181,6 +153,10 @@ Deno.serve(async (req) => {
     } catch {
       return new Response("// htmx.js not found", { status: 500, headers: { "content-type": "text/javascript" } });
     }
+  }
+
+  if (url.pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStyles, { headers: { "content-type": "text/css; charset=utf-8" } });
   }
 
   return new Response("Not found", { status: 404 });

@@ -30,8 +30,10 @@ export function Card(
 
 export function UserList(props: { children: unknown }) {
   return (
-    <ul class="user-list" id="user-list">
-      {props.children}
-    </ul>
+    <div class="user-list" id="user-list">
+      <ul>
+        {props.children}
+      </ul>
+    </div>
   );
 }

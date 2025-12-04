@@ -6,6 +6,7 @@
  * enforcement between handler output and component props.
  */
 import { hsxComponent, hsxPage, id } from "../../src/index.ts";
+import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
 
 // =============================================================================
 // Types & Data
@@ -27,41 +28,9 @@ const ids = {
 };
 
 // =============================================================================
-// Styles
-// =============================================================================
-
-const styles = `
-:root { --accent: #4f46e5; --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --text: #1e293b; --muted: #64748b; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
-main { max-width: 32rem; margin: 0 auto; }
-h1 { font-weight: 300; margin-bottom: 1.5rem; color: var(--muted); }
-.card { background: var(--surface); border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-input[type="text"] { flex: 1; padding: 0.5rem; border: 2px solid var(--border); border-radius: 4px; font-size: 1rem; }
-input[type="text"]:focus { outline: none; border-color: var(--accent); }
-button { padding: 0.5rem 1rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-button:hover { opacity: 0.9; }
-ul { list-style: none; }
-li { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-li:last-child { border-bottom: none; }
-.done { text-decoration: line-through; color: var(--muted); }
-.toggle { width: 1.25rem; height: 1.25rem; cursor: pointer; }
-.delete { margin-left: auto; color: var(--muted); background: none; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-.delete:hover { color: #ef4444; }
-.count { margin-top: 1rem; font-size: 0.875rem; color: var(--muted); text-align: center; }
-`;
-
-// =============================================================================
 // HSX Components - Each co-locates route + handler + render
 // =============================================================================
 
-/**
- * TodoList component - handles GET (list) and POST (add)
- *
- * The handler return type { todos: Todo[] } is enforced to match
- * the render function's props. TypeScript will error if they mismatch.
- */
 const TodoList = hsxComponent("/todos", {
   methods: ["GET", "POST"],
 
@@ -113,34 +82,24 @@ const TodoList = hsxComponent("/todos", {
   },
 });
 
-/**
- * TodoToggle component - handles POST to toggle a todo's done state
- */
 const TodoToggle = hsxComponent("/todos/:id/toggle", {
   methods: ["POST"],
-
   handler(_req, params) {
     const todo = todos.find((t) => t.id === Number(params.id));
     if (todo) todo.done = !todo.done;
     return { todos: [...todos] };
   },
-
-  render: TodoList.Component, // Reuse TodoList's render!
+  render: TodoList.Component,
 });
 
-/**
- * TodoDelete component - handles DELETE to remove a todo
- */
 const TodoDelete = hsxComponent("/todos/:id", {
   methods: ["DELETE"],
-
   handler(_req, params) {
     const idx = todos.findIndex((t) => t.id === Number(params.id));
     if (idx !== -1) todos.splice(idx, 1);
     return { todos: [...todos] };
   },
-
-  render: TodoList.Component, // Reuse TodoList's render!
+  render: TodoList.Component,
 });
 
 // =============================================================================
@@ -153,7 +112,7 @@ const Page = hsxPage(() => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>HSX Components Example</title>
-      <style>{styles}</style>
+      <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
       <main>
@@ -179,19 +138,16 @@ const Page = hsxPage(() => (
 // Server - Route matching using HSX Components
 // =============================================================================
 
-// All HSX components in this app
 const components = [TodoList, TodoToggle, TodoDelete];
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const { pathname } = url;
 
-  // Favicon
   if (pathname === "/favicon.ico") {
     return new Response(null, { status: 204 });
   }
 
-  // HTMX script
   if (pathname === "/static/htmx.js") {
     try {
       const js = await Deno.readTextFile(
@@ -208,12 +164,16 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Main page
+  if (pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStyles, {
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
+  }
+
   if (pathname === "/") {
     return Page.render();
   }
 
-  // Try HSX Components - automatic routing!
   for (const component of components) {
     const method = req.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     if (component.match(pathname) && component.methods.includes(method)) {

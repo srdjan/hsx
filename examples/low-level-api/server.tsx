@@ -1,4 +1,3 @@
-/** @jsxImportSource ../../src */
 /**
  * Low-Level API Example
  *

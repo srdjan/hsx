@@ -48,6 +48,9 @@ import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/component-model";
 
 // Everything (default)
 import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
+
+// Optional styles - ready-to-use CSS with theming support
+import { hsxStyles, HSX_STYLES_PATH } from "jsr:@srdjan/hsx/styles";
 ```
 
 ### From Source
@@ -332,6 +335,39 @@ if (url.pathname === "/static/htmx.js") {
 }
 ```
 
+### Optional Styles Module
+
+HSX includes an optional CSS module with a default theme and dark variant:
+
+```ts
+import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "jsr:@srdjan/hsx/styles";
+
+// Serve the styles
+if (url.pathname === HSX_STYLES_PATH) {
+  return new Response(hsxStyles, {
+    headers: { "content-type": "text/css; charset=utf-8" },
+  });
+}
+
+// In your page head
+<link rel="stylesheet" href={HSX_STYLES_PATH} />
+```
+
+**Exports:**
+- `hsxStyles` - Default light theme (indigo accent)
+- `hsxStylesDark` - Dark theme variant
+- `HSX_STYLES_PATH` - Default path: `/static/hsx.css`
+
+**Customization:** Override CSS variables in your page:
+
+```tsx
+<style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; }`}</style>
+```
+
+Available variables: `--hsx-accent`, `--hsx-bg`, `--hsx-surface`, `--hsx-border`,
+`--hsx-text`, `--hsx-muted`, `--hsx-error`, `--hsx-success`, spacing (`--hsx-space-*`),
+and radius (`--hsx-radius-*`).
+
 ## API Reference
 
 ### `render(node, options?)`
@@ -445,6 +481,7 @@ src/
   index.ts          # Main entry - exports everything
   core.ts           # Core module - render, route, id, Fragment, types
   component-model.ts # Component module - hsxComponent, hsxPage
+  styles.ts         # Optional CSS module with themes
   jsx-runtime.ts    # Minimal JSX runtime (compiler requirement)
   render.ts         # SSR renderer with HTMX injection
   hsx-normalize.ts  # HSX to hx-* attribute mapping

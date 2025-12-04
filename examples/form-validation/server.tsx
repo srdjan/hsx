@@ -1,45 +1,7 @@
-/** @jsxImportSource ../../src */
 import { hsxComponent, hsxPage } from "../../src/index.ts";
+import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
 import { Card, Subtitle } from "./components.tsx";
 import { ids } from "./ids.ts";
-
-const styles = `
-:root { --accent: #0ea5e9; --bg: #f0f9ff; --surface: #fff; --border: #bae6fd; --text: #0c4a6e; --muted: #64748b; --error: #dc2626; --success: #16a34a; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
-main { max-width: 24rem; margin: 0 auto; }
-h1 { font-weight: 300; margin-bottom: 0.5rem; }
-.subtitle { color: var(--muted); margin-bottom: 2rem; }
-.subtitle p { margin: 0; }
-
-.card { background: var(--surface); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.form-group { margin-bottom: 1.5rem; }
-.form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
-.form-group input { width: 100%; padding: 0.75rem 1rem; font: inherit; border: 2px solid var(--border); border-radius: 8px; transition: border-color 0.2s; }
-.form-group input:focus { outline: none; border-color: var(--accent); }
-.form-group input.is-valid { border-color: var(--success); }
-.form-group input.is-invalid { border-color: var(--error); }
-
-.field-feedback { min-height: 1.5rem; font-size: 0.875rem; margin-top: 0.25rem; }
-.error-msg { color: var(--error); display: flex; align-items: center; gap: 0.25rem; }
-.success-msg { color: var(--success); display: flex; align-items: center; gap: 0.25rem; }
-.loading { color: var(--muted); }
-
-.btn { width: 100%; padding: 0.75rem; font: inherit; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-.btn:hover { background: #0284c7; }
-.btn:disabled { background: var(--border); cursor: not-allowed; }
-
-.htmx-request .btn { opacity: 0.7; pointer-events: none; }
-.result { margin-top: 1rem; padding: 1rem; border-radius: 8px; text-align: center; }
-.result.success { background: #dcfce7; color: var(--success); }
-.result.error { background: #fee2e2; color: var(--error); }
-
-.password-strength { display: flex; gap: 0.25rem; margin-top: 0.5rem; }
-.strength-bar { height: 4px; flex: 1; border-radius: 2px; background: var(--border); }
-.strength-bar.weak { background: var(--error); }
-.strength-bar.medium { background: #f59e0b; }
-.strength-bar.strong { background: var(--success); }
-`;
 
 // Simulated taken usernames and emails
 const takenUsernames = ["admin", "user", "john", "jane"];
@@ -197,7 +159,8 @@ const Page = hsxPage(() => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Form Validation - HSX Example</title>
-      <style>{styles}</style>
+      <link rel="stylesheet" href={HSX_STYLES_PATH} />
+      <style>{`:root { --hsx-accent: #0ea5e9; --hsx-bg: #f0f9ff; --hsx-border: #bae6fd; --hsx-text: #0c4a6e; }`}</style>
     </head>
     <body>
       <main>
@@ -298,6 +261,12 @@ Deno.serve(async (req) => {
         headers: { "content-type": "text/javascript" },
       });
     }
+  }
+
+  if (pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStyles, {
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
   }
 
   return new Response("Not found", { status: 404 });

@@ -1,5 +1,5 @@
-/** @jsxImportSource hsx */
 import { hsxComponent, hsxPage, id, render } from "../../src/index.ts";
+import { hsxStylesDark, HSX_STYLES_PATH } from "../../src/styles.ts";
 
 // ---------------------------------------------------------------------------
 // Data (in-memory for demo)
@@ -62,24 +62,7 @@ const Page = hsxPage(() => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>hsxPage Demo</title>
-      <style>
-        {`
-:root { --bg: #0b1021; --surface: #11172d; --text: #e6edf7; --muted: #9fb1d0; --accent: #6ee7ff; }
-* { box-sizing: border-box; }
-body { font-family: "Inter", system-ui, -apple-system, sans-serif; background: radial-gradient(circle at 20% 20%, #122040 0, #0b1021 40%), #0b1021; color: var(--text); margin: 0; min-height: 100vh; }
-.shell { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem 3.5rem; }
-.card { background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
-h2 { margin: 0 0 1rem; font-weight: 600; }
-form { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
-input[type="text"] { flex: 1; padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); color: var(--text); }
-button { padding: 0.65rem 1rem; border-radius: 10px; border: none; background: var(--accent); color: #0b1021; font-weight: 700; cursor: pointer; box-shadow: 0 10px 30px rgba(110,231,255,0.25); }
-button:hover { transform: translateY(-1px); }
-ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-li { padding: 0.65rem 0.75rem; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
-label { display: flex; gap: 0.5rem; align-items: center; }
-footer { margin-top: 2rem; color: var(--muted); }
-        `}
-      </style>
+      <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
       <div class="shell">
@@ -126,6 +109,12 @@ Deno.serve(async (req) => {
     );
     return new Response(js, {
       headers: { "content-type": "text/javascript; charset=utf-8" },
+    });
+  }
+
+  if (pathname === HSX_STYLES_PATH) {
+    return new Response(hsxStylesDark, {
+      headers: { "content-type": "text/css; charset=utf-8" },
     });
   }
 
