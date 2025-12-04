@@ -713,6 +713,14 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 2. **Use partial updates** - Return only the HTML that changed
 3. **Leverage HTMX triggers** - Use `delay:` and `throttle:` modifiers
 
+### Styling with `@srdjan/hsx-styles` (optional)
+
+- Serve `hsxStyles` (light) or `hsxStylesDark` and add `<link rel="stylesheet" href={HSX_STYLES_PATH}>` in your page `<head>`.
+- Layout helpers: `container`, `stack`, `cluster`, `sidebar`, `split`, `auto-grid`, `hero`, `measure`, `bleed`.
+- Components: `card`, `surface`, `badge`, `pill`, `chip`, `callout.{info|success|warning|danger}`, `divider`, `list-inline`, button sizes (`btn-sm`, `btn-lg`) and variants (`btn-ghost`, `btn-outline`).
+- Utilities: text sizing (`text-xs` … `text-3xl`), spacing (`p-sm`, `space-y-md`), flex/grid (`flex`, `cols-2/3`, `gap-sm`), shadows/rounding (`shadow-*`, `rounded-*`), and accessibility (`visually-hidden`).
+- Customize via CSS variables (`--hsx-accent`, `--hsx-bg`, `--hsx-space-*`, `--hsx-breakpoint-*`, etc.) to fit your brand palette.
+
 ---
 
 ## Examples Index

@@ -382,15 +382,25 @@ if (url.pathname === HSX_STYLES_PATH) {
 - `hsxStylesDark` - Dark theme variant
 - `HSX_STYLES_PATH` - Default path: `/static/hsx.css`
 
+**What you get (Fizzy-inspired defaults):**
+
+- Layout helpers: `container`, `stack`, `cluster`, `sidebar`, `split`, `auto-grid`, `hero`, `bleed`, `measure`
+- Components: `card`, `surface`, `callout.{info|success|warning|danger}`, `badge`, `pill`, `chip`, `divider`, `list-inline`, button sizes (`btn-sm`, `btn-lg`) and variants (`btn-ghost`, `btn-outline`)
+- Utilities: text sizes (`text-xs` … `text-3xl`), spacing (`p-sm`, `px-md`, `space-y-md`), flex/grid helpers (`flex`, `cols-2/3`, `gap-sm`), shadows/rounding (`shadow-sm`, `rounded-lg`), visibility (`visually-hidden`, `hidden`)
+
 **Customization:** Override CSS variables in your page:
 
 ```tsx
 <style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; }`}</style>;
 ```
 
-Available variables: `--hsx-accent`, `--hsx-bg`, `--hsx-surface`,
-`--hsx-border`, `--hsx-text`, `--hsx-muted`, `--hsx-error`, `--hsx-success`,
-spacing (`--hsx-space-*`), and radius (`--hsx-radius-*`).
+Available variables: `--hsx-accent`, `--hsx-accent-hover`, `--hsx-bg`,
+`--hsx-surface`, `--hsx-border`, `--hsx-text`, `--hsx-muted`, `--hsx-error`,
+`--hsx-success`, `--hsx-info`, `--hsx-warning`, `--hsx-neutral`, spacing
+(`--hsx-space-2xs` … `--hsx-space-3xl`), radius (`--hsx-radius-*`), typography
+(`--hsx-font-size-*`, `--hsx-leading-*`), shadows (`--hsx-shadow-*`),
+breakpoints (`--hsx-breakpoint-sm|md|lg`), and layout tokens
+(`--hsx-container-max`, `--hsx-container-padding`, `--hsx-measure`).
 
 ## API Reference
 
