@@ -1,14 +1,5 @@
-/**
- * Tabs & Modal Example
- *
- * Demonstrates HSX features:
- * - Tab navigation with active states
- * - Modal dialogs with `beforeend` swap for overlay
- * - `swap="outerHTML"` vs `swap="innerHTML"` strategies
- * - Multiple targets and swap strategies
- */
-import { render, renderHtml } from "../../src/index.ts";
-import { routes } from "./routes.ts";
+/** @jsxImportSource ../../src */
+import { hsxComponent, hsxPage } from "../../src/index.ts";
 import { ids } from "./ids.ts";
 
 const styles = `
@@ -17,7 +8,7 @@ const styles = `
 body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem; line-height: 1.6; color: var(--text); }
 main { max-width: 40rem; margin: 0 auto; }
 h1 { font-weight: 300; margin-bottom: 1.5rem; }
-.tabs { display: flex; border-bottom: 2px solid var(--border); }
+.tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
 .tab { padding: 0.75rem 1.5rem; background: none; border: none; font: inherit; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
 .tab:hover { color: var(--accent); }
 .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
@@ -43,17 +34,23 @@ h1 { font-weight: 300; margin-bottom: 1.5rem; }
 .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
 .toggle { display: flex; align-items: center; gap: 0.5rem; }
 .toggle input { width: auto; }
+.paragraph p { margin-bottom: 1rem; }
+.bullets ul { margin-top: 1rem; padding-left: 1.5rem; }
 `;
 
 type Tab = "overview" | "details" | "settings";
 
+type TabState = { current: Tab };
+
+type VoidProps = Record<string, never>;
+
 function TabButton(props: { tab: Tab; current: Tab; label: string }) {
   const isActive = props.tab === props.current;
   const routeMap = {
-    overview: routes.tabs.overview,
-    details: routes.tabs.details,
-    settings: routes.tabs.settings,
-  };
+    overview: TabOverview,
+    details: TabDetails,
+    settings: TabSettings,
+  } as const;
   return (
     <button
       class="tab"
@@ -69,11 +66,13 @@ function TabButton(props: { tab: Tab; current: Tab; label: string }) {
 
 function TabNav(props: { current: Tab }) {
   return (
-    <nav class="tabs" role="tablist">
-      <TabButton tab="overview" current={props.current} label="Overview" />
-      <TabButton tab="details" current={props.current} label="Details" />
-      <TabButton tab="settings" current={props.current} label="Settings" />
-    </nav>
+    <div class="tabs">
+      <nav role="tablist">
+        <TabButton tab="overview" current={props.current} label="Overview" />
+        <TabButton tab="details" current={props.current} label="Details" />
+        <TabButton tab="settings" current={props.current} label="Settings" />
+      </nav>
+    </div>
   );
 }
 
@@ -81,7 +80,9 @@ function OverviewContent() {
   return (
     <>
       <h2>Overview</h2>
-      <p style={{ marginBottom: "1rem" }}>Quick summary of your account.</p>
+      <div class="paragraph">
+        <p>Quick summary of your account.</p>
+      </div>
       <div class="card-grid">
         <div class="card">
           <h3>Projects</h3>
@@ -103,7 +104,7 @@ function OverviewContent() {
       <div class="btn-group">
         <button
           class="btn btn-primary"
-          get={routes.modal.open}
+          get={ModalOpen}
           target="body"
           swap="beforeend"
         >
@@ -119,11 +120,13 @@ function DetailsContent() {
     <>
       <h2>Details</h2>
       <p>Detailed information about recent activity.</p>
-      <ul style={{ marginTop: "1rem", paddingLeft: "1.5rem" }}>
-        <li>Completed task "Update documentation"</li>
-        <li>Created project "Q4 Planning"</li>
-        <li>Added team member "Alex"</li>
-      </ul>
+      <div class="bullets">
+        <ul>
+          <li>Completed task "Update documentation"</li>
+          <li>Created project "Q4 Planning"</li>
+          <li>Added team member "Alex"</li>
+        </ul>
+      </div>
     </>
   );
 }
@@ -160,7 +163,7 @@ function ModalDialog() {
         <div class="btn-group">
           <button
             class="btn btn-secondary"
-            get={routes.modal.close}
+            get={ModalClose}
             target="#modal-overlay"
             swap="outerHTML"
           >
@@ -168,7 +171,7 @@ function ModalDialog() {
           </button>
           <button
             class="btn btn-danger"
-            post={routes.modal.confirm}
+            post={ModalConfirm}
             target={ids.modalContainer}
             swap="innerHTML"
           >
@@ -184,78 +187,92 @@ function Notification(props: { message: string }) {
   return <div class="notification" id="notification">{props.message}</div>;
 }
 
-function Page(props: { currentTab: Tab }) {
-  const content = {
-    overview: <OverviewContent />,
-    details: <DetailsContent />,
-    settings: <SettingsContent />,
-  };
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Tabs & Modal - HSX Example</title>
-        <style>{styles}</style>
-      </head>
-      <body>
-        <main>
-          <h1>Dashboard</h1>
-          <TabNav current={props.currentTab} />
-          <div class="tab-content" id="tab-content">
-            {content[props.currentTab]}
-          </div>
-        </main>
-        <div id="modal-container"></div>
-      </body>
-    </html>
-  );
-}
+// HSX Components for tabs and modal actions
 
-// =============================================================================
+const TabOverview = hsxComponent("/tabs/overview", {
+  methods: ["GET"],
+  handler: () => ({} as VoidProps),
+  render: () => <OverviewContent />,
+});
+
+const TabDetails = hsxComponent("/tabs/details", {
+  methods: ["GET"],
+  handler: () => ({} as VoidProps),
+  render: () => <DetailsContent />,
+});
+
+const TabSettings = hsxComponent("/tabs/settings", {
+  methods: ["GET"],
+  handler: () => ({} as VoidProps),
+  render: () => <SettingsContent />,
+});
+
+const ModalOpen = hsxComponent("/modal/open", {
+  methods: ["GET"],
+  handler: () => ({} as VoidProps),
+  render: () => <ModalDialog />,
+});
+
+const ModalClose = hsxComponent("/modal/close", {
+  methods: ["GET"],
+  handler: () => ({} as VoidProps),
+  render: () => <></>,
+});
+
+const ModalConfirm = hsxComponent("/modal/confirm", {
+  methods: ["POST"],
+  handler: () => ({ message: "✓ Action confirmed!" }),
+  render: ({ message }: { message: string }) => <Notification message={message} />,
+});
+
+// Page
+
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Tabs & Modal - HSX Example</title>
+      <style>{styles}</style>
+    </head>
+    <body>
+      <main>
+        <header>
+          <h1>Dashboard</h1>
+        </header>
+        <TabNav current="overview" />
+        <div class="tab-content" id="tab-content">
+          <OverviewContent />
+        </div>
+      </main>
+      <div id="modal-container"></div>
+    </body>
+  </html>
+));
+
 // Server
-// =============================================================================
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const { pathname } = url;
 
   if (pathname === "/favicon.ico") return new Response(null, { status: 204 });
-  if (pathname === "/") return render(<Page currentTab="overview" />);
+  if (pathname === "/") return Page.render();
 
-  // Tab content
-  if (pathname === "/tabs/overview") {
-    return new Response(renderHtml(<OverviewContent />), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  }
-  if (pathname === "/tabs/details") {
-    return new Response(renderHtml(<DetailsContent />), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  }
-  if (pathname === "/tabs/settings") {
-    return new Response(renderHtml(<SettingsContent />), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  }
+  const components = [
+    TabOverview,
+    TabDetails,
+    TabSettings,
+    ModalOpen,
+    ModalClose,
+    ModalConfirm,
+  ];
 
-  // Modal
-  if (pathname === "/modal/open") {
-    return new Response(renderHtml(<ModalDialog />), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  }
-  if (pathname === "/modal/close") {
-    return new Response("", {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
-  }
-  if (pathname === "/modal/confirm") {
-    return new Response(
-      renderHtml(<Notification message="✓ Action confirmed!" />),
-      { headers: { "content-type": "text/html; charset=utf-8" } },
-    );
+  for (const component of components) {
+    const method = req.method as typeof component.methods[number];
+    if (component.match(pathname) && component.methods.includes(method)) {
+      return component.handle(req);
+    }
   }
 
   if (pathname === "/static/htmx.js") {

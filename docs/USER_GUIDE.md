@@ -9,11 +9,12 @@ A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX applicati
 3. [HSX Attributes Reference](#hsx-attributes-reference)
 4. [Type-Safe Routes](#type-safe-routes)
 5. [HSX Components](#hsx-components)
-6. [Branded IDs](#branded-ids)
-7. [HTMX Script Injection](#htmx-script-injection)
-8. [Render Options](#render-options)
-9. [Best Practices](#best-practices)
-10. [Troubleshooting](#troubleshooting)
+6. [HSX Page](#hsx-page)
+7. [Branded IDs](#branded-ids)
+8. [HTMX Script Injection](#htmx-script-injection)
+9. [Render Options](#render-options)
+10. [Best Practices](#best-practices)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -386,6 +387,49 @@ export const TodoList = hsxComponent("/todos", {
 Set `fullPage: true` when your render function outputs a complete HTML document. The default (`fullPage: false`) returns just the rendered fragment with `content-type: text/html; charset=utf-8`.
 
 `methods` controls which HTTP verbs the component responds to; it defaults to `GET`.
+
+---
+
+## HSX Page
+
+`hsxPage()` wraps a render function that returns a **full HTML document** and validates it for semantic cleanliness:
+
+- Root must be `<html>` containing `<head>` followed by `<body>`
+- Semantic tags (`header`, `main`, `section`, `article`, `footer`, headings, lists, etc.) may **not** have `class` or inline `style`
+- `<style>` tags must live inside `<head>` (put your CSS there)
+- Composition is limited to semantic HTML, standard document tags, and HSX components
+
+```tsx
+import { hsxPage, hsxComponent } from "jsr:@srdjan/hsx";
+
+const Stats = hsxComponent("/stats", {
+  handler: () => ({ total: 42 }),
+  render: ({ total }) => <p>Total: {total}</p>,
+});
+
+export const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <title>Guarded Layout</title>
+      <style>{"body { font-family: system-ui; }"}</style>
+    </head>
+    <body>
+      <header><h1>Dashboard</h1></header>
+      <main>
+        <section>
+          <div class="card">
+            <Stats.Component />
+          </div>
+        </section>
+      </main>
+    </body>
+  </html>
+));
+
+// Usage: render(<Page.Component />) or Page.render();
+```
+
+Violations throw descriptive errors (e.g., "Semantic element <section> cannot have a class").
 
 ---
 

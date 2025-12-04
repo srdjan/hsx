@@ -5,7 +5,7 @@
  * component are co-located in a single definition with type-safe
  * enforcement between handler output and component props.
  */
-import { hsxComponent, id, render, renderHtml } from "../../src/index.ts";
+import { hsxComponent, hsxPage, id } from "../../src/index.ts";
 
 // =============================================================================
 // Types & Data
@@ -144,38 +144,36 @@ const TodoDelete = hsxComponent("/todos/:id", {
 });
 
 // =============================================================================
-// Page Layout (traditional component - wraps HSX components)
+// Page Layout
 // =============================================================================
 
-function Page() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>HSX Components Example</title>
-        <style>{styles}</style>
-      </head>
-      <body>
-        <main>
-          <h1>HSX Components Demo</h1>
-          <div class="card">
-            <form post={TodoList} target={ids.list} swap="outerHTML">
-              <input
-                type="text"
-                name="text"
-                placeholder="What needs to be done?"
-                required
-              />
-              <button type="submit">Add</button>
-            </form>
-            <TodoList.Component todos={todos} />
-          </div>
-        </main>
-      </body>
-    </html>
-  );
-}
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>HSX Components Example</title>
+      <style>{styles}</style>
+    </head>
+    <body>
+      <main>
+        <h1>HSX Components Demo</h1>
+        <div class="card">
+          <form post={TodoList} target={ids.list} swap="outerHTML">
+            <input
+              type="text"
+              name="text"
+              placeholder="What needs to be done?"
+              required
+            />
+            <button type="submit">Add</button>
+          </form>
+          <TodoList.Component todos={todos} />
+        </div>
+      </main>
+    </body>
+  </html>
+));
 
 // =============================================================================
 // Server - Route matching using HSX Components
@@ -212,7 +210,7 @@ Deno.serve(async (req) => {
 
   // Main page
   if (pathname === "/") {
-    return render(<Page />);
+    return Page.render();
   }
 
   // Try HSX Components - automatic routing!

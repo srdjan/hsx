@@ -3,6 +3,7 @@ import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert
 import {
   Fragment,
   hsxComponent,
+  hsxPage,
   id,
   render,
   renderHtml,
@@ -528,4 +529,59 @@ Deno.test("hsxComponent: usable as Urlish in HSX attributes", () => {
   );
 
   assertEquals(html.includes('hx-get="/items/5"'), true);
+});
+
+// ============================================================================
+// HSX Page Tests
+// ============================================================================
+
+Deno.test("hsxPage: enforces root html with head and body", () => {
+  const Page = hsxPage(() => <div />);
+  assertThrows(() => renderHtml(<Page.Component />), Error, "root <html>");
+});
+
+Deno.test("hsxPage: blocks class on semantic elements", () => {
+  const Page = hsxPage(() => (
+    <html>
+      <head></head>
+      <body>
+        <section class="bad"></section>
+      </body>
+    </html>
+  ));
+
+  assertThrows(() => renderHtml(<Page.Component />), Error, "cannot have a class");
+});
+
+Deno.test("hsxPage: blocks style outside head", () => {
+  const Page = hsxPage(() => (
+    <html>
+      <head></head>
+      <body>
+        <style></style>
+      </body>
+    </html>
+  ));
+
+  assertThrows(() => renderHtml(<Page.Component />), Error, "must live inside <head>");
+});
+
+Deno.test("hsxPage: allows styling on non-semantic div", () => {
+  const Page = hsxPage(() => (
+    <html>
+      <head>
+        <style>{"body{margin:0;}"}</style>
+      </head>
+      <body>
+        <div class="shell" style="padding:1rem">
+          <main>
+            <h1>Hi</h1>
+          </main>
+        </div>
+      </body>
+    </html>
+  ));
+
+  const res = renderHtml(<Page.Component />);
+  assertEquals(res.includes("shell"), true);
 });

@@ -12,6 +12,7 @@ SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*`
 - **HTMX as HTML** - Write `get`, `post`, `target`, `swap` as native attributes
 - **Type-safe routes** - Branded `Route<Path>` types with automatic parameter inference
 - **Co-located components** - `hsxComponent()` bundles route + handler + render
+- **Page guardrails** - `hsxPage()` enforces semantic, style-free layouts
 - **Branded IDs** - `id("name")` returns `Id<"name">` typed as `"#name"`
 - **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when needed
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
@@ -123,6 +124,45 @@ if (TodoList.match(url.pathname)) return TodoList.handle(req);
 ```
 
 TypeScript enforces that `handler` returns the same shape that `render` expects. `methods` defaults to `["GET"]`; set `fullPage: true` when your render function returns a full document instead of a fragment.
+
+## hsxPage (full-page guardrails)
+
+`hsxPage()` wraps a render function that returns a **complete** HTML document and validates that:
+
+- The root is `<html>` with `<head>` then `<body>`
+- Semantic tags (header/main/section/article/h1-h6/p/ul/ol/li/etc.) have **no** `class` or inline `style`
+- `<style>` tags live in `<head>`; CSS belongs there, not inline
+- Composition stays within semantic HTML + HSX components
+
+```tsx
+import { hsxPage, hsxComponent } from "jsr:@srdjan/hsx";
+
+const Widget = hsxComponent("/data", {
+  handler: () => ({ message: "Hi" }),
+  render: ({ message }) => <p>{message}</p>,
+});
+
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <title>Guarded Page</title>
+      <style>{"body { font-family: system-ui; }"}</style>
+    </head>
+    <body>
+      <header><h1>Welcome</h1></header>
+      <main>
+        <section>
+          <div class="card">
+            <Widget.Component />
+          </div>
+        </section>
+      </main>
+    </body>
+  </html>
+));
+
+Deno.serve(() => Page.render());
+```
 
 ## HSX Attributes
 
@@ -349,6 +389,8 @@ Run examples with `deno task`:
 | **Polling** | `deno task example:polling` | Live dashboard with intervals |
 | **Tabs & Modal** | `deno task example:tabs-modal` | Tab navigation and modals |
 | **HSX Components** | `deno task example:hsx-components` | Co-located route + handler + render |
+| **HSX Page** | `deno task example:hsx-page` | Semantic full-page with hsxPage guardrails |
+| **Low-Level API** | `deno task example:low-level-api` | Manual render/renderHtml without hsxPage/hsxComponent |
 
 ## Safety
 
@@ -366,6 +408,7 @@ src/
   render.ts         # SSR renderer with HTMX injection
   hsx-normalize.ts  # HSX to hx-* attribute mapping
   hsx-component.ts  # hsxComponent factory (route + handler + render)
+  hsx-page.ts       # hsxPage guardrail for full-page layouts
   hsx-types.ts      # Route, Id, HsxSwap, HsxTrigger types
   hsx-jsx.d.ts      # JSX type declarations
 examples/
@@ -376,6 +419,7 @@ examples/
   polling/          # Polling example
   tabs-modal/       # Tabs and modal example
   hsx-components/   # HSX Component pattern example
+  hsx-page/         # hsxPage full-page guardrail example
 vendor/htmx/
   htmx.js           # Vendored HTMX v4 (alpha)
 docs/

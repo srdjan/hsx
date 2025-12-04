@@ -1,6 +1,4 @@
-import { render, renderHtml } from "../../src/index.ts";
-import { routes } from "./routes.ts";
-import { ids } from "./ids.ts";
+import { hsxComponent, hsxPage, id } from "../../src/index.ts";
 
 // =============================================================================
 // Types & Data
@@ -8,6 +6,14 @@ import { ids } from "./ids.ts";
 
 type Todo = { id: number; text: string; done: boolean };
 type Filter = "all" | "active" | "completed";
+
+const ids = {
+  app: id("todo-app"),
+  list: id("todo-list"),
+  count: id("todo-count"),
+  filters: id("todo-filters"),
+  clearCompleted: id("clear-completed"),
+};
 
 const todos: Todo[] = [
   { id: 1, text: "Learn HSX JSX renderer", done: true },
@@ -179,8 +185,8 @@ const styles = `
     background: rgba(139, 115, 85, 0.08);
   }
 
-  /* ===== Todo List (menu element) ===== */
-  section > menu:empty::before {
+  /* ===== Todo List ===== */
+  section > ul:empty::before {
     content: "No todos yet. Add one above!";
     display: block;
     padding: var(--space-xl);
@@ -190,7 +196,7 @@ const styles = `
   }
 
   /* ===== Todo Item ===== */
-  section > menu > li {
+  section > ul > li {
     display: flex;
     align-items: center;
     gap: var(--space-md);
@@ -199,16 +205,16 @@ const styles = `
     transition: background var(--transition-fast);
   }
 
-  section > menu > li:hover {
+  section > ul > li:hover {
     background: rgba(0, 0, 0, 0.02);
   }
 
-  section > menu > li:last-child {
+  section > ul > li:last-child {
     border-block-end: none;
   }
 
   /* Checkbox */
-  section > menu > li > input[type="checkbox"] {
+  section > ul > li > input[type="checkbox"] {
     appearance: none;
     inline-size: 1.25rem;
     block-size: 1.25rem;
@@ -219,11 +225,11 @@ const styles = `
     flex-shrink: 0;
   }
 
-  section > menu > li > input[type="checkbox"]:hover {
+  section > ul > li > input[type="checkbox"]:hover {
     border-color: var(--color-accent);
   }
 
-  section > menu > li > input[type="checkbox"]:checked {
+  section > ul > li > input[type="checkbox"]:checked {
     background: var(--color-success);
     border-color: var(--color-success);
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
@@ -233,7 +239,7 @@ const styles = `
   }
 
   /* Todo text label */
-  section > menu > li > label {
+  section > ul > li > label {
     flex: 1;
     font-size: var(--font-size-base);
     transition: all var(--transition-fast);
@@ -241,14 +247,14 @@ const styles = `
   }
 
   /* Strikethrough for completed todos using :has() */
-  section > menu > li:has(input:checked) > label {
+  section > ul > li:has(input:checked) > label {
     color: var(--color-text-muted);
     text-decoration: line-through;
     text-decoration-color: var(--color-border);
   }
 
   /* Delete button */
-  section > menu > li > button[type="button"] {
+  section > ul > li > button[type="button"] {
     opacity: 0;
     padding: var(--space-xs) var(--space-sm);
     font: inherit;
@@ -261,12 +267,12 @@ const styles = `
     transition: all var(--transition-fast);
   }
 
-  section > menu > li:hover > button[type="button"],
-  section > menu > li > button[type="button"]:focus-visible {
+  section > ul > li:hover > button[type="button"],
+  section > ul > li > button[type="button"]:focus-visible {
     opacity: 1;
   }
 
-  section > menu > li > button[type="button"]:hover {
+  section > ul > li > button[type="button"]:hover {
     background: rgba(196, 92, 92, 0.1);
   }
 
@@ -361,6 +367,18 @@ const styles = `
 // Components - Using semantic HTML elements
 // =============================================================================
 
+type ViewState = { items: Todo[]; filter: Filter };
+
+function parseFilter(url: URL): Filter {
+  const f = url.searchParams.get("filter");
+  if (f === "active" || f === "completed") return f;
+  return "all";
+}
+
+function view(filter: Filter): ViewState {
+  return { items: [...todos], filter };
+}
+
 function TodoItem(props: { todo: Todo }) {
   const { todo } = props;
   const inputId = `todo-${todo.id}`;
@@ -371,7 +389,7 @@ function TodoItem(props: { todo: Todo }) {
         type="checkbox"
         id={inputId}
         checked={todo.done}
-        post={routes.todos.toggle}
+        post={TodoToggle}
         params={{ id: todo.id }}
         target={ids.app}
         swap="innerHTML"
@@ -380,7 +398,7 @@ function TodoItem(props: { todo: Todo }) {
       <label htmlFor={inputId}>{todo.text}</label>
       <button
         type="button"
-        post={routes.todos.delete}
+        post={TodoDelete}
         params={{ id: todo.id }}
         target={ids.app}
         swap="innerHTML"
@@ -392,7 +410,7 @@ function TodoItem(props: { todo: Todo }) {
   );
 }
 
-function TodoList(props: { items: Todo[]; filter: Filter }) {
+function TodoListView(props: ViewState) {
   const { items, filter } = props;
 
   const filtered = items.filter((t) => {
@@ -402,11 +420,11 @@ function TodoList(props: { items: Todo[]; filter: Filter }) {
   });
 
   return (
-    <menu id="todo-list">
+    <ul id="todo-list">
       {filtered.map((t) => (
         <TodoItem todo={t} />
       ))}
-    </menu>
+    </ul>
   );
 }
 
@@ -414,9 +432,9 @@ function TodoCount(props: { items: Todo[] }) {
   const active = props.items.filter((t) => !t.done).length;
   const word = active === 1 ? "item" : "items";
   return (
-    <data id="todo-count" value={String(active)}>
+    <span id="todo-count" data-count={String(active)}>
       <strong>{active}</strong> {word} left
-    </data>
+    </span>
   );
 }
 
@@ -429,7 +447,7 @@ function TodoFilters(props: { current: Filter }) {
       {filters.map((f) => (
         <button
           type="button"
-          get={routes.todos.list}
+          get={TodoList}
           target={ids.app}
           swap="innerHTML"
           vals={{ filter: f }}
@@ -448,7 +466,7 @@ function ClearCompleted(props: { items: Todo[] }) {
     <button
       type="button"
       id="clear-completed"
-      post={routes.todos.clearCompleted}
+      post={TodoClear}
       target={ids.app}
       swap="innerHTML"
       disabled={!hasCompleted}
@@ -458,12 +476,12 @@ function ClearCompleted(props: { items: Todo[] }) {
   );
 }
 
-function TodoApp(props: { items: Todo[]; filter: Filter }) {
+function TodoApp(props: ViewState) {
   const { items, filter } = props;
   return (
-    <>
+    <section id="todo-app" aria-label="Todo list">
       <form
-        post={routes.todos.list}
+        post={TodoList}
         target={ids.app}
         swap="innerHTML"
       >
@@ -477,7 +495,7 @@ function TodoApp(props: { items: Todo[]; filter: Filter }) {
         <button type="submit">Add</button>
       </form>
 
-      <TodoList items={items} filter={filter} />
+      <TodoListView items={items} filter={filter} />
 
       {items.length > 0 && (
         <footer>
@@ -486,98 +504,81 @@ function TodoApp(props: { items: Todo[]; filter: Filter }) {
           <ClearCompleted items={items} />
         </footer>
       )}
-    </>
+    </section>
   );
 }
 
-function Page(props: { filter: Filter }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Todos - HSX Example</title>
-        <style>{styles}</style>
-      </head>
-      <body>
-        <main>
-          <header>
-            <h1>todos</h1>
-          </header>
+const TodoList = hsxComponent("/todos", {
+  methods: ["GET", "POST"],
+  async handler(req) {
+    const url = new URL(req.url);
+    const filter = parseFilter(url);
 
-          <section id="todo-app" aria-label="Todo list">
-            <TodoApp items={todos} filter={props.filter} />
-          </section>
-        </main>
-      </body>
-    </html>
-  );
-}
-
-// =============================================================================
-// Request Handlers
-// =============================================================================
-
-function parseFilter(url: URL): Filter {
-  const f = url.searchParams.get("filter");
-  if (f === "active" || f === "completed") return f;
-  return "all";
-}
-
-function parseId(pathname: string): number | null {
-  const match = pathname.match(/\/todos\/(\d+)\//);
-  return match ? parseInt(match[1], 10) : null;
-}
-
-async function handleTodos(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const filter = parseFilter(url);
-
-  if (req.method === "POST") {
-    const form = await req.formData();
-    const text = String(form.get("text") ?? "").trim();
-    if (text.length > 0) {
-      todos.push({ id: nextId++, text, done: false });
+    if (req.method === "POST") {
+      const form = await req.formData();
+      const text = String(form.get("text") ?? "").trim();
+      if (text.length > 0) {
+        todos.push({ id: nextId++, text, done: false });
+      }
     }
-  }
 
-  const html = renderHtml(<TodoApp items={todos} filter={filter} />);
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
+    return view(filter);
+  },
+  render: (props: ViewState) => TodoApp(props),
+});
 
-function handleToggle(id: number): Response {
-  const todo = todos.find((t) => t.id === id);
-  if (todo) {
-    todo.done = !todo.done;
-  }
-  const html = renderHtml(<TodoApp items={todos} filter="all" />);
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
+const TodoToggle = hsxComponent("/todos/:id/toggle", {
+  methods: ["POST"],
+  handler(_req, params) {
+    const id = Number(params.id);
+    const todo = todos.find((t) => t.id === id);
+    if (todo) todo.done = !todo.done;
+    return view("all");
+  },
+  render: (props: ViewState) => TodoApp(props),
+});
 
-function handleDelete(id: number): Response {
-  const idx = todos.findIndex((t) => t.id === id);
-  if (idx !== -1) {
-    todos.splice(idx, 1);
-  }
-  const html = renderHtml(<TodoApp items={todos} filter="all" />);
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
+const TodoDelete = hsxComponent("/todos/:id/delete", {
+  methods: ["POST"],
+  handler(_req, params) {
+    const id = Number(params.id);
+    const idx = todos.findIndex((t) => t.id === id);
+    if (idx !== -1) todos.splice(idx, 1);
+    return view("all");
+  },
+  render: (props: ViewState) => TodoApp(props),
+});
 
-function handleClearCompleted(): Response {
-  const active = todos.filter((t) => !t.done);
-  todos.length = 0;
-  todos.push(...active);
-  const html = renderHtml(<TodoApp items={todos} filter="all" />);
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
+const TodoClear = hsxComponent("/todos/clear-completed", {
+  methods: ["POST"],
+  handler() {
+    const active = todos.filter((t) => !t.done);
+    todos.length = 0;
+    todos.push(...active);
+    return view("all");
+  },
+  render: (props: ViewState) => TodoApp(props),
+});
+
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Todos - HSX Example</title>
+      <style>{styles}</style>
+    </head>
+    <body>
+      <main>
+        <header>
+          <h1>todos</h1>
+        </header>
+
+        <TodoApp items={todos} filter="all" />
+      </main>
+    </body>
+  </html>
+));
 
 // =============================================================================
 // Server
@@ -594,29 +595,16 @@ Deno.serve(async (req) => {
 
   // Main page
   if (pathname === "/") {
-    return render(<Page filter="all" />);
+    return Page.render();
   }
 
-  // Todo list (GET for refresh/filter, POST for add)
-  if (pathname === "/todos") {
-    return handleTodos(req);
-  }
-
-  // Toggle todo
-  if (pathname.match(/^\/todos\/\d+\/toggle$/)) {
-    const id = parseId(pathname);
-    if (id !== null) return handleToggle(id);
-  }
-
-  // Delete todo
-  if (pathname.match(/^\/todos\/\d+\/delete$/)) {
-    const id = parseId(pathname);
-    if (id !== null) return handleDelete(id);
-  }
-
-  // Clear completed
-  if (pathname === "/todos/clear-completed") {
-    return handleClearCompleted();
+  // HSX components routing
+  const components = [TodoList, TodoToggle, TodoDelete, TodoClear];
+  for (const component of components) {
+    const method = req.method as typeof component.methods[number];
+    if (component.match(pathname) && component.methods.includes(method)) {
+      return component.handle(req);
+    }
   }
 
   // HTMX library

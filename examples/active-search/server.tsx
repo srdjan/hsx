@@ -9,15 +9,17 @@
  * - `vals` for passing additional data
  * - CSS indicator class for loading states
  */
-import { render, renderHtml } from "../../src/index.ts";
-import { routes } from "./routes.ts";
-import { ids } from "./ids.ts";
+import { hsxComponent, hsxPage, id } from "../../src/index.ts";
 
 // =============================================================================
 // Sample Data
 // =============================================================================
 
 type Contact = { id: number; name: string; email: string; company: string };
+
+const ids = {
+  results: id("search-results"),
+};
 
 const contacts: Contact[] = [
   { id: 1, name: "Alice Johnson", email: "alice@example.com", company: "Acme Corp" },
@@ -100,47 +102,6 @@ function SearchResults(props: { contacts: Contact[]; query: string }) {
   );
 }
 
-function Page() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Active Search - HSX Example</title>
-        <style>{styles}</style>
-      </head>
-      <body>
-        <main>
-          <h1>Contact Search</h1>
-          {/* Search input with HTMX active search pattern */}
-          {/* trigger="keyup changed delay:300ms" - fires on keyup, only if value changed, with 300ms debounce */}
-          <div class="search-form">
-            <span class="search-icon">🔍</span>
-            <input
-              type="search"
-              name="q"
-              placeholder="Search contacts..."
-              get={routes.search}
-              trigger="keyup changed delay:300ms, search"
-              target={ids.results}
-              swap="innerHTML"
-              autofocus
-            />
-            <span class="indicator"><span class="spinner" /></span>
-          </div>
-          <div id="search-results">
-            <SearchResults contacts={contacts} query="" />
-          </div>
-        </main>
-      </body>
-    </html>
-  );
-}
-
-// =============================================================================
-// Server
-// =============================================================================
-
 function searchContacts(query: string): Contact[] {
   if (!query) return contacts;
   const q = query.toLowerCase();
@@ -151,18 +112,68 @@ function searchContacts(query: string): Contact[] {
   );
 }
 
+const Search = hsxComponent("/search", {
+  methods: ["GET"],
+  async handler(req) {
+    const url = new URL(req.url);
+    const q = url.searchParams.get("q") ?? "";
+    // small artificial delay for demo smoothness
+    if (q) await new Promise((r) => setTimeout(r, 200));
+    return { contacts: searchContacts(q), query: q };
+  },
+  render: ({ contacts, query }) => <SearchResults contacts={contacts} query={query} />,
+});
+
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Active Search - HSX Example</title>
+      <style>{styles}</style>
+    </head>
+    <body>
+      <main>
+        <h1>Contact Search</h1>
+        <div class="search-form">
+          <span class="search-icon">🔍</span>
+          <input
+            type="search"
+            name="q"
+            placeholder="Search contacts..."
+            get={Search}
+            trigger="keyup changed delay:300ms, search"
+            target={ids.results}
+            swap="innerHTML"
+            autofocus
+          />
+          <span class="indicator"><span class="spinner" /></span>
+        </div>
+        <div id="search-results">
+          <SearchResults contacts={contacts} query="" />
+        </div>
+      </main>
+    </body>
+  </html>
+));
+
+// =============================================================================
+// Server
+// =============================================================================
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
-  if (url.pathname === "/") return render(<Page />);
-  if (url.pathname === "/search") {
-    const q = url.searchParams.get("q") ?? "";
-    // Simulate network delay for demo purposes
-    await new Promise((r) => setTimeout(r, 200));
-    return new Response(renderHtml(<SearchResults contacts={searchContacts(q)} query={q} />), {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
+  if (url.pathname === "/") return Page.render();
+
+  const components = [Search];
+  for (const component of components) {
+    const method = req.method as typeof component.methods[number];
+    if (component.match(url.pathname) && component.methods.includes(method)) {
+      return component.handle(req);
+    }
   }
+
   if (url.pathname === "/static/htmx.js") {
     try {
       const js = await Deno.readTextFile(new URL("../../vendor/htmx/htmx.js", import.meta.url));
@@ -171,6 +182,6 @@ Deno.serve(async (req) => {
       return new Response("// htmx.js not found", { status: 500, headers: { "content-type": "text/javascript" } });
     }
   }
+
   return new Response("Not found", { status: 404 });
 });
-

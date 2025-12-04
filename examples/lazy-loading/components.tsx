@@ -4,7 +4,11 @@
 import type { HsxSwap, Urlish } from "../../src/hsx-types.ts";
 
 export function Subtitle(props: { children: string }) {
-  return <p class="subtitle">{props.children}</p>;
+  return (
+    <div class="subtitle">
+      <p>{props.children}</p>
+    </div>
+  );
 }
 
 export function Card(
@@ -26,8 +30,10 @@ export function Card(
 
 export function UserList(props: { children: unknown }) {
   return (
-    <ul class="user-list" id="user-list">
-      {props.children}
-    </ul>
+    <div class="user-list">
+      <ul id="user-list">
+        {props.children}
+      </ul>
+    </div>
   );
 }

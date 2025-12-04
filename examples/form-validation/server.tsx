@@ -1,17 +1,6 @@
-/**
- * Form Validation Example
- *
- * Demonstrates HSX features:
- * - Inline validation with `post` on input blur
- * - `trigger="blur changed"` for validation on field exit
- * - `target` for updating specific error containers
- * - `swap="innerHTML"` for error messages
- * - Form submission with full validation
- * - `vals` for passing additional context
- */
-import { render, renderHtml } from "../../src/index.ts";
+/** @jsxImportSource ../../src */
+import { hsxComponent, hsxPage } from "../../src/index.ts";
 import { Card, Subtitle } from "./components.tsx";
-import { routes } from "./routes.ts";
 import { ids } from "./ids.ts";
 
 const styles = `
@@ -21,6 +10,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); padding: 2rem;
 main { max-width: 24rem; margin: 0 auto; }
 h1 { font-weight: 300; margin-bottom: 0.5rem; }
 .subtitle { color: var(--muted); margin-bottom: 2rem; }
+.subtitle p { margin: 0; }
 
 .card { background: var(--surface); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .form-group { margin-bottom: 1.5rem; }
@@ -84,82 +74,6 @@ function FormResult(props: { success: boolean; message: string }) {
   );
 }
 
-function Page() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Form Validation - HSX Example</title>
-        <style>{styles}</style>
-      </head>
-      <body>
-        <main>
-          <h1>Create Account</h1>
-          <Subtitle>Real-time validation as you type</Subtitle>
-          <Card>
-            <form
-              post={routes.register}
-              target={ids.formResult}
-              swap="innerHTML"
-            >
-              <div class="form-group">
-                <label htmlFor="username">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  placeholder="Choose a username"
-                  required
-                  minLength={3}
-                  post={routes.validate.username}
-                  trigger="blur changed delay:300ms"
-                  target={ids.usernameError}
-                  swap="innerHTML"
-                />
-                <div class="field-feedback" id="username-error"></div>
-              </div>
-              <div class="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="you@example.com"
-                  required
-                  post={routes.validate.email}
-                  trigger="blur changed delay:300ms"
-                  target={ids.emailError}
-                  swap="innerHTML"
-                />
-                <div class="field-feedback" id="email-error"></div>
-              </div>
-              <div class="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="At least 8 characters"
-                  required
-                  minLength={8}
-                  post={routes.validate.password}
-                  trigger="keyup changed delay:200ms"
-                  target={ids.passwordError}
-                  swap="innerHTML"
-                />
-                <div class="field-feedback" id="password-error"></div>
-              </div>
-              <button type="submit" class="btn">Create Account</button>
-              <div id="form-result"></div>
-            </form>
-          </Card>
-        </main>
-      </body>
-    </html>
-  );
-}
-
 // Validation helpers
 function validateUsername(
   username: string,
@@ -214,79 +128,159 @@ function validatePassword(
   return { valid: true, message: msg, strength };
 }
 
-// =============================================================================
+// HSX Components
+
+const ValidateUsername = hsxComponent("/validate/username", {
+  methods: ["POST"],
+  async handler(req) {
+    await new Promise((r) => setTimeout(r, 100));
+    const form = await req.formData();
+    const result = validateUsername(String(form.get("username") ?? ""));
+    return result;
+  },
+  render: (result) => result.valid
+    ? <SuccessMessage message={result.message} />
+    : <ErrorMessage message={result.message} />,
+});
+
+const ValidateEmail = hsxComponent("/validate/email", {
+  methods: ["POST"],
+  async handler(req) {
+    await new Promise((r) => setTimeout(r, 100));
+    const form = await req.formData();
+    const result = validateEmail(String(form.get("email") ?? ""));
+    return result;
+  },
+  render: (result) => result.valid
+    ? <SuccessMessage message={result.message} />
+    : <ErrorMessage message={result.message} />,
+});
+
+const ValidatePassword = hsxComponent("/validate/password", {
+  methods: ["POST"],
+  handler(req) {
+    const form = req.formData();
+    return Promise.resolve(form).then((f) => {
+      const result = validatePassword(String(f.get("password") ?? ""));
+      return result;
+    });
+  },
+  render: (result) => (
+    <>
+      {result.valid
+        ? <SuccessMessage message={result.message} />
+        : <ErrorMessage message={result.message} />}
+      <PasswordStrength level={result.strength} />
+    </>
+  ),
+});
+
+const Register = hsxComponent("/register", {
+  methods: ["POST"],
+  async handler(req) {
+    await new Promise((r) => setTimeout(r, 500));
+    const form = await req.formData();
+    const u = validateUsername(String(form.get("username") ?? ""));
+    const e = validateEmail(String(form.get("email") ?? ""));
+    const p = validatePassword(String(form.get("password") ?? ""));
+    const success = u.valid && e.valid && p.valid;
+    return { success, message: success ? "Account created successfully!" : "Please fix the errors above" };
+  },
+  render: ({ success, message }) => <FormResult success={success} message={message} />,
+});
+
+// Page
+
+const Page = hsxPage(() => (
+  <html lang="en">
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Form Validation - HSX Example</title>
+      <style>{styles}</style>
+    </head>
+    <body>
+      <main>
+        <header>
+          <h1>Create Account</h1>
+        </header>
+        <Subtitle>Real-time validation as you type</Subtitle>
+        <Card>
+          <form
+            post={Register}
+            target={ids.formResult}
+            swap="innerHTML"
+          >
+            <div class="form-group">
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Choose a username"
+                required
+                minLength={3}
+                post={ValidateUsername}
+                trigger="blur changed delay:300ms"
+                target={ids.usernameError}
+                swap="innerHTML"
+              />
+              <div class="field-feedback" id="username-error"></div>
+            </div>
+            <div class="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                required
+                post={ValidateEmail}
+                trigger="blur changed delay:300ms"
+                target={ids.emailError}
+                swap="innerHTML"
+              />
+              <div class="field-feedback" id="email-error"></div>
+            </div>
+            <div class="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="At least 8 characters"
+                required
+                minLength={8}
+                post={ValidatePassword}
+                trigger="keyup changed delay:200ms"
+                target={ids.passwordError}
+                swap="innerHTML"
+              />
+              <div class="field-feedback" id="password-error"></div>
+            </div>
+            <button type="submit" class="btn">Create Account</button>
+            <div id="form-result"></div>
+          </form>
+        </Card>
+      </main>
+    </body>
+  </html>
+));
+
 // Server
-// =============================================================================
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const { pathname } = url;
 
   if (pathname === "/favicon.ico") return new Response(null, { status: 204 });
-  if (pathname === "/") return render(<Page />);
+  if (pathname === "/") return Page.render();
 
-  if (req.method === "POST") {
-    const form = await req.formData();
-
-    if (pathname === "/validate/username") {
-      await new Promise((r) => setTimeout(r, 100)); // Simulate API check
-      const result = validateUsername(String(form.get("username") ?? ""));
-      const html = result.valid
-        ? renderHtml(<SuccessMessage message={result.message} />)
-        : renderHtml(<ErrorMessage message={result.message} />);
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
-
-    if (pathname === "/validate/email") {
-      await new Promise((r) => setTimeout(r, 100));
-      const result = validateEmail(String(form.get("email") ?? ""));
-      const html = result.valid
-        ? renderHtml(<SuccessMessage message={result.message} />)
-        : renderHtml(<ErrorMessage message={result.message} />);
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
-
-    if (pathname === "/validate/password") {
-      const result = validatePassword(String(form.get("password") ?? ""));
-      const html = renderHtml(
-        <>
-          {result.valid
-            ? <SuccessMessage message={result.message} />
-            : <ErrorMessage message={result.message} />}
-          <PasswordStrength level={result.strength} />
-        </>,
-      );
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
-
-    if (pathname === "/register") {
-      await new Promise((r) => setTimeout(r, 500)); // Simulate registration
-      const u = validateUsername(String(form.get("username") ?? ""));
-      const e = validateEmail(String(form.get("email") ?? ""));
-      const p = validatePassword(String(form.get("password") ?? ""));
-      if (u.valid && e.valid && p.valid) {
-        return new Response(
-          renderHtml(
-            <FormResult
-              success={true}
-              message="Account created successfully!"
-            />,
-          ),
-          { headers: { "content-type": "text/html; charset=utf-8" } },
-        );
-      }
-      return new Response(
-        renderHtml(
-          <FormResult success={false} message="Please fix the errors above" />,
-        ),
-        { headers: { "content-type": "text/html; charset=utf-8" } },
-      );
+  const components = [ValidateUsername, ValidateEmail, ValidatePassword, Register];
+  for (const component of components) {
+    const method = req.method as typeof component.methods[number];
+    if (component.match(pathname) && component.methods.includes(method)) {
+      return component.handle(req);
     }
   }
 

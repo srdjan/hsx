@@ -43,3 +43,4 @@ export {
   type HsxComponentOptions,
   type HttpMethod,
 } from "./hsx-component.ts";
+export { hsxPage, type HsxPage } from "./hsx-page.ts";
