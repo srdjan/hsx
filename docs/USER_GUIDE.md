@@ -8,11 +8,12 @@ A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX applicati
 2. [Getting Started](#getting-started)
 3. [HSX Attributes Reference](#hsx-attributes-reference)
 4. [Type-Safe Routes](#type-safe-routes)
-5. [Branded IDs](#branded-ids)
-6. [HTMX Script Injection](#htmx-script-injection)
-7. [Render Options](#render-options)
-8. [Best Practices](#best-practices)
-9. [Troubleshooting](#troubleshooting)
+5. [HSX Components](#hsx-components)
+6. [Branded IDs](#branded-ids)
+7. [HTMX Script Injection](#htmx-script-injection)
+8. [Render Options](#render-options)
+9. [Best Practices](#best-practices)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -341,6 +342,50 @@ export const routes = {
   },
 };
 ```
+
+## HSX Components
+
+`hsxComponent()` co-locates a route, request handler, and render function. The handler's return type and the render props are tied together, so TypeScript prevents mismatches.
+
+### Defining a Component
+
+```ts
+import { hsxComponent } from "jsr:@srdjan/hsx";
+
+export const TodoList = hsxComponent("/todos", {
+  methods: ["GET", "POST"], // defaults to ["GET"]
+
+  async handler(req) {
+    if (req.method === "POST") {
+      const form = await req.formData();
+      await addTodo(String(form.get("text")));
+    }
+    return { todos: await getTodos() }; // must match render props
+  },
+
+  render({ todos }) {
+    return (
+      <ul id="todo-list">
+        {todos.map((t) => (
+          <li key={t.id}>{t.text}</li>
+        ))}
+      </ul>
+    );
+  },
+});
+```
+
+### Using in JSX and on the Server
+
+- In JSX: `<form post={TodoList} target="#todo-list" swap="outerHTML" />`
+- As a route matcher: `TodoList.match(pathname)` returns params or `null`
+- As a handler: `return TodoList.handle(req)` renders the fragment (or full page)
+
+### Full Page vs Fragment
+
+Set `fullPage: true` when your render function outputs a complete HTML document. The default (`fullPage: false`) returns just the rendered fragment with `content-type: text/html; charset=utf-8`.
+
+`methods` controls which HTTP verbs the component responds to; it defaults to `GET`.
 
 ---
 

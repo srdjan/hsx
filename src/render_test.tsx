@@ -1,6 +1,14 @@
 /** @jsxImportSource hsx */
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { renderHtml, render, Fragment, route, id, type Renderable } from "./index.ts";
+import {
+  Fragment,
+  hsxComponent,
+  id,
+  render,
+  renderHtml,
+  route,
+  type Renderable,
+} from "./index.ts";
 
 // ============================================================================
 // HTML Escaping Tests
@@ -455,4 +463,69 @@ Deno.test("normalize: plain elements are not copied", () => {
   assertEquals(html.includes('id="test"'), true);
   assertEquals(html.includes('class="container"'), true);
   assertEquals(html.includes("htmx.js"), false);
+});
+
+// ============================================================================
+// HSX Component Tests
+// ============================================================================
+
+Deno.test("hsxComponent: match extracts params", () => {
+  const Todo = hsxComponent("/todos/:id", {
+    handler: () => ({}),
+    render: () => <div />,
+  });
+
+  assertEquals(Todo.match("/todos/42"), { id: "42" });
+  assertEquals(Todo.match("/todos"), null);
+});
+
+Deno.test("hsxComponent: handle renders fragment response", async () => {
+  const Hello = hsxComponent("/hello", {
+    handler: () => ({ msg: "hi" }),
+    render: ({ msg }: { msg: string }) => <p>{msg}</p>,
+  });
+
+  const res = await Hello.handle(new Request("http://x/hello"));
+  assertEquals(res.status, 200);
+  assertEquals(res.headers.get("content-type"), "text/html; charset=utf-8");
+  assertEquals(await res.text(), "<p>hi</p>");
+});
+
+Deno.test("hsxComponent: fullPage uses render() with HTMX injection", async () => {
+  const Page = hsxComponent("/page", {
+    fullPage: true,
+    handler: () => ({}),
+    render: () => (
+      <html>
+        <body>
+          <button get="/ok">Ping</button>
+        </body>
+      </html>
+    ),
+  });
+
+  const res = await Page.handle(new Request("http://x/page"));
+  const body = await res.text();
+  assertEquals(res.status, 200);
+  assertEquals(body.includes('hx-get="/ok"'), true);
+  assertEquals(body.includes("/static/htmx.js"), true);
+});
+
+Deno.test("hsxComponent: usable as Urlish in HSX attributes", () => {
+  const Show = hsxComponent("/items/:id", {
+    handler: () => ({}),
+    render: () => <div />,
+  });
+
+  const html = renderHtml(
+    <html>
+      <body>
+        <button get={Show} params={{ id: 5 }}>
+          View
+        </button>
+      </body>
+    </html>
+  );
+
+  assertEquals(html.includes('hx-get="/items/5"'), true);
 });

@@ -7,6 +7,7 @@ HSX is a small, opinionated JSX/TSX renderer for **server-side rendering only**.
 - **Ergonomic authoring**: JSX should feel like HTML from a future where HTMX semantics (`get`, `post`, `target`, `swap`, `trigger`, `vals`, `headers`) are part of the spec.
 - **SSR-only**: No client-side HSX runtime; the browser sees only HTML + `hx-*` attributes and an HTMX script.
 - **Typed routes & IDs**: Routes and target element references should be type-safe.
+- **Co-located components**: Route + handler + render live together with shared types.
 - **HTMX as implementation detail**: You never write `hx-` manually or add the HTMX `<script>` tag yourself.
 
 ## Architecture
@@ -46,6 +47,11 @@ JSX Code → jsx-runtime → VNode Tree → render → HTML String
 - `Id<Name>` - Branded element IDs
 - `HsxSwap`, `HsxTrigger` - HTMX type unions
 
+**hsx-component.ts**
+- `hsxComponent()` factory for co-locating route + handler + render
+- `match()` for pathname matching and param extraction
+- `handle()` to run the handler and render a Response (fragment or full page)
+
 **hsx-jsx.d.ts**
 - TypeScript JSX declarations
 - Augments intrinsic elements with HSX attributes
@@ -76,6 +82,7 @@ HSX provides compile-time safety for:
 - **Routes**: Path parameters are extracted and validated
 - **IDs**: Branded types ensure consistent targeting
 - **Attributes**: Only valid HSX attributes are allowed on elements
+- **HSX Components**: `handler` return values must match `render` props
 
 ## Performance Considerations
 

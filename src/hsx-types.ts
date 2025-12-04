@@ -21,16 +21,24 @@
 type PathParams<Path extends string> =
   // Match paths with up to 5 segments to avoid infinite recursion
   Path extends `/${infer A}/${infer B}/${infer C}/${infer D}/${infer E}`
-    ? ExtractSingle<A> | ExtractSingle<B> | ExtractSingle<C> | ExtractSingle<D> | ExtractSingle<E>
+    ?
+      | ExtractSingle<A>
+      | ExtractSingle<B>
+      | ExtractSingle<C>
+      | ExtractSingle<D>
+      | ExtractSingle<E>
     : Path extends `/${infer A}/${infer B}/${infer C}/${infer D}`
-      ? ExtractSingle<A> | ExtractSingle<B> | ExtractSingle<C> | ExtractSingle<D>
-      : Path extends `/${infer A}/${infer B}/${infer C}`
-        ? ExtractSingle<A> | ExtractSingle<B> | ExtractSingle<C>
-        : Path extends `/${infer A}/${infer B}`
-          ? ExtractSingle<A> | ExtractSingle<B>
-          : Path extends `/${infer A}`
-            ? ExtractSingle<A>
-            : never;
+      ?
+        | ExtractSingle<A>
+        | ExtractSingle<B>
+        | ExtractSingle<C>
+        | ExtractSingle<D>
+    : Path extends `/${infer A}/${infer B}/${infer C}`
+      ? ExtractSingle<A> | ExtractSingle<B> | ExtractSingle<C>
+    : Path extends `/${infer A}/${infer B}`
+      ? ExtractSingle<A> | ExtractSingle<B>
+    : Path extends `/${infer A}` ? ExtractSingle<A>
+    : never;
 
 /** Extract param name from a single segment */
 type ExtractSingle<S extends string> = S extends `:${infer P}` ? P : never;
@@ -45,10 +53,9 @@ type ExtractSingle<S extends string> = S extends `:${infer P}` ? P : never;
  * // { id: string | number; postId: string | number }
  * ```
  */
-type ParamsFromPath<Path extends string> =
-  [PathParams<Path>] extends [never]
-    ? Record<string, never>
-    : { [K in PathParams<Path>]: string | number };
+export type ParamsFromPath<Path extends string> = [PathParams<Path>] extends
+  [never] ? Record<string, never>
+  : { [K in PathParams<Path>]: string | number };
 
 /**
  * A type-safe route definition with path template and URL builder.
@@ -67,7 +74,7 @@ type ParamsFromPath<Path extends string> =
  */
 export type Route<
   Path extends string,
-  Params = ParamsFromPath<Path>
+  Params = ParamsFromPath<Path>,
 > = {
   /** The URL path template */
   path: Path;
@@ -124,8 +131,7 @@ export function route<Path extends string>(
  * // Type: "#todo-list" (branded)
  * ```
  */
-export type Id<Name extends string> =
-  `#${Name}` & { readonly __idBrand: Name };
+export type Id<Name extends string> = `#${Name}` & { readonly __idBrand: Name };
 
 /**
  * Create a branded element ID for use in HSX target attributes.

@@ -11,6 +11,7 @@ SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*`
 - **SSR-only** - No client runtime. Outputs plain HTML.
 - **HTMX as HTML** - Write `get`, `post`, `target`, `swap` as native attributes
 - **Type-safe routes** - Branded `Route<Path>` types with automatic parameter inference
+- **Co-located components** - `hsxComponent()` bundles route + handler + render
 - **Branded IDs** - `id("name")` returns `Id<"name">` typed as `"#name"`
 - **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when needed
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
@@ -86,6 +87,42 @@ Deno.serve(() => render(<Page />));
   </body>
 </html>
 ```
+
+## HSX Component Pattern (route + handler + render)
+
+```ts
+import { hsxComponent } from "jsr:@srdjan/hsx";
+
+export const TodoList = hsxComponent("/todos", {
+  methods: ["GET", "POST"],
+
+  async handler(req) {
+    if (req.method === "POST") {
+      const form = await req.formData();
+      await addTodo(String(form.get("text")));
+    }
+    return { todos: await getTodos() }; // must match render props
+  },
+
+  render({ todos }) {
+    return (
+      <ul id="todo-list">
+        {todos.map((t) => (
+          <li key={t.id}>{t.text}</li>
+        ))}
+      </ul>
+    );
+  },
+});
+
+// Use as route in JSX
+<form post={TodoList} target="#todo-list" swap="outerHTML" />;
+
+// Use as handler in your server
+if (TodoList.match(url.pathname)) return TodoList.handle(req);
+```
+
+TypeScript enforces that `handler` returns the same shape that `render` expects. `methods` defaults to `["GET"]`; set `fullPage: true` when your render function returns a full document instead of a fragment.
 
 ## HSX Attributes
 
@@ -279,6 +316,26 @@ JSX Fragment for grouping elements without a wrapper.
 </Fragment>
 ```
 
+### `hsxComponent(path, options)`
+
+Co-locates a route, request handler, and render function.
+
+```ts
+const Comp = hsxComponent("/items/:id", {
+  methods: ["GET", "DELETE"],       // defaults to ["GET"]
+  fullPage: false,                    // default: return fragment Response
+  status: 200,
+  headers: { "x-powered-by": "hsx" },
+  handler: async (_req, params) => ({
+    item: await getItem(params.id),
+  }),
+  render: ({ item }) => <div>{item.name}</div>,
+});
+
+// Works anywhere a Route does:
+<button delete={Comp} params={{ id: 42 }} target="#row-42" />;
+```
+
 ## Examples
 
 Run examples with `deno task`:
@@ -291,6 +348,7 @@ Run examples with `deno task`:
 | **Form Validation** | `deno task example:form-validation` | Server-side validation |
 | **Polling** | `deno task example:polling` | Live dashboard with intervals |
 | **Tabs & Modal** | `deno task example:tabs-modal` | Tab navigation and modals |
+| **HSX Components** | `deno task example:hsx-components` | Co-located route + handler + render |
 
 ## Safety
 
@@ -307,6 +365,7 @@ src/
   jsx-runtime.ts    # Minimal JSX runtime
   render.ts         # SSR renderer with HTMX injection
   hsx-normalize.ts  # HSX to hx-* attribute mapping
+  hsx-component.ts  # hsxComponent factory (route + handler + render)
   hsx-types.ts      # Route, Id, HsxSwap, HsxTrigger types
   hsx-jsx.d.ts      # JSX type declarations
 examples/
@@ -316,6 +375,7 @@ examples/
   form-validation/  # Form validation example
   polling/          # Polling example
   tabs-modal/       # Tabs and modal example
+  hsx-components/   # HSX Component pattern example
 vendor/htmx/
   htmx.js           # Vendored HTMX v4 (alpha)
 docs/

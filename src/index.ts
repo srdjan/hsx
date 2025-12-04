@@ -30,10 +30,16 @@
 
 export type {
   ComponentType,
-  VNode,
-  Renderable,
   JsxProps,
+  Renderable,
+  VNode,
 } from "./jsx-runtime.ts";
 export { Fragment } from "./jsx-runtime.ts";
-export { renderHtml, render, type RenderHtmlOptions } from "./render.ts";
+export { render, renderHtml, type RenderHtmlOptions } from "./render.ts";
 export * from "./hsx-types.ts";
+export {
+  type HsxComponent,
+  hsxComponent,
+  type HsxComponentOptions,
+  type HttpMethod,
+} from "./hsx-component.ts";

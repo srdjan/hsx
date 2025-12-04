@@ -23,6 +23,7 @@
     "example:lazy-loading": "deno run --allow-net --allow-read examples/lazy-loading/server.tsx",
     "example:tabs-modal": "deno run --allow-net --allow-read examples/tabs-modal/server.tsx",
     "example:form-validation": "deno run --allow-net --allow-read examples/form-validation/server.tsx",
-    "example:polling": "deno run --allow-net --allow-read examples/polling/server.tsx"
+    "example:polling": "deno run --allow-net --allow-read examples/polling/server.tsx",
+    "example:hsx-components": "deno run --allow-net --allow-read examples/hsx-components/server.tsx"
   }
 }
