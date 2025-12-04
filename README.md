@@ -61,7 +61,10 @@ Clone and import:
 import { id, render, route } from "./src/index.ts";
 ```
 
-## Quick Start
+## Quick Start (Low-Level API)
+
+> **Note:** This shows the low-level API using `route()`. For most projects, use
+> the [hsxComponent pattern](#hsx-component-pattern-recommended) below instead.
 
 ```tsx
 /** @jsxImportSource ./src */
@@ -111,7 +114,7 @@ Deno.serve(() => render(<Page />));
 </html>
 ```
 
-## HSX Component Pattern (route + handler + render)
+## HSX Component Pattern (Recommended)
 
 ```ts
 import { hsxComponent } from "jsr:@srdjan/hsx";
@@ -146,6 +149,9 @@ if (TodoList.match(url.pathname)) return TodoList.handle(req);
 TypeScript enforces that `handler` returns the same shape that `render` expects.
 `methods` defaults to `["GET"]`; set `fullPage: true` when your render function
 returns a full document instead of a fragment.
+
+> **Choose one style:** Use either `hsxComponent` (recommended) or the low-level
+> `route()` API, but don't mix them in the same project.
 
 ## hsxPage (full-page guardrails)
 

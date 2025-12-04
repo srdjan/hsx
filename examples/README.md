@@ -11,8 +11,8 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 - `polling` – live stats/feed/status polling
 - `hsx-components` – minimal demo of co-located route/handler/render
 - `hsx-page` – semantic page guardrails showcase
-- `low-level-api` – direct `render`/`renderHtml` without hsxPage/hsxComponent
-  (escape hatch)
+- `low-level-api` – direct `render`/`renderHtml` with `route()` (escape hatch,
+  don't mix with hsxComponent)
 
 ## Pick the right example
 
@@ -38,5 +38,7 @@ import { hsxComponent, hsxPage } from "@srdjan/hsx/component-model";
 import { render, route, hsxComponent, hsxPage } from "@srdjan/hsx";
 ```
 
-- `low-level-api` uses `@srdjan/hsx/core`
-- Other examples use the full `@srdjan/hsx` or `@srdjan/hsx/component-model`
+- `low-level-api` uses `@srdjan/hsx/core` with `route()` for manual routing
+- Other examples use `hsxComponent` from `@srdjan/hsx`
+
+**Note:** Choose one style per project. Don't mix `route()` with `hsxComponent`.

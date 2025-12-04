@@ -3,7 +3,7 @@
  *
  * Demonstrates manual use of render/renderHtml without hsxPage/hsxComponent.
  */
-import { render, renderHtml, route, id } from "../../src/index.ts";
+import { id, render, renderHtml, route } from "../../src/index.ts";
 
 const routes = {
   time: route("/time", () => "/time"),
@@ -21,22 +21,36 @@ function Page() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Low-Level HSX API</title>
-        <style>{`
+        <style>
+          {`
 body { font-family: system-ui, sans-serif; margin: 2rem; }
 main { max-width: 32rem; }
 button { padding: 0.5rem 0.75rem; margin-right: 0.5rem; }
 #output { margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; min-height: 3rem; }
-`}</style>
+`}
+        </style>
       </head>
       <body>
         <main>
-          <header><h1>Low-Level HSX API</h1></header>
+          <header>
+            <h1>Low-Level HSX API</h1>
+          </header>
           <p>Directly using render/renderHtml and manual route handling.</p>
           <div>
-            <button get={routes.time} target={ids.output} swap="innerHTML">
+            <button
+              type="button"
+              get={routes.time}
+              target={ids.output}
+              swap="innerHTML"
+            >
               Show Time
             </button>
-            <button get={routes.joke} target={ids.output} swap="innerHTML">
+            <button
+              type="button"
+              get={routes.joke}
+              target={ids.output}
+              swap="innerHTML"
+            >
               Tell Joke
             </button>
           </div>
@@ -71,17 +85,26 @@ function handleJoke(): Response {
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
+  if (url.pathname === "/favicon.ico") {
+    return new Response(null, { status: 204 });
+  }
   if (url.pathname === "/") return render(<Page />);
   if (url.pathname === routes.time.path) return handleTime();
   if (url.pathname === routes.joke.path) return handleJoke();
 
   if (url.pathname === "/static/htmx.js") {
     try {
-      const js = await Deno.readTextFile(new URL("../../vendor/htmx/htmx.js", import.meta.url));
-      return new Response(js, { headers: { "content-type": "text/javascript; charset=utf-8" } });
+      const js = await Deno.readTextFile(
+        new URL("../../vendor/htmx/htmx.js", import.meta.url),
+      );
+      return new Response(js, {
+        headers: { "content-type": "text/javascript; charset=utf-8" },
+      });
     } catch {
-      return new Response("// htmx.js not found", { status: 500, headers: { "content-type": "text/javascript" } });
+      return new Response("// htmx.js not found", {
+        status: 500,
+        headers: { "content-type": "text/javascript" },
+      });
     }
   }
 

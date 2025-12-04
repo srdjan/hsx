@@ -45,16 +45,35 @@ deno run --allow-net --allow-read examples/todos/server.ts
 
 ## Key Patterns
 
-**Type-safe routes** - Define with `route()`, use in JSX attributes:
+HSX offers two API styles. **Do not mix them** - choose one per project.
+
+### hsxComponent Style (Recommended)
+
+Co-locates route, handler, and render. The component itself is the route:
 ```ts
-const routes = { todos: { list: route("/todos", () => "/todos") } };
-<form post={routes.todos.list}>...</form>  // → hx-post="/todos"
+const TodoList = hsxComponent("/todos", {
+  methods: ["GET", "POST"],
+  handler(req) { return { todos: [...] }; },
+  render: ({ todos }) => <ul>...</ul>,
+});
+
+<form post={TodoList}>...</form>  // → hx-post="/todos"
 ```
+
+### Low-Level API Style
+
+Manual `route()` definitions, separate handlers. For simple cases or learning:
+```ts
+const routes = { todos: route("/todos", () => "/todos") };
+<form post={routes.todos}>...</form>  // → hx-post="/todos"
+```
+
+### Shared Patterns
 
 **Branded IDs** - Create with `id()`, use in `target`:
 ```ts
 const ids = { list: id("todo-list") };  // Type: Id<"todo-list"> = "#todo-list"
-<button get="..." target={ids.list}>    // → hx-target="#todo-list"
+<button get={...} target={ids.list}>    // → hx-target="#todo-list"
 ```
 
 **HSX attributes on elements:**
