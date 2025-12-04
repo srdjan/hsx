@@ -564,6 +564,96 @@ export const hsxStyles = `/* HSX Default Styles - Light Theme */
     text-align: center;
   }
 
+  /* Todo App (semantic structure) */
+  #todo-app {
+    background: var(--hsx-surface);
+    border-radius: var(--hsx-radius-lg);
+    padding: var(--hsx-space-lg);
+    box-shadow: var(--hsx-shadow-md);
+  }
+  #todo-app form {
+    margin-bottom: var(--hsx-space-lg);
+  }
+  #todo-list {
+    margin-bottom: var(--hsx-space-md);
+  }
+  #todo-list li {
+    padding: var(--hsx-space-sm) 0;
+  }
+  #todo-list li label {
+    flex: 1;
+    cursor: pointer;
+  }
+  #todo-list li input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--hsx-accent);
+    cursor: pointer;
+  }
+  #todo-list li input[type="checkbox"]:checked + label {
+    text-decoration: line-through;
+    color: var(--hsx-muted);
+  }
+  #todo-list li button {
+    background: transparent;
+    color: var(--hsx-muted);
+    padding: var(--hsx-space-xs) var(--hsx-space-sm);
+    font-size: var(--hsx-font-size-sm);
+    border-radius: var(--hsx-radius-sm);
+  }
+  #todo-list li button:hover {
+    color: var(--hsx-error);
+    background: rgba(220, 38, 38, 0.1);
+  }
+  #todo-app footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hsx-space-md);
+    padding-top: var(--hsx-space-md);
+    border-top: 1px solid var(--hsx-border);
+    font-size: var(--hsx-font-size-sm);
+    color: var(--hsx-muted);
+    flex-wrap: wrap;
+  }
+  #todo-count {
+    white-space: nowrap;
+  }
+  #todo-count strong {
+    color: var(--hsx-text);
+  }
+  #todo-filters {
+    display: flex;
+    gap: var(--hsx-space-xs);
+  }
+  #todo-filters button {
+    background: transparent;
+    color: var(--hsx-muted);
+    padding: var(--hsx-space-xs) var(--hsx-space-sm);
+    font-size: var(--hsx-font-size-sm);
+    border: 1px solid transparent;
+    border-radius: var(--hsx-radius-sm);
+  }
+  #todo-filters button:hover {
+    border-color: var(--hsx-border);
+  }
+  #todo-filters button[aria-pressed="true"] {
+    border-color: var(--hsx-accent);
+    color: var(--hsx-accent);
+  }
+  #clear-completed {
+    background: transparent;
+    color: var(--hsx-muted);
+    padding: var(--hsx-space-xs) var(--hsx-space-sm);
+    font-size: var(--hsx-font-size-sm);
+  }
+  #clear-completed:hover:not(:disabled) {
+    color: var(--hsx-error);
+  }
+  #clear-completed:disabled {
+    opacity: 0.4;
+  }
+
   /* Toggle/checkbox group */
   .toggle { display: flex; align-items: center; gap: var(--hsx-space-sm); }
   .toggle input { width: auto; }
