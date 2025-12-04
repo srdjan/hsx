@@ -19,7 +19,13 @@ deno run --allow-net --allow-read examples/todos/server.ts
 
 ## Architecture
 
-**JSX Transform Pipeline:**
+HSX is a monorepo with two packages:
+
+**Packages:**
+- `@srdjan/hsx` (packages/hsx/) - Core JSX renderer, `render()`, `renderHtml()`, `route()`, `id()`, `Fragment`, `hsxComponent()`, `hsxPage()`
+- `@srdjan/hsx-styles` (packages/hsx-styles/) - `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
+
+**JSX Transform Pipeline (packages/hsx/):**
 1. `jsx-runtime.ts` - Minimal JSX runtime producing VNode tree
 2. `render.ts` - Walks VNode tree, normalizes HSX props per element type, auto-injects HTMX script before `</body>` when needed
 3. `hsx-normalize.ts` - Maps HSX attributes → `hx-*` attributes, tracks HTMX usage via RenderContext
@@ -36,12 +42,15 @@ deno run --allow-net --allow-read examples/todos/server.ts
 
 **Safety:** `script`/`style` children are emitted verbatim (no escaping); never pass user input there.
 
-**Entry Points (Modular):**
-- `index.ts` (`.`) - Everything: `render`, `renderHtml`, `route`, `id`, `Fragment`, `hsxComponent`, `hsxPage`
-- `core.ts` (`./core`) - Core rendering: `render`, `renderHtml`, `route`, `id`, `Fragment`, types
-- `component-model.ts` (`./component-model`) - Higher-level: `hsxComponent`, `hsxPage`
-- `styles.ts` (`./styles`) - Optional CSS: `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
-- `jsx-runtime.ts` (`./jsx-runtime`) - JSX compiler requirement (not for direct import)
+**Imports (Workspace-aware):**
+```ts
+import { render, id, route, Fragment, hsxComponent, hsxPage } from "@srdjan/hsx";
+import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+```
+
+**Legacy exports** are maintained for backward compatibility via root deno.json:
+- `./core` → `packages/hsx/mod.ts`
+- `./styles` → `packages/hsx-styles/mod.ts`
 
 ## Key Patterns
 
@@ -85,6 +94,14 @@ const ids = { list: id("todo-list") };  // Type: Id<"todo-list"> = "#todo-list"
 
 ## JSX Configuration
 
-Files using JSX need either:
-- Pragma: `/** @jsxImportSource ./src */` at file top
-- Or rely on `deno.json` compilerOptions (already configured)
+Files using JSX rely on root `deno.json` compilerOptions (already configured):
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hsx"
+  }
+}
+```
+
+The workspace `imports` map resolves `hsx/jsx-runtime` to `packages/hsx/jsx-runtime.ts`.

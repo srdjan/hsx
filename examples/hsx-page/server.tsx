@@ -1,5 +1,6 @@
-import { hsxComponent, hsxPage, id, render } from "../../src/index.ts";
-import { hsxStylesDark, HSX_STYLES_PATH } from "../../src/styles.ts";
+import { hsxComponent, hsxPage } from "@srdjan/hsx";
+import { id } from "@srdjan/hsx";
+import { hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 
 // ---------------------------------------------------------------------------
 // Data (in-memory for demo)

@@ -1,10 +1,14 @@
 # HSX
 
-SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*`
-on the server.
+First things, first... What the hack does HSX stand for? I'll say it's '**H**TML
+for **S**erver-Side e**X**tensions'. :0
+
+But, silently, I prefer: **H**TML **S**laps **X**tremely :)
+
+SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during the rendering process, and compiles them to `hx-*` attributes.
 
 > Disclaimer: this was a quick hack in my free time, held together by vibe
-> coding and espresso. I like it a lot, but consider it an early release.
+> coding and espresso. I like it a lot, but consider it an early release. I feel it is getting better (a lot)
 
 ## TL;DR: : Like JSX, but for SSR HTML + HTMX.
 
@@ -35,30 +39,40 @@ Or import directly:
 import { id, render, route } from "jsr:@srdjan/hsx";
 ```
 
-### Selective Imports (Tree-Shaking)
+### Separate Packages
 
-HSX supports modular imports for smaller bundles:
+HSX is a monorepo with two packages:
 
 ```ts
-// Core only - rendering + type-safe routes (excludes hsxComponent/hsxPage)
-import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
+// Core - JSX rendering, type-safe routes, hsxComponent, hsxPage
+import { Fragment, hsxComponent, hsxPage, id, render, route } from "jsr:@srdjan/hsx";
 
-// Component model only - higher-level abstractions
-import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/component-model";
+// Styles - ready-to-use CSS with theming support
+import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx-styles";
+```
 
-// Everything (default)
-import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
+Install individually:
 
-// Optional styles - ready-to-use CSS with theming support
-import { hsxStyles, HSX_STYLES_PATH } from "jsr:@srdjan/hsx/styles";
+```bash
+deno add jsr:@srdjan/hsx
+deno add jsr:@srdjan/hsx-styles
+```
+
+### Legacy Exports (Backward Compatible)
+
+For backward compatibility, subpath exports still work:
+
+```ts
+import { Fragment, id, render, route } from "jsr:@srdjan/hsx/core";
+import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx/styles";
 ```
 
 ### From Source
 
-Clone and import:
+Clone and import using workspace package names:
 
 ```ts
-import { id, render, route } from "./src/index.ts";
+import { hsxComponent, hsxPage, id, render, route } from "@srdjan/hsx";
 ```
 
 ## Quick Start (Low-Level API)
@@ -67,8 +81,7 @@ import { id, render, route } from "./src/index.ts";
 > the [hsxComponent pattern](#hsx-component-pattern-recommended) below instead.
 
 ```tsx
-/** @jsxImportSource ./src */
-import { id, render, route } from "./src/index.ts";
+import { id, render, route } from "@srdjan/hsx";
 
 const routes = {
   todos: route("/todos", () => "/todos"),
@@ -346,7 +359,11 @@ if (url.pathname === "/static/htmx.js") {
 HSX includes an optional CSS module with a default theme and dark variant:
 
 ```ts
-import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "jsr:@srdjan/hsx/styles";
+import {
+  HSX_STYLES_PATH,
+  hsxStyles,
+  hsxStylesDark,
+} from "jsr:@srdjan/hsx-styles";
 
 // Serve the styles
 if (url.pathname === HSX_STYLES_PATH) {
@@ -356,10 +373,11 @@ if (url.pathname === HSX_STYLES_PATH) {
 }
 
 // In your page head
-<link rel="stylesheet" href={HSX_STYLES_PATH} />
+<link rel="stylesheet" href={HSX_STYLES_PATH} />;
 ```
 
 **Exports:**
+
 - `hsxStyles` - Default light theme (indigo accent)
 - `hsxStylesDark` - Dark theme variant
 - `HSX_STYLES_PATH` - Default path: `/static/hsx.css`
@@ -367,12 +385,12 @@ if (url.pathname === HSX_STYLES_PATH) {
 **Customization:** Override CSS variables in your page:
 
 ```tsx
-<style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; }`}</style>
+<style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; }`}</style>;
 ```
 
-Available variables: `--hsx-accent`, `--hsx-bg`, `--hsx-surface`, `--hsx-border`,
-`--hsx-text`, `--hsx-muted`, `--hsx-error`, `--hsx-success`, spacing (`--hsx-space-*`),
-and radius (`--hsx-radius-*`).
+Available variables: `--hsx-accent`, `--hsx-bg`, `--hsx-surface`,
+`--hsx-border`, `--hsx-text`, `--hsx-muted`, `--hsx-error`, `--hsx-success`,
+spacing (`--hsx-space-*`), and radius (`--hsx-radius-*`).
 
 ## API Reference
 
@@ -483,34 +501,34 @@ Run examples with `deno task`:
 ## Project Structure
 
 ```
-src/
-  index.ts          # Main entry - exports everything
-  core.ts           # Core module - render, route, id, Fragment, types
-  component-model.ts # Component module - hsxComponent, hsxPage
-  styles.ts         # Optional CSS module with themes
-  jsx-runtime.ts    # Minimal JSX runtime (compiler requirement)
-  render.ts         # SSR renderer with HTMX injection
-  hsx-normalize.ts  # HSX to hx-* attribute mapping
-  hsx-component.ts  # hsxComponent factory (route + handler + render)
-  hsx-page.ts       # hsxPage guardrail for full-page layouts
-  hsx-types.ts      # Route, Id, HsxSwap, HsxTrigger types
-  hsx-jsx.d.ts      # JSX type declarations
+packages/
+  hsx/                   # Core package (@srdjan/hsx)
+    mod.ts               # Main entry point
+    jsx-runtime.ts       # Minimal JSX runtime (compiler requirement)
+    render.ts            # SSR renderer with HTMX injection
+    hsx-normalize.ts     # HSX to hx-* attribute mapping
+    hsx-types.ts         # Route, Id, HsxSwap, HsxTrigger types
+    hsx-jsx.d.ts         # JSX type declarations
+    hsx-component.ts     # hsxComponent factory (route + handler + render)
+    hsx-page.ts          # hsxPage guardrail for full-page layouts
+  hsx-styles/            # Styles package (@srdjan/hsx-styles)
+    mod.ts               # Main entry point (CSS themes)
 examples/
-  todos/            # Full todo app example
-  active-search/    # Search example
-  lazy-loading/     # Lazy load example
-  form-validation/  # Form validation example
-  polling/          # Polling example
-  tabs-modal/       # Tabs and modal example
-  hsx-components/   # HSX Component pattern example
-  hsx-page/         # hsxPage full-page guardrail example
-  low-level-api/    # Manual render/renderHtml without hsxPage/hsxComponent
+  todos/                 # Full todo app example
+  active-search/         # Search example
+  lazy-loading/          # Lazy load example
+  form-validation/       # Form validation example
+  polling/               # Polling example
+  tabs-modal/            # Tabs and modal example
+  hsx-components/        # HSX Component pattern example
+  hsx-page/              # hsxPage full-page guardrail example
+  low-level-api/         # Manual render/renderHtml without hsxPage/hsxComponent
 vendor/htmx/
-  htmx.js           # Vendored HTMX v4 (alpha)
+  htmx.js                # Vendored HTMX v4 (alpha)
 docs/
-  USER_GUIDE.md     # Comprehensive user guide
-  HSX_OVERVIEW.md   # Architecture overview
-  HTMX_INTEGRATION.md # HTMX integration details
+  USER_GUIDE.md          # Comprehensive user guide
+  HSX_OVERVIEW.md        # Architecture overview
+  HTMX_INTEGRATION.md    # HTMX integration details
 ```
 
 ## License

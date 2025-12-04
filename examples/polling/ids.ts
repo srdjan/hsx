@@ -1,7 +1,7 @@
 /**
  * Polling Example - Branded IDs
  */
-import { id } from "../../src/hsx-types.ts";
+import { id } from "@srdjan/hsx";
 
 export const ids = {
   stats: id("live-stats"),

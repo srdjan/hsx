@@ -5,8 +5,9 @@
  * component are co-located in a single definition with type-safe
  * enforcement between handler output and component props.
  */
-import { hsxComponent, hsxPage, id } from "../../src/index.ts";
-import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
+import { hsxComponent, hsxPage } from "@srdjan/hsx";
+import { id } from "@srdjan/hsx";
+import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 
 // =============================================================================
 // Types & Data

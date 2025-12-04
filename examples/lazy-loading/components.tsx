@@ -1,7 +1,7 @@
 /**
  * Shared UI wrapper components for cleaner JSX
  */
-import type { HsxSwap, Urlish } from "../../src/hsx-types.ts";
+import type { HsxSwap, Urlish } from "@srdjan/hsx";
 
 export function Subtitle(props: { children: string }) {
   return (

@@ -9,8 +9,9 @@
  * - `vals` for passing additional data
  * - CSS indicator class for loading states
  */
-import { hsxComponent, hsxPage, id } from "../../src/index.ts";
-import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
+import { hsxComponent, hsxPage } from "@srdjan/hsx";
+import { id } from "@srdjan/hsx";
+import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 
 // =============================================================================
 // Sample Data

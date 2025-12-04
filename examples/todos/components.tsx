@@ -4,7 +4,8 @@
  * Demonstrates hsxComponent pattern with type-safe co-located routes,
  * handlers, and render functions.
  */
-import { hsxComponent, id } from "../../src/index.ts";
+import { hsxComponent } from "@srdjan/hsx";
+import { id } from "@srdjan/hsx";
 
 // =============================================================================
 // Types & Shared State

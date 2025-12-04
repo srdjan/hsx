@@ -1,7 +1,7 @@
 /**
  * Form Validation Example - Branded IDs
  */
-import { id } from "../../src/hsx-types.ts";
+import { id } from "@srdjan/hsx";
 
 export const ids = {
   usernameError: id("username-error"),

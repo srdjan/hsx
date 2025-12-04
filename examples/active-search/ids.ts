@@ -3,7 +3,7 @@
  *
  * Demonstrates type-safe element IDs for HTMX targeting.
  */
-import { id } from "../../src/hsx-types.ts";
+import { id } from "@srdjan/hsx";
 
 export const ids = {
   results: id("search-results"),

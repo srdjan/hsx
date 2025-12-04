@@ -3,7 +3,7 @@
  *
  * This module provides the JSX factory functions required by TypeScript's
  * `react-jsx` transform. It is automatically used when you configure
- * `jsxImportSource: "hsx"` in your deno.json or tsconfig.
+ * `jsxImportSource: "@srdjan/hsx"` in your deno.json or tsconfig.
  *
  * You typically don't import from this module directly - use the main
  * `@srdjan/hsx` module instead.
@@ -315,7 +315,7 @@ type ExtensibleAttrs = Record<string, unknown>;
 
 /**
  * JSX namespace for TypeScript JSX type checking.
- * This is automatically used when you configure `jsxImportSource: "hsx"`.
+ * This is automatically used when you configure `jsxImportSource: "@srdjan/hsx"`.
  */
 // deno-lint-ignore no-namespace
 export namespace JSX {

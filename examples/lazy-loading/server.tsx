@@ -1,5 +1,5 @@
-import { hsxComponent, hsxPage } from "../../src/index.ts";
-import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
+import { hsxComponent, hsxPage } from "@srdjan/hsx";
+import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import { Card, Subtitle, UserList } from "./components.tsx";
 
 // =============================================================================

@@ -13,7 +13,7 @@
 
 import type { Renderable } from "./jsx-runtime.ts";
 import { render as renderResponse, renderHtml } from "./render.ts";
-import { type ParamsFromPath, type Route } from "./hsx-types.ts";
+import type { ParamsFromPath, Route } from "./hsx-types.ts";
 
 // =============================================================================
 // Types

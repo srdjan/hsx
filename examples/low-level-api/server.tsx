@@ -3,7 +3,7 @@
  *
  * Demonstrates manual use of render/renderHtml without hsxPage/hsxComponent.
  */
-import { id, render, renderHtml, route } from "../../src/index.ts";
+import { id, render, renderHtml, route } from "@srdjan/hsx";
 
 const routes = {
   time: route("/time", () => "/time"),

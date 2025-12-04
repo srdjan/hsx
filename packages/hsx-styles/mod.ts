@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx/styles";
+ * import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
  *
  * // Serve the stylesheet
  * if (url.pathname === HSX_STYLES_PATH) {

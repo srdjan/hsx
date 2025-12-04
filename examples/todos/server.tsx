@@ -4,8 +4,8 @@
  * Demonstrates hsxComponent pattern with hsxPage for the main layout.
  * Components are defined in components.tsx.
  */
-import { hsxPage } from "../../src/index.ts";
-import { hsxStyles, HSX_STYLES_PATH } from "../../src/styles.ts";
+import { hsxPage } from "@srdjan/hsx";
+import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import {
   TodoApp,
   TodoList,

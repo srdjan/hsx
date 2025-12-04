@@ -1,16 +1,20 @@
 {
-  "name": "@srdjan/hsx",
-  "version": "0.6.0",
+  "workspace": [
+    "./packages/hsx",
+    "./packages/hsx-styles"
+  ],
   "exports": {
-    ".": "./src/index.ts",
-    "./jsx-runtime": "./src/jsx-runtime.ts",
-    "./core": "./src/core.ts",
-    "./component-model": "./src/component-model.ts",
-    "./styles": "./src/styles.ts"
+    ".": "./packages/hsx/mod.ts",
+    "./jsx-runtime": "./packages/hsx/jsx-runtime.ts",
+    "./core": "./packages/hsx/mod.ts",
+    "./component-model": "./packages/hsx/mod.ts",
+    "./styles": "./packages/hsx-styles/mod.ts"
   },
   "license": "MIT",
   "imports": {
-    "hsx/jsx-runtime": "./src/jsx-runtime.ts"
+    "@srdjan/hsx": "./packages/hsx/mod.ts",
+    "@srdjan/hsx-styles": "./packages/hsx-styles/mod.ts",
+    "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
@@ -19,8 +23,8 @@
     "strict": true
   },
   "tasks": {
-    "test": "deno test src/ --allow-read",
-    "check": "deno check src/index.ts",
+    "test": "deno test packages/ --allow-read",
+    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts",
     "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
     "example:active-search": "deno run --allow-net --allow-read examples/active-search/server.tsx",
     "example:lazy-loading": "deno run --allow-net --allow-read examples/lazy-loading/server.tsx",

@@ -1,4 +1,4 @@
-import { id } from "../../src/hsx-types.ts";
+import { id } from "@srdjan/hsx";
 
 export const ids = {
   app: id("todo-app"),
