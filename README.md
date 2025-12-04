@@ -1,4 +1,4 @@
-# HSX
+# HSX is love, HSX is life
 
 First things, first... What the hack does HSX stand for? I'll say it's '**H**TML
 for **S**erver-Side e**X**tensions'. :0
