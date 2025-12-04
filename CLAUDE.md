@@ -36,8 +36,11 @@ deno run --allow-net --allow-read examples/todos/server.ts
 
 **Safety:** `script`/`style` children are emitted verbatim (no escaping); never pass user input there.
 
-**Entry Point:**
-- `index.ts` exports: `render()` (returns Response), `renderHtml()` (returns string), `route()`, `id()`, `Fragment`
+**Entry Points (Modular):**
+- `index.ts` (`.`) - Everything: `render`, `renderHtml`, `route`, `id`, `Fragment`, `hsxComponent`, `hsxPage`
+- `core.ts` (`./core`) - Core rendering: `render`, `renderHtml`, `route`, `id`, `Fragment`, types
+- `component-model.ts` (`./component-model`) - Higher-level: `hsxComponent`, `hsxPage`
+- `jsx-runtime.ts` (`./jsx-runtime`) - JSX compiler requirement (not for direct import)
 
 ## Key Patterns
 

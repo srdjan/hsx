@@ -1,9 +1,11 @@
 {
   "name": "@srdjan/hsx",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "exports": {
     ".": "./src/index.ts",
-    "./jsx-runtime": "./src/jsx-runtime.ts"
+    "./jsx-runtime": "./src/jsx-runtime.ts",
+    "./core": "./src/core.ts",
+    "./component-model": "./src/component-model.ts"
   },
   "license": "MIT",
   "imports": {

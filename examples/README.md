@@ -22,3 +22,21 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 - Looking for progressive loading? Check `lazy-loading`, `active-search`, or
   `polling`.
 - Want full control / custom routing? Use `low-level-api` as a reference.
+
+## Module Imports
+
+HSX supports selective imports for tree-shaking:
+
+```ts
+// Core only (excludes hsxComponent/hsxPage)
+import { render, route, id } from "@srdjan/hsx/core";
+
+// Component model only
+import { hsxComponent, hsxPage } from "@srdjan/hsx/component-model";
+
+// Everything
+import { render, route, hsxComponent, hsxPage } from "@srdjan/hsx";
+```
+
+- `low-level-api` uses `@srdjan/hsx/core`
+- Other examples use the full `@srdjan/hsx` or `@srdjan/hsx/component-model`

@@ -35,6 +35,21 @@ Or import directly:
 import { id, render, route } from "jsr:@srdjan/hsx";
 ```
 
+### Selective Imports (Tree-Shaking)
+
+HSX supports modular imports for smaller bundles:
+
+```ts
+// Core only - rendering + type-safe routes (excludes hsxComponent/hsxPage)
+import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
+
+// Component model only - higher-level abstractions
+import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/component-model";
+
+// Everything (default)
+import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
+```
+
 ### From Source
 
 Clone and import:
@@ -427,8 +442,10 @@ Run examples with `deno task`:
 
 ```
 src/
-  index.ts          # Public API exports
-  jsx-runtime.ts    # Minimal JSX runtime
+  index.ts          # Main entry - exports everything
+  core.ts           # Core module - render, route, id, Fragment, types
+  component-model.ts # Component module - hsxComponent, hsxPage
+  jsx-runtime.ts    # Minimal JSX runtime (compiler requirement)
   render.ts         # SSR renderer with HTMX injection
   hsx-normalize.ts  # HSX to hx-* attribute mapping
   hsx-component.ts  # hsxComponent factory (route + handler + render)
