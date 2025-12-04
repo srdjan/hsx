@@ -6,7 +6,7 @@ on the server.
 > Disclaimer: this was a quick hack in my free time, held together by vibe
 > coding and espresso. I like it a lot, but consider it an early release.
 
-## TL;DR: JSX for HTML + HTMX.
+## TL;DR: : Like JSX, but for SSR HTML + HTMX.
 
 ## Features
 
