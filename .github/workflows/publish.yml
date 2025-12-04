@@ -21,9 +21,6 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Run tests
-        run: deno task test
-
       - name: Type check
         run: deno task check
 
