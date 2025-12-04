@@ -1,8 +1,10 @@
 # HSX
 
-SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*` on the server.
+SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*`
+on the server.
 
-> Disclaimer: this was a quick hack in my free time, held together by vibe coding and espresso. I like it a lot, but consider it an early release.
+> Disclaimer: this was a quick hack in my free time, held together by vibe
+> coding and espresso. I like it a lot, but consider it an early release.
 
 ## TL;DR: JSX for HTML + HTMX.
 
@@ -10,11 +12,13 @@ SSR-only JSX/TSX renderer for Deno that compiles HTMX-style attributes to `hx-*`
 
 - **SSR-only** - No client runtime. Outputs plain HTML.
 - **HTMX as HTML** - Write `get`, `post`, `target`, `swap` as native attributes
-- **Type-safe routes** - Branded `Route<Path>` types with automatic parameter inference
+- **Type-safe routes** - Branded `Route<Path>` types with automatic parameter
+  inference
 - **Co-located components** - `hsxComponent()` bundles route + handler + render
 - **Page guardrails** - `hsxPage()` enforces semantic, style-free layouts
 - **Branded IDs** - `id("name")` returns `Id<"name">` typed as `"#name"`
-- **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when needed
+- **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when
+  needed
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
 
 ## Installation
@@ -28,7 +32,7 @@ deno add jsr:@srdjan/hsx
 Or import directly:
 
 ```ts
-import { render, route, id } from "jsr:@srdjan/hsx";
+import { id, render, route } from "jsr:@srdjan/hsx";
 ```
 
 ### From Source
@@ -36,14 +40,14 @@ import { render, route, id } from "jsr:@srdjan/hsx";
 Clone and import:
 
 ```ts
-import { render, route, id } from "./src/index.ts";
+import { id, render, route } from "./src/index.ts";
 ```
 
 ## Quick Start
 
 ```tsx
 /** @jsxImportSource ./src */
-import { render, route, id } from "./src/index.ts";
+import { id, render, route } from "./src/index.ts";
 
 const routes = {
   todos: route("/todos", () => "/todos"),
@@ -108,9 +112,7 @@ export const TodoList = hsxComponent("/todos", {
   render({ todos }) {
     return (
       <ul id="todo-list">
-        {todos.map((t) => (
-          <li key={t.id}>{t.text}</li>
-        ))}
+        {todos.map((t) => <li key={t.id}>{t.text}</li>)}
       </ul>
     );
   },
@@ -123,19 +125,23 @@ export const TodoList = hsxComponent("/todos", {
 if (TodoList.match(url.pathname)) return TodoList.handle(req);
 ```
 
-TypeScript enforces that `handler` returns the same shape that `render` expects. `methods` defaults to `["GET"]`; set `fullPage: true` when your render function returns a full document instead of a fragment.
+TypeScript enforces that `handler` returns the same shape that `render` expects.
+`methods` defaults to `["GET"]`; set `fullPage: true` when your render function
+returns a full document instead of a fragment.
 
 ## hsxPage (full-page guardrails)
 
-`hsxPage()` wraps a render function that returns a **complete** HTML document and validates that:
+`hsxPage()` wraps a render function that returns a **complete** HTML document
+and validates that:
 
 - The root is `<html>` with `<head>` then `<body>`
-- Semantic tags (header/main/section/article/h1-h6/p/ul/ol/li/etc.) have **no** `class` or inline `style`
+- Semantic tags (header/main/section/article/h1-h6/p/ul/ol/li/etc.) have **no**
+  `class` or inline `style`
 - `<style>` tags live in `<head>`; CSS belongs there, not inline
 - Composition stays within semantic HTML + HSX components
 
 ```tsx
-import { hsxPage, hsxComponent } from "jsr:@srdjan/hsx";
+import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
 
 const Widget = hsxComponent("/data", {
   handler: () => ({ message: "Hi" }),
@@ -149,7 +155,9 @@ const Page = hsxPage(() => (
       <style>{"body { font-family: system-ui; }"}</style>
     </head>
     <body>
-      <header><h1>Welcome</h1></header>
+      <header>
+        <h1>Welcome</h1>
+      </header>
       <main>
         <section>
           <div class="card">
@@ -166,21 +174,22 @@ Deno.serve(() => Page.render());
 
 ## HSX Attributes
 
-| HSX Attribute | Renders To | Description |
-|---------------|------------|-------------|
-| `get` | `hx-get` | HTTP GET request |
-| `post` | `hx-post` | HTTP POST request |
-| `put` | `hx-put` | HTTP PUT request |
-| `patch` | `hx-patch` | HTTP PATCH request |
-| `delete` | `hx-delete` | HTTP DELETE request |
-| `target` | `hx-target` | Element to update |
-| `swap` | `hx-swap` | How to swap content |
-| `trigger` | `hx-trigger` | Event that triggers request |
-| `vals` | `hx-vals` | Additional values (JSON) |
-| `headers` | `hx-headers` | Custom headers (JSON) |
+| HSX Attribute      | Renders To        | Description                    |
+| ------------------ | ----------------- | ------------------------------ |
+| `get`              | `hx-get`          | HTTP GET request               |
+| `post`             | `hx-post`         | HTTP POST request              |
+| `put`              | `hx-put`          | HTTP PUT request               |
+| `patch`            | `hx-patch`        | HTTP PATCH request             |
+| `delete`           | `hx-delete`       | HTTP DELETE request            |
+| `target`           | `hx-target`       | Element to update              |
+| `swap`             | `hx-swap`         | How to swap content            |
+| `trigger`          | `hx-trigger`      | Event that triggers request    |
+| `vals`             | `hx-vals`         | Additional values (JSON)       |
+| `headers`          | `hx-headers`      | Custom headers (JSON)          |
 | `behavior="boost"` | `hx-boost="true"` | Enable boost mode (`<a>` only) |
 
-**Supported elements:** `form`, `button`, `a`, `div`, `span`, `section`, `article`, `ul`, `tbody`, `tr`
+**Supported elements:** `form`, `button`, `a`, `div`, `span`, `section`,
+`article`, `ul`, `tbody`, `tr`
 
 ## Type-Safe Routes
 
@@ -191,14 +200,15 @@ const routes = {
   users: {
     list: route("/users", () => "/users"),
     detail: route("/users/:id", (p) => `/users/${p.id}`),
-    posts: route("/users/:userId/posts/:postId", (p) =>
-      `/users/${p.userId}/posts/${p.postId}`
+    posts: route(
+      "/users/:userId/posts/:postId",
+      (p) => `/users/${p.userId}/posts/${p.postId}`,
     ),
   },
 };
 
 // In JSX - params are type-checked:
-<button get={routes.users.detail} params={{ id: 42 }}>View</button>
+<button get={routes.users.detail} params={{ id: 42 }}>View</button>;
 // Renders: <button hx-get="/users/42">View</button>
 ```
 
@@ -220,7 +230,8 @@ const ids = {
 
 ## Wrapper Components
 
-Create reusable wrapper components that pass through HSX attributes for cleaner JSX:
+Create reusable wrapper components that pass through HSX attributes for cleaner
+JSX:
 
 ```tsx
 import type { HsxSwap, Urlish } from "jsr:@srdjan/hsx";
@@ -253,7 +264,12 @@ function Page() {
     <main>
       <h1>Dashboard</h1>
       <Subtitle>Content loads lazily</Subtitle>
-      <Card get={routes.stats} trigger="load" swap="innerHTML" title="Statistics">
+      <Card
+        get={routes.stats}
+        trigger="load"
+        swap="innerHTML"
+        title="Statistics"
+      >
         <LoadingSkeleton />
       </Card>
       <Card title="Team Members">
@@ -264,7 +280,8 @@ function Page() {
 }
 ```
 
-This pattern keeps your page components clean while maintaining full access to HSX attributes. See the `examples/*/components.tsx` files for more examples.
+This pattern keeps your page components clean while maintaining full access to
+HSX attributes. See the `examples/*/components.tsx` files for more examples.
 
 ## Configuration
 
@@ -282,11 +299,14 @@ Add this to your `deno.json`:
 }
 ```
 
-JSX intrinsic element types (`<div>`, `<form>`, `<button>`, etc.) are automatically included via the jsx-runtime import—no additional type configuration needed.
+JSX intrinsic element types (`<div>`, `<form>`, `<button>`, etc.) are
+automatically included via the jsx-runtime import—no additional type
+configuration needed.
 
 ### Serving HTMX
 
-HSX injects `<script src="/static/htmx.js">` when HTMX is used. You must serve it:
+HSX injects `<script src="/static/htmx.js">` when HTMX is used. You must serve
+it:
 
 ```ts
 if (url.pathname === "/static/htmx.js") {
@@ -305,10 +325,10 @@ Renders JSX to an HTTP `Response`.
 
 ```ts
 render(<Page />, {
-  status: 200,           // HTTP status code
-  headers: {},           // Additional response headers
-  maxDepth: 100,         // Max nesting depth (DoS protection)
-  maxNodes: 50000,       // Max node count (DoS protection)
+  status: 200, // HTTP status code
+  headers: {}, // Additional response headers
+  maxDepth: 100, // Max nesting depth (DoS protection)
+  maxNodes: 50000, // Max node count (DoS protection)
   injectHtmx: undefined, // true/false to force, undefined for auto
 });
 ```
@@ -327,7 +347,8 @@ const html = renderHtml(<Page />, {
 
 ### `route(path, build)`
 
-Creates a type-safe route. Path parameters (`:param`) are automatically extracted.
+Creates a type-safe route. Path parameters (`:param`) are automatically
+extracted.
 
 ```ts
 const r = route("/users/:id", (p) => `/users/${p.id}`);
@@ -353,7 +374,7 @@ JSX Fragment for grouping elements without a wrapper.
 <Fragment>
   <li>One</li>
   <li>Two</li>
-</Fragment>
+</Fragment>;
 ```
 
 ### `hsxComponent(path, options)`
@@ -362,8 +383,8 @@ Co-locates a route, request handler, and render function.
 
 ```ts
 const Comp = hsxComponent("/items/:id", {
-  methods: ["GET", "DELETE"],       // defaults to ["GET"]
-  fullPage: false,                    // default: return fragment Response
+  methods: ["GET", "DELETE"], // defaults to ["GET"]
+  fullPage: false, // default: return fragment Response
   status: 200,
   headers: { "x-powered-by": "hsx" },
   handler: async (_req, params) => ({
@@ -380,22 +401,25 @@ const Comp = hsxComponent("/items/:id", {
 
 Run examples with `deno task`:
 
-| Example | Command | Description |
-|---------|---------|-------------|
-| **Todos** | `deno task example:todos` | Full CRUD with partial updates |
-| **Active Search** | `deno task example:active-search` | Live search as you type |
-| **Lazy Loading** | `deno task example:lazy-loading` | Deferred content loading |
-| **Form Validation** | `deno task example:form-validation` | Server-side validation |
-| **Polling** | `deno task example:polling` | Live dashboard with intervals |
-| **Tabs & Modal** | `deno task example:tabs-modal` | Tab navigation and modals |
-| **HSX Components** | `deno task example:hsx-components` | Co-located route + handler + render |
-| **HSX Page** | `deno task example:hsx-page` | Semantic full-page with hsxPage guardrails |
-| **Low-Level API** | `deno task example:low-level-api` | Manual render/renderHtml without hsxPage/hsxComponent |
+| Example               | Command                             | Description                                           |
+| --------------------- | ----------------------------------- | ----------------------------------------------------- |
+| **Todos**             | `deno task example:todos`           | Full CRUD with partial updates                        |
+| **Active Search**     | `deno task example:active-search`   | Live search as you type                               |
+| **Lazy Loading**      | `deno task example:lazy-loading`    | Deferred content loading                              |
+| **Form Validation**   | `deno task example:form-validation` | Server-side validation                                |
+| **Polling**           | `deno task example:polling`         | Live dashboard with intervals                         |
+| **Tabs & Modal**      | `deno task example:tabs-modal`      | Tab navigation and modals                             |
+| **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
+| **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |
+| **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent |
+| **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                 |
 
 ## Safety
 
-- **HTML escaping** - All text content and attributes are escaped (XSS prevention)
-- **Raw text elements** - `<script>` and `<style>` children are NOT escaped. Never pass user input.
+- **HTML escaping** - All text content and attributes are escaped (XSS
+  prevention)
+- **Raw text elements** - `<script>` and `<style>` children are NOT escaped.
+  Never pass user input.
 - **No manual hx-\*** - Throws at render time. Use HSX aliases instead.
 - **DoS protection** - Optional `maxDepth` and `maxNodes` limits
 
@@ -420,6 +444,7 @@ examples/
   tabs-modal/       # Tabs and modal example
   hsx-components/   # HSX Component pattern example
   hsx-page/         # hsxPage full-page guardrail example
+  low-level-api/    # Manual render/renderHtml without hsxPage/hsxComponent
 vendor/htmx/
   htmx.js           # Vendored HTMX v4 (alpha)
 docs/

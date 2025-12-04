@@ -1,6 +1,7 @@
 # HSX User Guide
 
-A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX applications.
+A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX
+applications.
 
 ## Table of Contents
 
@@ -10,11 +11,13 @@ A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX applicati
 4. [Type-Safe Routes](#type-safe-routes)
 5. [HSX Components](#hsx-components)
 6. [HSX Page](#hsx-page)
-7. [Branded IDs](#branded-ids)
-8. [HTMX Script Injection](#htmx-script-injection)
-9. [Render Options](#render-options)
-10. [Best Practices](#best-practices)
-11. [Troubleshooting](#troubleshooting)
+7. [Low-Level API](#low-level-api)
+8. [Branded IDs](#branded-ids)
+9. [HTMX Script Injection](#htmx-script-injection)
+10. [Render Options](#render-options)
+11. [Best Practices](#best-practices)
+12. [Troubleshooting](#troubleshooting)
+13. [Examples Index](#examples-index)
 
 ---
 
@@ -22,9 +25,12 @@ A comprehensive guide to using HSX, the SSR-only JSX renderer for HTMX applicati
 
 ### What is HSX?
 
-HSX is a server-side rendering (SSR) library for Deno that lets you write JSX with HTMX-style attributes. Instead of writing `hx-get`, `hx-post`, `hx-target`, etc., you write `get`, `post`, `target` as if they were native HTML attributes.
+HSX is a server-side rendering (SSR) library for Deno that lets you write JSX
+with HTMX-style attributes. Instead of writing `hx-get`, `hx-post`, `hx-target`,
+etc., you write `get`, `post`, `target` as if they were native HTML attributes.
 
 During rendering, HSX:
+
 1. Walks your JSX tree
 2. Converts HSX attributes to `hx-*` attributes
 3. Automatically injects the HTMX script when needed
@@ -39,7 +45,9 @@ During rendering, HSX:
 
 ### The SSR-Only Philosophy
 
-HSX has no client-side runtime. The browser never sees HSX attributes like `get`, `post`, or `target`. These exist only in your TypeScript/JSX code. After rendering, the browser receives:
+HSX has no client-side runtime. The browser never sees HSX attributes like
+`get`, `post`, or `target`. These exist only in your TypeScript/JSX code. After
+rendering, the browser receives:
 
 - Standard HTML tags
 - `hx-*` attributes (interpreted by HTMX)
@@ -60,7 +68,7 @@ deno add jsr:@srdjan/hsx
 **Or import directly:**
 
 ```ts
-import { render, route, id } from "jsr:@srdjan/hsx";
+import { id, render, route } from "jsr:@srdjan/hsx";
 ```
 
 ### JSX Configuration
@@ -89,7 +97,8 @@ Or use the pragma in individual files:
 
 ### Serving HTMX
 
-HSX injects `<script src="/static/htmx.js">` when HTMX is used. You must serve this file:
+HSX injects `<script src="/static/htmx.js">` when HTMX is used. You must serve
+this file:
 
 ```ts
 const handler = async (req: Request) => {
@@ -114,7 +123,7 @@ Deno.serve(handler);
 
 ```tsx
 /** @jsxImportSource jsr:@srdjan/hsx */
-import { render, route, id } from "jsr:@srdjan/hsx";
+import { id, render, route } from "jsr:@srdjan/hsx";
 
 const routes = {
   greet: route("/greet", () => "/greet"),
@@ -148,13 +157,13 @@ Deno.serve(() => render(<Page />));
 
 These trigger HTMX requests:
 
-| Attribute | Renders To | Description |
-|-----------|------------|-------------|
-| `get` | `hx-get` | GET request to fetch content |
-| `post` | `hx-post` | POST request to submit data |
-| `put` | `hx-put` | PUT request for full updates |
-| `patch` | `hx-patch` | PATCH request for partial updates |
-| `delete` | `hx-delete` | DELETE request to remove resources |
+| Attribute | Renders To  | Description                        |
+| --------- | ----------- | ---------------------------------- |
+| `get`     | `hx-get`    | GET request to fetch content       |
+| `post`    | `hx-post`   | POST request to submit data        |
+| `put`     | `hx-put`    | PUT request for full updates       |
+| `patch`   | `hx-patch`  | PATCH request for partial updates  |
+| `delete`  | `hx-delete` | DELETE request to remove resources |
 
 **Example:**
 
@@ -170,10 +179,10 @@ These trigger HTMX requests:
 
 Control where content goes:
 
-| Attribute | Renders To | Description |
-|-----------|------------|-------------|
-| `target` | `hx-target` | CSS selector for target element |
-| `swap` | `hx-swap` | How to swap content into target |
+| Attribute | Renders To  | Description                     |
+| --------- | ----------- | ------------------------------- |
+| `target`  | `hx-target` | CSS selector for target element |
+| `swap`    | `hx-swap`   | How to swap content into target |
 
 **Swap values:**
 
@@ -190,7 +199,7 @@ Control where content goes:
 ```tsx
 <button get="/items" target="#list" swap="innerHTML">
   Refresh List
-</button>
+</button>;
 // Renders: <button hx-get="/items" hx-target="#list" hx-swap="innerHTML">
 ```
 
@@ -198,8 +207,8 @@ Control where content goes:
 
 Control when requests fire:
 
-| Attribute | Renders To | Description |
-|-----------|------------|-------------|
+| Attribute | Renders To   | Description                     |
+| --------- | ------------ | ------------------------------- |
 | `trigger` | `hx-trigger` | Event that triggers the request |
 
 **Common trigger values:**
@@ -226,9 +235,9 @@ Control when requests fire:
 
 Send additional data with requests:
 
-| Attribute | Renders To | Description |
-|-----------|------------|-------------|
-| `vals` | `hx-vals` | Additional values as JSON |
+| Attribute | Renders To   | Description                    |
+| --------- | ------------ | ------------------------------ |
+| `vals`    | `hx-vals`    | Additional values as JSON      |
 | `headers` | `hx-headers` | Custom request headers as JSON |
 
 **Example:**
@@ -240,7 +249,7 @@ Send additional data with requests:
   headers={{ "X-Custom": "value" }}
 >
   Filter
-</button>
+</button>;
 // Renders:
 // <button hx-get="/filter"
 //         hx-vals='{"status":"active","page":1}'
@@ -249,14 +258,14 @@ Send additional data with requests:
 
 ### Anchor-Specific Attributes
 
-| Attribute | Renders To | Description |
-|-----------|------------|-------------|
+| Attribute          | Renders To        | Description                  |
+| ------------------ | ----------------- | ---------------------------- |
 | `behavior="boost"` | `hx-boost="true"` | Enable HTMX boost on anchors |
 
 **Example:**
 
 ```tsx
-<a href="/page" behavior="boost">Link</a>
+<a href="/page" behavior="boost">Link</a>;
 // Renders: <a href="/page" hx-boost="true">Link</a>
 ```
 
@@ -303,7 +312,7 @@ const userRoute = route("/users/:id", (p) => `/users/${p.id}`);
 // Multiple parameters
 const postRoute = route(
   "/users/:userId/posts/:postId",
-  (p) => `/users/${p.userId}/posts/${p.postId}`
+  (p) => `/users/${p.userId}/posts/${p.postId}`,
 );
 // p is typed as { userId: string | number; postId: string | number }
 
@@ -346,7 +355,9 @@ export const routes = {
 
 ## HSX Components
 
-`hsxComponent()` co-locates a route, request handler, and render function. The handler's return type and the render props are tied together, so TypeScript prevents mismatches.
+`hsxComponent()` co-locates a route, request handler, and render function. The
+handler's return type and the render props are tied together, so TypeScript
+prevents mismatches.
 
 ### Defining a Component
 
@@ -367,9 +378,7 @@ export const TodoList = hsxComponent("/todos", {
   render({ todos }) {
     return (
       <ul id="todo-list">
-        {todos.map((t) => (
-          <li key={t.id}>{t.text}</li>
-        ))}
+        {todos.map((t) => <li key={t.id}>{t.text}</li>)}
       </ul>
     );
   },
@@ -380,27 +389,34 @@ export const TodoList = hsxComponent("/todos", {
 
 - In JSX: `<form post={TodoList} target="#todo-list" swap="outerHTML" />`
 - As a route matcher: `TodoList.match(pathname)` returns params or `null`
-- As a handler: `return TodoList.handle(req)` renders the fragment (or full page)
+- As a handler: `return TodoList.handle(req)` renders the fragment (or full
+  page)
 
 ### Full Page vs Fragment
 
-Set `fullPage: true` when your render function outputs a complete HTML document. The default (`fullPage: false`) returns just the rendered fragment with `content-type: text/html; charset=utf-8`.
+Set `fullPage: true` when your render function outputs a complete HTML document.
+The default (`fullPage: false`) returns just the rendered fragment with
+`content-type: text/html; charset=utf-8`.
 
-`methods` controls which HTTP verbs the component responds to; it defaults to `GET`.
+`methods` controls which HTTP verbs the component responds to; it defaults to
+`GET`.
 
 ---
 
 ## HSX Page
 
-`hsxPage()` wraps a render function that returns a **full HTML document** and validates it for semantic cleanliness:
+`hsxPage()` wraps a render function that returns a **full HTML document** and
+validates it for semantic cleanliness:
 
 - Root must be `<html>` containing `<head>` followed by `<body>`
-- Semantic tags (`header`, `main`, `section`, `article`, `footer`, headings, lists, etc.) may **not** have `class` or inline `style`
+- Semantic tags (`header`, `main`, `section`, `article`, `footer`, headings,
+  lists, etc.) may **not** have `class` or inline `style`
 - `<style>` tags must live inside `<head>` (put your CSS there)
-- Composition is limited to semantic HTML, standard document tags, and HSX components
+- Composition is limited to semantic HTML, standard document tags, and HSX
+  components
 
 ```tsx
-import { hsxPage, hsxComponent } from "jsr:@srdjan/hsx";
+import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
 
 const Stats = hsxComponent("/stats", {
   handler: () => ({ total: 42 }),
@@ -414,7 +430,9 @@ export const Page = hsxPage(() => (
       <style>{"body { font-family: system-ui; }"}</style>
     </head>
     <body>
-      <header><h1>Dashboard</h1></header>
+      <header>
+        <h1>Dashboard</h1>
+      </header>
       <main>
         <section>
           <div class="card">
@@ -429,7 +447,21 @@ export const Page = hsxPage(() => (
 // Usage: render(<Page.Component />) or Page.render();
 ```
 
-Violations throw descriptive errors (e.g., "Semantic element <section> cannot have a class").
+Violations throw descriptive errors (e.g., "Semantic element <section> cannot
+have a class").
+
+---
+
+## Low-Level API
+
+You can still use the underlying primitives without `hsxPage` or `hsxComponent`:
+
+- `render()` to return a `Response` for a full document
+- `renderHtml()` to return HTML fragments
+- Manual `route()`/`id()` helpers and your own routing/matching
+
+See `examples/low-level-api/` for a reference that uses direct
+`render`/`renderHtml`, manual HSX attributes, and explicit route handling.
 
 ---
 
@@ -443,9 +475,9 @@ Use `id()` to create type-safe element references:
 import { id } from "jsr:@srdjan/hsx";
 
 const ids = {
-  list: id("todo-list"),      // Type: Id<"todo-list">
-  count: id("item-count"),    // Type: Id<"item-count">
-  form: id("add-form"),       // Type: Id<"add-form">
+  list: id("todo-list"), // Type: Id<"todo-list">
+  count: id("item-count"), // Type: Id<"item-count">
+  form: id("add-form"), // Type: Id<"add-form">
 };
 
 // The value is "#todo-list", "#item-count", etc.
@@ -466,7 +498,8 @@ Use IDs in both the element and target:
 
 ### Type Safety Benefits
 
-The branded type ensures you can't accidentally use a plain string where an ID is expected:
+The branded type ensures you can't accidentally use a plain string where an ID
+is expected:
 
 ```ts
 const ids = { list: id("todo-list") };
@@ -507,7 +540,7 @@ HSX automatically injects the HTMX script when any HSX attribute is used:
 
 ```tsx
 // This triggers injection:
-<button get="/data">Load</button>
+<button get="/data">Load</button>;
 
 // Rendered HTML includes:
 // <script src="/static/htmx.js"></script>
@@ -531,13 +564,14 @@ render(<Page />, { injectHtmx: false });
 
 ### Custom HTMX Path
 
-The injection path is `/static/htmx.js`. If you need a different path, suppress auto-injection and add the script manually:
+The injection path is `/static/htmx.js`. If you need a different path, suppress
+auto-injection and add the script manually:
 
 ```tsx
 render(<Page />, { injectHtmx: false });
 
 // In your JSX:
-<script src="/my/custom/path/htmx.min.js"></script>
+<script src="/my/custom/path/htmx.min.js"></script>;
 ```
 
 ---
@@ -550,11 +584,11 @@ Returns an HTTP `Response`:
 
 ```ts
 interface RenderOptions {
-  status?: number;        // HTTP status code (default: 200)
-  headers?: HeadersInit;  // Additional response headers
-  maxDepth?: number;      // Max nesting depth
-  maxNodes?: number;      // Max node count
-  injectHtmx?: boolean;   // Force/suppress HTMX injection
+  status?: number; // HTTP status code (default: 200)
+  headers?: HeadersInit; // Additional response headers
+  maxDepth?: number; // Max nesting depth
+  maxNodes?: number; // Max node count
+  injectHtmx?: boolean; // Force/suppress HTMX injection
 }
 
 // Example:
@@ -593,6 +627,7 @@ render(<Page />, { maxNodes: 50000 });
 ```
 
 Recommended production values:
+
 - `maxDepth: 100` - Sufficient for any reasonable HTML
 - `maxNodes: 50000` - Allows large pages without abuse
 
@@ -665,11 +700,15 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 
 ---
 
+## Examples Index
+
+Browse `examples/README.md` for a quick map of each demo and when to use it.
+
 ## Troubleshooting
 
 ### Common Errors
 
-**"Manual hx-* attributes are not allowed"**
+__"Manual hx-_ attributes are not allowed"_*
 
 HSX throws if you use `hx-*` attributes directly:
 
@@ -735,7 +774,7 @@ Ensure your params match the path:
 const route = route("/users/:id", (p) => `/users/${p.id}`);
 
 // Params must include id
-<button get={route} params={{ id: 123 }}>View</button>
+<button get={route} params={{ id: 123 }}>View</button>;
 ```
 
 ### Debug Tips

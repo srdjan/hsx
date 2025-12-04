@@ -1,15 +1,26 @@
 # HSX Overview
 
-HSX is a small, opinionated JSX/TSX renderer for **server-side rendering only**. It treats HTMX-style interactions as if they were a natural part of HTML, then compiles them to `hx-*` attributes on the server.
+HSX is a small, opinionated JSX/TSX renderer for **server-side rendering only**.
+It treats HTMX-style interactions as if they were a natural part of HTML, then
+compiles them to `hx-*` attributes on the server.
 
 ## Goals
 
-- **Ergonomic authoring**: JSX should feel like HTML from a future where HTMX semantics (`get`, `post`, `target`, `swap`, `trigger`, `vals`, `headers`) are part of the spec.
-- **SSR-only**: No client-side HSX runtime; the browser sees only HTML + `hx-*` attributes and an HTMX script.
-- **Typed routes & IDs**: Routes and target element references should be type-safe.
-- **Co-located components**: Route + handler + render live together with shared types.
-- **Guarded pages**: Full-page layouts can opt into structural/styling guardrails.
-- **HTMX as implementation detail**: You never write `hx-` manually or add the HTMX `<script>` tag yourself.
+- **Ergonomic authoring**: JSX should feel like HTML from a future where HTMX
+  semantics (`get`, `post`, `target`, `swap`, `trigger`, `vals`, `headers`) are
+  part of the spec.
+- **SSR-only**: No client-side HSX runtime; the browser sees only HTML + `hx-*`
+  attributes and an HTMX script.
+- **Typed routes & IDs**: Routes and target element references should be
+  type-safe.
+- **Co-located components**: Route + handler + render live together with shared
+  types.
+- **Guarded pages**: Full-page layouts can opt into structural/styling
+  guardrails.
+- **Escape hatch**: Low-level `render` / `renderHtml` APIs remain available when
+  you need full control.
+- **HTMX as implementation detail**: You never write `hx-` manually or add the
+  HTMX `<script>` tag yourself.
 
 ## Architecture
 
@@ -26,11 +37,13 @@ JSX Code → jsx-runtime → VNode Tree → render → HTML String
 ### Module Responsibilities
 
 **jsx-runtime.ts**
+
 - Minimal JSX factory functions (`jsx`, `jsxs`, `jsxDEV`)
 - Creates VNode tree from JSX
 - Defines core types: `VNode`, `Renderable`, `ComponentType`
 
 **render.ts**
+
 - Walks VNode tree recursively
 - Calls normalization for HSX elements
 - Handles HTML escaping for XSS prevention
@@ -38,27 +51,38 @@ JSX Code → jsx-runtime → VNode Tree → render → HTML String
 - Provides DoS protection via depth/node limits
 
 **hsx-normalize.ts**
+
 - Maps HSX attributes to `hx-*` attributes
 - Resolves Route objects to URLs
 - Handles element-specific normalization (form, button, a, etc.)
 - Lazy copy optimization (only copies props when needed)
 
 **hsx-types.ts**
+
 - `Route<Path, Params>` - Type-safe routes
 - `Id<Name>` - Branded element IDs
 - `HsxSwap`, `HsxTrigger` - HTMX type unions
 
 **hsx-component.ts**
+
 - `hsxComponent()` factory for co-locating route + handler + render
 - `match()` for pathname matching and param extraction
 - `handle()` to run the handler and render a Response (fragment or full page)
 
 **hsx-page.ts**
+
 - `hsxPage()` wrapper for full `<html>` pages
 - Validates semantic structure (head/body order) and styling constraints
 - Convenience `render()` helper for serving the page
 
+**Low-level usage**
+
+- Keep using `render()` / `renderHtml()` directly for bespoke routing or
+  experimental flows
+- See `examples/low-level-api/` for a minimal reference
+
 **hsx-jsx.d.ts**
+
 - TypeScript JSX declarations
 - Augments intrinsic elements with HSX attributes
 
@@ -77,7 +101,8 @@ JSX Code → jsx-runtime → VNode Tree → render → HTML String
 HSX follows these security principles:
 
 - **HTML Escaping**: All text content and attribute values are escaped
-- **Raw Text Elements**: `<script>` and `<style>` children are NOT escaped (by design)
+- **Raw Text Elements**: `<script>` and `<style>` children are NOT escaped (by
+  design)
 - **No Manual hx-***: Manual `hx-*` attributes throw at render time
 - **DoS Protection**: Optional `maxDepth` and `maxNodes` limits
 
