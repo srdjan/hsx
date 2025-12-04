@@ -3,7 +3,7 @@
 First things, first... What the hack does HSX stand for? I'll say it's '**H**TML
 for **S**erver-Side e**X**tensions'. :0
 
-But, silently, I prefer: **H**TMX **S**laps **X**tremely :)
+But, honestly, I prefer: **H**TMX **S**laps **X**tremely :)
 
 SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during the rendering process, and compiles them to `hx-*` attributes.
 
