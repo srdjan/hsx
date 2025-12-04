@@ -26,10 +26,10 @@
  */
 
 /** Default path for serving HSX styles */
-export const HSX_STYLES_PATH = "/static/hsx.css";
+export const HSX_STYLES_PATH: string = "/static/hsx.css";
 
 /** Default theme (light, indigo accent) */
-export const hsxStyles = `/* HSX Default Styles - Light Theme */
+export const hsxStyles: string = `/* HSX Default Styles - Light Theme */
 @layer reset, tokens, base, layout, components, utilities, animations;
 
 @layer reset {
@@ -721,7 +721,7 @@ export const hsxStyles = `/* HSX Default Styles - Light Theme */
 `;
 
 /** Dark theme variant (for hsx-page example) */
-export const hsxStylesDark = `/* HSX Dark Theme */
+export const hsxStylesDark: string = `/* HSX Dark Theme */
 @layer reset, tokens, base, layout, components;
 
 @layer reset {
