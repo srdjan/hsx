@@ -23,7 +23,7 @@
     "strict": true
   },
   "tasks": {
-    "test": "echo 'No tests yet'",
+    "test": "deno test --allow-read --allow-net packages/",
     "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts",
     "example:todos": "deno run --allow-net --allow-read examples/todos/server.tsx",
     "example:active-search": "deno run --allow-net --allow-read examples/active-search/server.tsx",

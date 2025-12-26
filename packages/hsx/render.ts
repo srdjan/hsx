@@ -47,12 +47,46 @@ function escapeAttr(text: string): string {
   return escapeHtml(text);
 }
 
+/**
+ * Valid CSS property name pattern (letters, hyphens only after first char).
+ * Prevents CSS injection via malicious property names like "color;background:url(...)".
+ */
+const CSS_PROPERTY_RE = /^[a-zA-Z][a-zA-Z-]*$/;
+
+/**
+ * Check if a value is a valid CSS property value (string or finite number).
+ * Rejects NaN, Infinity, and non-primitive values.
+ */
+function isValidStyleValue(v: unknown): v is string | number {
+  if (typeof v === "string") return true;
+  if (typeof v === "number") return Number.isFinite(v);
+  return false;
+}
+
+/**
+ * Convert a style object to a CSS string.
+ * Sanitizes property names and values to prevent CSS injection.
+ *
+ * Security measures:
+ * - Property names must match /^[a-zA-Z][a-zA-Z-]*$/ (no semicolons, colons, etc.)
+ * - Values must be strings or finite numbers (no NaN, Infinity)
+ * - Value strings have ;{} removed to prevent breaking out of CSS context
+ */
 function styleObjectToCss(style: Record<string, string | number>): string {
   return Object.entries(style)
+    .filter(([k, v]) => {
+      // Validate property name (prevent injection via keys like "color;background:url(...)")
+      if (!CSS_PROPERTY_RE.test(k)) return false;
+      // Validate value (prevent NaN, Infinity, non-primitives)
+      if (!isValidStyleValue(v)) return false;
+      return true;
+    })
     .map(([k, v]) => {
       // convert camelCase to kebab-case
       const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-      return `${prop}:${v};`;
+      // Sanitize value: remove characters that could break out of CSS context
+      const safeValue = String(v).replace(/[;{}]/g, "");
+      return `${prop}:${safeValue};`;
     })
     .join("");
 }
@@ -85,9 +119,19 @@ function propsToAttrs(props: Props): string {
     }
 
     // Fallback: JSON stringify for objects (hx-vals, hx-headers, etc.)
-    parts.push(
-      ` ${attrName}="${escapeAttr(JSON.stringify(value))}"`,
-    );
+    try {
+      parts.push(
+        ` ${attrName}="${escapeAttr(JSON.stringify(value))}"`,
+      );
+    } catch (e) {
+      if (e instanceof TypeError && String(e.message).includes("circular")) {
+        throw new Error(
+          `Cannot serialize attribute "${attrName}": circular reference detected. ` +
+          `Ensure objects passed to hx-vals, hx-headers, etc. are JSON-serializable.`
+        );
+      }
+      throw e;
+    }
   }
   return parts.join("");
 }
