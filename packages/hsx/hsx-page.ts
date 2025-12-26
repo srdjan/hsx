@@ -194,8 +194,19 @@ function validateNode(node: Renderable, ancestors: Ancestors = [], depth = 0): v
   }
 
   if (typeof node.type === "function") {
+    const name = componentName(node.type as ComponentType);
     const rendered = (node.type as ComponentType)(node.props);
-    validateNode(rendered, ancestors.concat([componentName(node.type as ComponentType)]), depth + 1);
+
+    // Detect async components which are not supported in hsxPage
+    if (rendered instanceof Promise) {
+      throw new Error(
+        `Async components are not supported in hsxPage. ` +
+        `Component "${name}" returned a Promise. ` +
+        `Use synchronous components or fetch data before rendering.`
+      );
+    }
+
+    validateNode(rendered, ancestors.concat([name]), depth + 1);
     return;
   }
 

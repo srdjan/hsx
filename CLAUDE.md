@@ -9,12 +9,18 @@ HSX is an SSR-only JSX/TSX renderer for Deno that treats HTMX-style interactions
 ## Commands
 
 ```bash
+# Run tests
+deno task test               # Run all unit tests
+
+# Type check
+deno task check              # Type check all packages
+
 # Run examples
 deno task example:todos      # Todos example on port 8000
-deno task example:identity   # Identity widget example
+deno task example:hsx-components  # HSX Components example
 
 # Run any server file directly
-deno run --allow-net --allow-read examples/todos/server.ts
+deno run --allow-net --allow-read examples/todos/server.tsx
 ```
 
 ## Architecture
@@ -32,7 +38,7 @@ HSX is a monorepo with two packages:
 
 **Type System:**
 - `hsx-types.ts` - `Route<Path, Params>` for type-safe URLs, `Id<Name>` branded `#name` strings, `HsxSwap`/`HsxTrigger` unions
-- `hsx-jsx.d.ts` - Augments JSX.IntrinsicElements for `form`, `button`, `a`, `div` with HSX attributes (index signature removed to catch tag typos)
+- `jsx-runtime.ts` - Contains `JSX.IntrinsicElements` definitions for `form`, `button`, `a`, `div` with HSX attributes
 
 **Rule:** Manual `hx-*` attributes are not allowed; render throws if they are present. Always use HSX aliases (`get/post/put/patch/delete`, `target`, `swap`, `trigger`, `vals`, `headers`, `behavior="boost"`).
 

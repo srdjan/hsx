@@ -199,13 +199,29 @@ export function hsxComponent<
   } = options;
 
   // Build function for Route compatibility
+  // Validates all required params are provided and URL-encodes values
   const build = (params: Params): string => {
-    let result = path as string;
-    if (params && typeof params === "object") {
-      for (const [key, value] of Object.entries(params)) {
-        result = result.replace(`:${key}`, String(value));
+    const missing: string[] = [];
+    let result = (path as string).replace(
+      /:([a-zA-Z_][a-zA-Z0-9_]*)/g,
+      (_, name) => {
+        if (params && typeof params === "object" && name in params) {
+          const value = (params as Record<string, unknown>)[name];
+          // URL-encode the value to prevent path traversal and injection
+          return encodeURIComponent(String(value));
+        }
+        missing.push(name);
+        return `:${name}`;
       }
+    );
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required route parameters: ${missing.join(", ")}. ` +
+        `Route "${path}" requires these parameters to build a URL.`
+      );
     }
+
     return result;
   };
 
@@ -216,33 +232,44 @@ export function hsxComponent<
 
   // Handle function - the core of the component
   const handle = async (req: Request): Promise<Response> => {
-    const url = new URL(req.url);
-    const params = match(url.pathname);
+    try {
+      const url = new URL(req.url);
+      const params = match(url.pathname);
 
-    if (params === null) {
-      return new Response("Not Found", { status: 404 });
+      if (params === null) {
+        return new Response("Not Found", { status: 404 });
+      }
+
+      // Call handler to get props
+      const props = await handler(req, params);
+
+      // Render with the component
+      const rendered = renderFn(props);
+
+      if (fullPage) {
+        return renderResponse(rendered, { status, headers });
+      }
+
+      const html = renderHtml(rendered);
+      return new Response(html, {
+        status,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          ...(typeof headers === "object" && !Array.isArray(headers)
+            ? headers
+            : {}),
+        },
+      });
+    } catch (error) {
+      // Log error for debugging (in production, use proper logging)
+      console.error(`[HSX] Error handling ${req.method} ${req.url}:`, error);
+
+      // Return a generic error response to avoid leaking internal details
+      return new Response("Internal Server Error", {
+        status: 500,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
     }
-
-    // Call handler to get props
-    const props = await handler(req, params);
-
-    // Render with the component
-    const rendered = renderFn(props);
-
-    if (fullPage) {
-      return renderResponse(rendered, { status, headers });
-    }
-
-    const html = renderHtml(rendered);
-    return new Response(html, {
-      status,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        ...(typeof headers === "object" && !Array.isArray(headers)
-          ? headers
-          : {}),
-      },
-    });
   };
 
   // Create the component object
