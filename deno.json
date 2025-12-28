@@ -5,14 +5,13 @@
   ],
   "exports": {
     ".": "./packages/hsx/mod.ts",
-    "./jsx-runtime": "./packages/hsx/jsx-runtime.ts",
-    "./core": "./packages/hsx/mod.ts",
-    "./component-model": "./packages/hsx/mod.ts",
-    "./styles": "./packages/hsx-styles/mod.ts"
+    "./jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "license": "MIT",
   "imports": {
     "@srdjan/hsx": "./packages/hsx/mod.ts",
+    "@srdjan/hsx/core": "./packages/hsx/core.ts",
+    "@srdjan/hsx/components": "./packages/hsx/components.ts",
     "@srdjan/hsx-styles": "./packages/hsx-styles/mod.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },

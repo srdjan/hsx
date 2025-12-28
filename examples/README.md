@@ -23,22 +23,22 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
   `polling`.
 - Want full control / custom routing? Use `low-level-api` as a reference.
 
-## Module Imports
+## Import Pattern
 
-HSX supports selective imports for tree-shaking:
+All examples use the main package:
 
 ```ts
-// Core only (excludes hsxComponent/hsxPage)
-import { render, route, id } from "@srdjan/hsx/core";
-
-// Component model only
-import { hsxComponent, hsxPage } from "@srdjan/hsx/component-model";
-
-// Everything
-import { render, route, hsxComponent, hsxPage } from "@srdjan/hsx";
+import { render, route, hsxComponent, hsxPage, id } from "@srdjan/hsx";
 ```
 
-- `low-level-api` uses `@srdjan/hsx/core` with `route()` for manual routing
-- Other examples use `hsxComponent` from `@srdjan/hsx`
+For smaller bundles, use selective imports:
+
+```ts
+// Core only (low-level API)
+import { render, route, id } from "@srdjan/hsx/core";
+
+// Components only
+import { hsxComponent, hsxPage } from "@srdjan/hsx/components";
+```
 
 **Note:** Choose one style per project. Don't mix `route()` with `hsxComponent`.

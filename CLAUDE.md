@@ -54,9 +54,9 @@ import { render, id, route, Fragment, hsxComponent, hsxPage } from "@srdjan/hsx"
 import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 ```
 
-**Legacy exports** are maintained for backward compatibility via root deno.json:
-- `./core` → `packages/hsx/mod.ts`
-- `./styles` → `packages/hsx-styles/mod.ts`
+**Tree-shaking entry points:**
+- `@srdjan/hsx/core` - render, route, id, Fragment (smaller bundle)
+- `@srdjan/hsx/components` - hsxComponent, hsxPage only
 
 ## Key Patterns
 

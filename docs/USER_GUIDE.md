@@ -76,15 +76,17 @@ import { id, render, route } from "jsr:@srdjan/hsx";
 HSX supports modular imports for smaller bundles:
 
 ```ts
-// Core only - rendering + type-safe routes (excludes hsxComponent/hsxPage)
+// Core only - rendering + type-safe routes (smaller bundle)
 import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
 
-// Component model only - higher-level abstractions
-import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/component-model";
+// Components only - higher-level abstractions
+import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/components";
 
 // Everything (default)
 import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
 ```
+
+Use `/core` when you only need the low-level API without `hsxComponent`/`hsxPage`.
 
 ### JSX Configuration
 

@@ -58,13 +58,19 @@ deno add jsr:@srdjan/hsx
 deno add jsr:@srdjan/hsx-styles
 ```
 
-### Legacy Exports (Backward Compatible)
+### Selective Imports (Tree-Shaking)
 
-For backward compatibility, subpath exports still work:
+For smaller bundles, import only what you need:
 
 ```ts
-import { Fragment, id, render, route } from "jsr:@srdjan/hsx/core";
-import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx/styles";
+// Core only - render, route, id, Fragment (smaller bundle)
+import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
+
+// Components only - hsxComponent, hsxPage
+import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/components";
+
+// Everything (default)
+import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
 ```
 
 ### From Source
