@@ -198,6 +198,22 @@ export function hsxComponent<
     headers = {},
   } = options;
 
+  // Precompute path regex and param names (fixed per component, no need to recompute)
+  const pathRegex = pathToRegex(path);
+  const paramNames = extractParamNames(path);
+
+  // Validate no duplicate parameter names
+  const seen = new Set<string>();
+  for (const name of paramNames) {
+    if (seen.has(name)) {
+      throw new Error(
+        `Duplicate path parameter ":${name}" in route "${path}". ` +
+        `Each parameter name must be unique.`
+      );
+    }
+    seen.add(name);
+  }
+
   // Build function for Route compatibility
   // Validates all required params are provided and URL-encodes values
   const build = (params: Params): string => {
@@ -225,14 +241,31 @@ export function hsxComponent<
     return result;
   };
 
-  // Match function
+  // Match function using precomputed regex and param names
   const match = (pathname: string): Params | null => {
-    return matchPath<Params>(path, pathname);
+    const m = pathname.match(pathRegex);
+    if (!m) return null;
+    const params: Record<string, string> = {};
+    paramNames.forEach((name, i) => {
+      params[name] = m[i + 1];
+    });
+    return params as Params;
   };
 
   // Handle function - the core of the component
   const handle = async (req: Request): Promise<Response> => {
     try {
+      // Enforce allowed HTTP methods
+      if (!methods.includes(req.method as HttpMethod)) {
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: {
+            "allow": methods.join(", "),
+            "content-type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+
       const url = new URL(req.url);
       const params = match(url.pathname);
 

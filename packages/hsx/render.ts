@@ -48,10 +48,12 @@ function escapeAttr(text: string): string {
 }
 
 /**
- * Valid CSS property name pattern (letters, hyphens only after first char).
+ * Valid CSS property name pattern.
+ * Accepts standard properties (letters, hyphens after first char) and
+ * CSS custom properties (--variable-name).
  * Prevents CSS injection via malicious property names like "color;background:url(...)".
  */
-const CSS_PROPERTY_RE = /^[a-zA-Z][a-zA-Z-]*$/;
+const CSS_PROPERTY_RE = /^(-{2}[a-zA-Z0-9_-]+|[a-zA-Z][a-zA-Z-]*)$/;
 
 /**
  * Check if a value is a valid CSS property value (string or finite number).
@@ -84,8 +86,13 @@ function styleObjectToCss(style: Record<string, string | number>): string {
     .map(([k, v]) => {
       // convert camelCase to kebab-case
       const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-      // Sanitize value: remove characters that could break out of CSS context
-      const safeValue = String(v).replace(/[;{}]/g, "");
+      // Sanitize value: remove characters that could break out of CSS context,
+      // then neutralize dangerous CSS functions (url, expression, @import)
+      const safeValue = String(v)
+        .replace(/[;{}]/g, "")
+        .replace(/url\s*\(/gi, "/* blocked */")
+        .replace(/expression\s*\(/gi, "/* blocked */")
+        .replace(/@import/gi, "/* blocked */");
       return `${prop}:${safeValue};`;
     })
     .join("");

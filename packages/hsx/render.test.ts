@@ -86,25 +86,25 @@ Deno.test("filters Infinity values from styles", () => {
 Deno.test("sanitizes semicolons from style values", () => {
   const style = { color: "red; background: url(evil)" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="color:red background url(evil);"></div>');
+  assertEquals(html, '<div style="color:red background: /* blocked */evil);"></div>');
 });
 
 Deno.test("sanitizes curly braces from style values", () => {
   const style = { color: "red} .evil { background: url()" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="color:red .evil  background url();"></div>');
+  assertEquals(html, '<div style="color:red .evil  background: /* blocked */);"></div>');
 });
 
 // =============================================================================
 // JSON Serialization Error Handling Tests
 // =============================================================================
 
-Deno.test("throws clear error for circular references in hx-vals", () => {
+Deno.test("throws clear error for circular references in vals", () => {
   const circular: Record<string, unknown> = { a: 1 };
   circular.self = circular;
 
   assertThrows(
-    () => renderHtml(jsx("button", { "hx-vals": circular })),
+    () => renderHtml(jsx("button", { vals: circular })),
     Error,
     "circular reference detected"
   );
@@ -115,7 +115,7 @@ Deno.test("includes attribute name in circular reference error", () => {
   circular.ref = circular;
 
   assertThrows(
-    () => renderHtml(jsx("div", { "hx-headers": circular })),
+    () => renderHtml(jsx("div", { headers: circular })),
     Error,
     '"hx-headers"'
   );
@@ -283,4 +283,158 @@ Deno.test("renders numbers correctly", () => {
 Deno.test("renders string 0 correctly", () => {
   const html = renderHtml(jsx("span", { children: 0 }));
   assertEquals(html, "<span>0</span>");
+});
+
+// =============================================================================
+// CSS Custom Properties Tests (Phase 1A)
+// =============================================================================
+
+Deno.test("accepts CSS custom properties (--variable-name)", () => {
+  const style = { "--custom-color": "red", "--spacing-lg": "24px" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, '<div style="--custom-color:red;--spacing-lg:24px;"></div>');
+});
+
+Deno.test("rejects malicious CSS custom property names", () => {
+  const style = { "--foo;background:url(evil)": "red" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, '<div style=""></div>');
+});
+
+// =============================================================================
+// CSS Value Sanitization Tests (Phase 1B)
+// =============================================================================
+
+Deno.test("blocks url() in style values", () => {
+  const style = { background: "url(javascript:alert('xss'))" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, `<div style="background:/* blocked */javascript:alert(&#x27;xss&#x27;));"></div>`);
+});
+
+Deno.test("preserves calc() in style values", () => {
+  const style = { width: "calc(100% - 20px)" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, '<div style="width:calc(100% - 20px);"></div>');
+});
+
+Deno.test("blocks expression() in style values", () => {
+  const style = { width: "expression(document.body.clientWidth)" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, '<div style="width:/* blocked */document.body.clientWidth);"></div>');
+});
+
+Deno.test("blocks @import in style values", () => {
+  const style = { content: "@import 'evil.css'" };
+  const html = renderHtml(jsx("div", { style }));
+  assertEquals(html, `<div style="content:/* blocked */ &#x27;evil.css&#x27;;"></div>`);
+});
+
+// =============================================================================
+// Multi-Verb Form Validation Tests (Phase 1F)
+// =============================================================================
+
+Deno.test("rejects form with multiple HTTP verbs", () => {
+  assertThrows(
+    () => renderHtml(jsx("form", { post: "/submit", get: "/data" })),
+    Error,
+    "cannot have multiple HTTP verb attributes"
+  );
+});
+
+Deno.test("allows form with single HTTP verb", () => {
+  const html = renderHtml(jsx("form", { post: "/submit" }));
+  assertEquals(html.includes('hx-post="/submit"'), true);
+});
+
+// =============================================================================
+// HTMX Script Auto-Injection Tests (Phase 2C)
+// =============================================================================
+
+Deno.test("auto-injects HTMX script when HSX attributes are used", () => {
+  const html = renderHtml(
+    jsx("html", {
+      children: jsx("body", {
+        children: jsx("button", { get: "/api/data", children: "Load" }),
+      }),
+    })
+  );
+  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+});
+
+Deno.test("does not inject HTMX script for plain HTML", () => {
+  const html = renderHtml(
+    jsx("html", {
+      children: jsx("body", {
+        children: jsx("div", { children: "Hello" }),
+      }),
+    })
+  );
+  assertEquals(html.includes("htmx.js"), false);
+});
+
+Deno.test("forces HTMX injection with injectHtmx: true", () => {
+  const html = renderHtml(
+    jsx("html", {
+      children: jsx("body", {
+        children: jsx("div", { children: "No HSX attrs" }),
+      }),
+    }),
+    { injectHtmx: true }
+  );
+  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+});
+
+Deno.test("suppresses HTMX injection with injectHtmx: false", () => {
+  const html = renderHtml(
+    jsx("html", {
+      children: jsx("body", {
+        children: jsx("button", { get: "/api", children: "Load" }),
+      }),
+    }),
+    { injectHtmx: false }
+  );
+  assertEquals(html.includes("htmx.js"), false);
+});
+
+// =============================================================================
+// SSE Attribute Normalization Tests (Phase 2D)
+// =============================================================================
+
+Deno.test("normalizes ext attribute to hx-ext", () => {
+  const html = renderHtml(jsx("div", { ext: "sse" }));
+  assertEquals(html, '<div hx-ext="sse"></div>');
+});
+
+Deno.test("normalizes sseConnect attribute to sse-connect", () => {
+  const html = renderHtml(jsx("div", { sseConnect: "/events" }));
+  assertEquals(html, '<div sse-connect="/events"></div>');
+});
+
+Deno.test("normalizes sseSwap attribute to sse-swap", () => {
+  const html = renderHtml(jsx("div", { sseSwap: "message" }));
+  assertEquals(html, '<div sse-swap="message"></div>');
+});
+
+// =============================================================================
+// Form Fallback Action/Method Tests (Phase 2E)
+// =============================================================================
+
+Deno.test("form with post gets action and method auto-populated", () => {
+  const html = renderHtml(jsx("form", { post: "/submit" }));
+  assertEquals(html.includes('action="/submit"'), true);
+  assertEquals(html.includes('method="post"'), true);
+  assertEquals(html.includes('hx-post="/submit"'), true);
+});
+
+Deno.test("form with get gets action and method auto-populated", () => {
+  const html = renderHtml(jsx("form", { get: "/search" }));
+  assertEquals(html.includes('action="/search"'), true);
+  assertEquals(html.includes('method="get"'), true);
+  assertEquals(html.includes('hx-get="/search"'), true);
+});
+
+Deno.test("explicit action is not overridden by HSX verb", () => {
+  const html = renderHtml(jsx("form", { post: "/submit", action: "/custom" }));
+  assertEquals(html.includes('action="/custom"'), true);
+  assertEquals(html.includes('hx-post="/submit"'), true);
 });

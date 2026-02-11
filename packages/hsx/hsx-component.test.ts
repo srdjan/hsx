@@ -282,3 +282,100 @@ Deno.test("component exposes Component render function", () => {
 
   assertEquals(component.Component, renderFn);
 });
+
+// =============================================================================
+// HTTP Method Enforcement Tests (Phase 1C)
+// =============================================================================
+
+Deno.test("handle() returns 405 for disallowed methods", async () => {
+  const component = hsxComponent("/items", {
+    methods: ["GET"],
+    handler: () => ({ items: [] }),
+    render: () => jsx("div", {}),
+  });
+
+  const req = new Request("http://localhost/items", { method: "POST" });
+  const res = await component.handle(req);
+
+  assertEquals(res.status, 405);
+  assertEquals(await res.text(), "Method Not Allowed");
+});
+
+Deno.test("handle() includes Allow header with permitted methods", async () => {
+  const component = hsxComponent("/items", {
+    methods: ["GET", "POST"],
+    handler: () => ({ items: [] }),
+    render: () => jsx("div", {}),
+  });
+
+  const req = new Request("http://localhost/items", { method: "DELETE" });
+  const res = await component.handle(req);
+
+  assertEquals(res.status, 405);
+  assertEquals(res.headers.get("allow"), "GET, POST");
+});
+
+Deno.test("handle() allows matching method", async () => {
+  const component = hsxComponent("/items", {
+    methods: ["GET", "POST"],
+    handler: () => ({ items: [] }),
+    render: () => jsx("div", { children: "ok" }),
+  });
+
+  const req = new Request("http://localhost/items", { method: "POST" });
+  const res = await component.handle(req);
+
+  assertEquals(res.status, 200);
+});
+
+// =============================================================================
+// Duplicate Path Parameter Tests (Phase 1E)
+// =============================================================================
+
+Deno.test("throws for duplicate path parameters", () => {
+  assertThrows(
+    () => hsxComponent("/users/:id/related/:id", {
+      handler: () => ({}),
+      render: () => jsx("div", {}),
+    }),
+    Error,
+    'Duplicate path parameter ":id"'
+  );
+});
+
+Deno.test("allows different parameter names", () => {
+  const component = hsxComponent("/users/:userId/posts/:postId", {
+    handler: () => ({}),
+    render: () => jsx("div", {}),
+  });
+  assertEquals(component.path, "/users/:userId/posts/:postId");
+});
+
+// =============================================================================
+// Integration Test: Full Request/Response Cycle (Phase 2F)
+// =============================================================================
+
+Deno.test("handle() processes POST with FormData end-to-end", async () => {
+  const component = hsxComponent("/todos", {
+    methods: ["POST"],
+    handler: async (req) => {
+      const form = await req.formData();
+      const text = String(form.get("text") ?? "");
+      return { text };
+    },
+    render: ({ text }) => jsx("li", { children: text }),
+  });
+
+  const formData = new FormData();
+  formData.set("text", "Buy groceries");
+
+  const req = new Request("http://localhost/todos", {
+    method: "POST",
+    body: formData,
+  });
+  const res = await component.handle(req);
+
+  assertEquals(res.status, 200);
+  assertEquals(res.headers.get("content-type"), "text/html; charset=utf-8");
+  assertEquals(await res.text(), "<li>Buy groceries</li>");
+});

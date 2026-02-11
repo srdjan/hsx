@@ -22,6 +22,9 @@ const HSX_NON_VERB_ATTRS = [
   ["trigger", "hx-trigger"],
   ["vals", "hx-vals"],
   ["headers", "hx-headers"],
+  ["ext", "hx-ext"],
+  ["sseConnect", "sse-connect"],
+  ["sseSwap", "sse-swap"],
 ] as const;
 
 function isRoute(x: unknown): x is Route<string, unknown> {
@@ -126,6 +129,22 @@ export function normalizeFormProps(
   props: Props,
   ctx: RenderContext,
 ): Props {
+  // Reject multiple HTTP verbs on a single form
+  let verbCount = 0;
+  const verbs: string[] = [];
+  for (const verb of HTTP_VERBS) {
+    if (props[verb] !== undefined) {
+      verbCount++;
+      verbs.push(verb);
+    }
+  }
+  if (verbCount > 1) {
+    throw new Error(
+      `<form> cannot have multiple HTTP verb attributes. ` +
+      `Found: ${verbs.join(", ")}. Use only one verb per form.`
+    );
+  }
+
   let next = baseNormalize(props, ctx);
 
   // Form-specific: normalize action/method for non-HTMX fallback

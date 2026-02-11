@@ -190,6 +190,7 @@ export type HsxSwap =
  * - `revealed` - When element enters viewport
  * - `load` - On page load
  * - `every Ns` - Polling interval (e.g., "every 5s")
+ * - `sse:eventName` - SSE event trigger
  *
  * Also accepts any valid HTMX trigger string.
  *
@@ -202,14 +203,32 @@ export type HsxTrigger =
   | "revealed"
   | "load"
   | `every ${number}s`
+  | `sse:${string}`
+  | (string & {});
+
+/**
+ * HTMX extensions to enable on an element.
+ * Maps to the hx-ext attribute.
+ *
+ * Common values:
+ * - `sse` - Server-Sent Events extension
+ * - `json-enc` - JSON encoding for form submissions
+ *
+ * @see https://htmx.org/extensions/
+ */
+export type HsxExt =
+  | "sse"
+  | "json-enc"
+  | "ws"
+  | "preload"
   | (string & {});
 
 /**
  * A URL-like value: either a string or a typed Route.
- * Uses `any` for Route params to allow variance in JSX attributes.
+ * Uses method syntax for `build` to leverage bivariant checking,
+ * allowing any concrete Route<Path, Params> to be assignable.
  */
-// deno-lint-ignore no-explicit-any
-export type Urlish = string | Route<string, any>;
+export type Urlish = string | { path: string; build(params: Record<string, unknown>): string };
 
 /** Parameters for route building */
 export type Params = Record<string, unknown>;

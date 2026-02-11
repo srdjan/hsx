@@ -11,7 +11,7 @@
  * @module
  */
 
-import type { Id, HsxSwap, HsxTrigger, Urlish, Params } from "./hsx-types.ts";
+import type { Id, HsxSwap, HsxTrigger, HsxExt, Urlish, Params } from "./hsx-types.ts";
 
 // =============================================================================
 // Core JSX Types
@@ -62,6 +62,12 @@ type HsxAttrs = {
   trigger?: HsxTrigger;
   vals?: Params;
   headers?: Record<string, string>;
+  /** HTMX extension(s) to enable. Maps to hx-ext. */
+  ext?: HsxExt;
+  /** SSE connection URL. Maps to sse-connect. */
+  sseConnect?: string;
+  /** SSE swap mapping (event:target). Maps to sse-swap. */
+  sseSwap?: string;
 };
 
 // =============================================================================
@@ -339,9 +345,9 @@ export namespace JSX {
     span: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
 
     // Form inputs
-    input: InputAttrs & ExtensibleAttrs;
-    textarea: TextareaAttrs & ExtensibleAttrs;
-    select: SelectAttrs & ExtensibleAttrs;
+    input: InputAttrs & HsxAttrs & ExtensibleAttrs;
+    textarea: TextareaAttrs & HsxAttrs & ExtensibleAttrs;
+    select: SelectAttrs & HsxAttrs & ExtensibleAttrs;
     option: OptionAttrs & ExtensibleAttrs;
     optgroup: GlobalAttrs & { label?: string; disabled?: boolean } & ExtensibleAttrs;
     label: LabelAttrs & ExtensibleAttrs;
@@ -387,14 +393,14 @@ export namespace JSX {
     noscript: GlobalAttrs & ExtensibleAttrs;
 
     // Sections
-    body: GlobalAttrs & ExtensibleAttrs;
-    main: GlobalAttrs & ExtensibleAttrs;
-    header: GlobalAttrs & ExtensibleAttrs;
-    footer: GlobalAttrs & ExtensibleAttrs;
-    nav: GlobalAttrs & ExtensibleAttrs;
+    body: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
+    main: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
+    header: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
+    footer: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
+    nav: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     section: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     article: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
-    aside: GlobalAttrs & ExtensibleAttrs;
+    aside: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     h1: GlobalAttrs & ExtensibleAttrs;
     h2: GlobalAttrs & ExtensibleAttrs;
     h3: GlobalAttrs & ExtensibleAttrs;
@@ -405,13 +411,13 @@ export namespace JSX {
     address: GlobalAttrs & ExtensibleAttrs;
 
     // Text content
-    p: GlobalAttrs & ExtensibleAttrs;
+    p: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     hr: GlobalAttrs & ExtensibleAttrs;
     pre: GlobalAttrs & ExtensibleAttrs;
     blockquote: GlobalAttrs & { cite?: string } & ExtensibleAttrs;
-    ol: GlobalAttrs & { reversed?: boolean; start?: number; type?: "1" | "a" | "A" | "i" | "I" } & ExtensibleAttrs;
+    ol: GlobalAttrs & HsxAttrs & { reversed?: boolean; start?: number; type?: "1" | "a" | "A" | "i" | "I" } & ExtensibleAttrs;
     ul: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
-    li: GlobalAttrs & { value?: number } & ExtensibleAttrs;
+    li: GlobalAttrs & HsxAttrs & { value?: number } & ExtensibleAttrs;
     dl: GlobalAttrs & ExtensibleAttrs;
     dt: GlobalAttrs & ExtensibleAttrs;
     dd: GlobalAttrs & ExtensibleAttrs;
@@ -448,19 +454,19 @@ export namespace JSX {
     data: GlobalAttrs & { value?: string } & ExtensibleAttrs;
 
     // Tables
-    table: GlobalAttrs & ExtensibleAttrs;
+    table: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     caption: GlobalAttrs & ExtensibleAttrs;
-    thead: GlobalAttrs & ExtensibleAttrs;
+    thead: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     tbody: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
-    tfoot: GlobalAttrs & ExtensibleAttrs;
+    tfoot: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     tr: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
-    th: TableCellAttrs & ExtensibleAttrs;
-    td: TableCellAttrs & ExtensibleAttrs;
+    th: TableCellAttrs & HsxAttrs & ExtensibleAttrs;
+    td: TableCellAttrs & HsxAttrs & ExtensibleAttrs;
     col: GlobalAttrs & { span?: number } & ExtensibleAttrs;
     colgroup: GlobalAttrs & { span?: number } & ExtensibleAttrs;
 
     // Interactive
-    details: GlobalAttrs & { open?: boolean } & ExtensibleAttrs;
+    details: GlobalAttrs & HsxAttrs & { open?: boolean } & ExtensibleAttrs;
     summary: GlobalAttrs & ExtensibleAttrs;
     dialog: GlobalAttrs & { open?: boolean } & ExtensibleAttrs;
     menu: GlobalAttrs & ExtensibleAttrs;

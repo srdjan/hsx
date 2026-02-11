@@ -230,6 +230,15 @@ function validateNode(node: Renderable, ancestors: Ancestors = [], depth = 0): v
   }
 }
 
+export interface HsxPageOptions {
+  /**
+   * When true, validates the tree only on the first render and caches the result.
+   * Useful for pages with static structure where validation on every render is unnecessary.
+   * @default false
+   */
+  validateOnce?: boolean;
+}
+
 export interface HsxPage {
   /** The validated page component (use in JSX: <Page.Component />) */
   Component: ComponentType;
@@ -240,13 +249,19 @@ export interface HsxPage {
 /**
  * Create a full-page HSX component with strict structural & styling rules.
  */
-export function hsxPage(renderFn: () => Renderable): HsxPage {
+export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}): HsxPage {
+  const { validateOnce = false } = options;
+  let validated = false;
+
   const Component: ComponentType = (_props) => {
     const tree = renderFn();
     if (!isVNode(tree)) {
       throw new Error("hsxPage render function must return a single <html> VNode");
     }
-    validateNode(tree);
+    if (!validateOnce || !validated) {
+      validateNode(tree);
+      validated = true;
+    }
     return tree;
   };
 

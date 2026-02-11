@@ -24,5 +24,8 @@ jobs:
       - name: Type check
         run: deno task check
 
+      - name: Run tests
+        run: deno task test
+
       - name: Publish to JSR
         run: deno publish
