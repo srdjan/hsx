@@ -8,7 +8,11 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { hsxPage } from "./hsx-page.ts";
 import { jsx } from "./jsx-runtime.ts";
-import type { Renderable } from "./jsx-runtime.ts";
+import type { Renderable, VNode, VNodeType } from "./jsx-runtime.ts";
+
+function isVNode(x: Renderable): x is VNode {
+  return typeof x === "object" && x !== null && !Array.isArray(x) && "type" in x;
+}
 
 // Helper to create a valid page structure
 function validPage(bodyContent: Renderable) {
@@ -31,7 +35,7 @@ Deno.test("rejects async components with clear error", () => {
   };
 
   const page = hsxPage(() =>
-    validPage(jsx(AsyncComponent, {}))
+    validPage(jsx(AsyncComponent as unknown as VNodeType, {}))
   );
 
   assertThrows(
@@ -48,7 +52,7 @@ Deno.test("async component error includes component name", () => {
   }
 
   const page = hsxPage(() =>
-    validPage(jsx(MyAsyncWidget, {}))
+    validPage(jsx(MyAsyncWidget as unknown as VNodeType, {}))
   );
 
   assertThrows(
@@ -67,7 +71,7 @@ Deno.test("accepts synchronous components", () => {
 
   // Should not throw
   const result = page.Component({});
-  assertEquals(result.type, "html");
+  assertEquals(isVNode(result) && result.type, "html");
 });
 
 // =============================================================================
@@ -80,7 +84,7 @@ Deno.test("requires root html element", () => {
   assertThrows(
     () => page.Component({}),
     Error,
-    "must return a single <html> VNode"
+    "must return a root <html> element"
   );
 });
 
@@ -162,7 +166,7 @@ Deno.test("allows class on non-semantic elements", () => {
 
   // Should not throw
   const result = page.Component({});
-  assertEquals(result.type, "html");
+  assertEquals(isVNode(result) && result.type, "html");
 });
 
 Deno.test("allows style on non-semantic elements", () => {
@@ -172,7 +176,7 @@ Deno.test("allows style on non-semantic elements", () => {
 
   // Should not throw
   const result = page.Component({});
-  assertEquals(result.type, "html");
+  assertEquals(isVNode(result) && result.type, "html");
 });
 
 // =============================================================================
@@ -208,7 +212,7 @@ Deno.test("allows style tags in head", () => {
 
   // Should not throw
   const result = page.Component({});
-  assertEquals(result.type, "html");
+  assertEquals(isVNode(result) && result.type, "html");
 });
 
 // =============================================================================
