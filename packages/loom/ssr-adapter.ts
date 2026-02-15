@@ -13,12 +13,11 @@ import {
   type HsxComponent,
   type HttpMethod,
 } from "@srdjan/hsx/components";
-import { renderHtml } from "@srdjan/hsx/core";
 import type { Renderable } from "@srdjan/hsx/core";
 import { jsx } from "hsx/jsx-runtime";
 
 import type { Widget, WidgetError } from "./widget.ts";
-import { ok, fail, type Result } from "./result.ts";
+import type { Result } from "./result.ts";
 
 // =============================================================================
 // Types
@@ -164,14 +163,13 @@ export function widgetToHsxComponent<P>(
 
       if (!result.ok) {
         const error = result.error;
-        const status = error.tag === "validation_error" ? 400 : 500;
+        // hsxComponent's catch block always returns 500 regardless of error type.
+        // Format a descriptive message for the server log.
         const message = error.tag === "validation_error"
           ? `Validation error: ${error.message}${error.field ? ` (field: ${error.field})` : ""}`
           : `Load error: ${error.message}`;
 
-        // Throw with a status marker so hsxComponent's catch block returns 500.
-        // We use a custom error that the handler recognizes.
-        throw new WidgetHandlerError(message, status);
+        throw new Error(message);
       }
 
       return result.value;
@@ -181,16 +179,3 @@ export function widgetToHsxComponent<P>(
   });
 }
 
-/**
- * Internal error type for widget handler failures.
- * Carries an HTTP status code for proper error responses.
- */
-export class WidgetHandlerError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "WidgetHandlerError";
-    this.status = status;
-  }
-}

@@ -28,7 +28,7 @@ export const statusWidget: Widget<StatusProps> = {
     validate(raw: unknown) {
       if (typeof raw !== "object" || raw === null) {
         return fail({
-          tag: "validation_error" as const,
+          tag: "validation_error",
           message: "Expected an object",
         });
       }
@@ -38,7 +38,7 @@ export const statusWidget: Widget<StatusProps> = {
 
       if (typeof label !== "string" || label.trim().length === 0) {
         return fail({
-          tag: "validation_error" as const,
+          tag: "validation_error",
           message: "Label is required",
           field: "label",
         });

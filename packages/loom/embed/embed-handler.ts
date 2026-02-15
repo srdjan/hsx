@@ -14,6 +14,9 @@ import type { Widget } from "../widget.ts";
 // Types
 // =============================================================================
 
+/** Minimal widget shape needed by the embed handler (tag + styles only). */
+export type EmbeddableWidget = Pick<Widget<unknown>, "tag" | "styles">;
+
 export type EmbedHandlerOptions = {
   /** Base path for embed routes. Defaults to "/embed". */
   readonly basePath?: string;
@@ -93,7 +96,7 @@ ro.observe(document.body);
  * ```
  */
 export function createEmbedHandler(
-  widgets: ReadonlyMap<string, Widget<unknown>>,
+  widgets: ReadonlyMap<string, EmbeddableWidget>,
   options: EmbedHandlerOptions = {},
 ): (req: Request) => Response | null {
   const basePath = (options.basePath ?? "/embed").replace(/\/$/, "");

@@ -28,7 +28,7 @@ export const greetingWidget: Widget<GreetingProps> = {
     validate(raw: unknown) {
       if (typeof raw !== "object" || raw === null) {
         return fail({
-          tag: "validation_error" as const,
+          tag: "validation_error",
           message: "Expected an object",
         });
       }
@@ -39,7 +39,7 @@ export const greetingWidget: Widget<GreetingProps> = {
 
       if (typeof name !== "string" || name.length === 0) {
         return fail({
-          tag: "validation_error" as const,
+          tag: "validation_error",
           message: "Name is required",
           field: "name",
         });
@@ -47,7 +47,7 @@ export const greetingWidget: Widget<GreetingProps> = {
 
       if (typeof message !== "string") {
         return fail({
-          tag: "validation_error" as const,
+          tag: "validation_error",
           message: "Message must be a string",
           field: "message",
         });
@@ -76,7 +76,7 @@ export const greetingWidget: Widget<GreetingProps> = {
     const name = params.name;
     if (!name) {
       return fail({
-        tag: "load_error" as const,
+        tag: "load_error",
         message: "Missing name parameter",
       });
     }

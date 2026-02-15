@@ -111,9 +111,8 @@ async function buildSingleEmbed(
   target: WidgetTarget,
   args: BuildArgs,
 ): Promise<boolean> {
-  const entry = target.entry;
-  const exportName = target.exportName;
-  const widgetTag = await resolveWidgetTag(target.entry, target.exportName);
+  const { entry, exportName } = target;
+  const widgetTag = await resolveWidgetTag(entry, exportName);
   if (!widgetTag) return false;
 
   const outDir = path.resolve(args.outDir ?? "dist/loom");
@@ -173,7 +172,6 @@ async function buildSingleEmbed(
   } finally {
     // Clean up temp file
     try { await Deno.remove(tmpEntry); } catch { /* ignore */ }
-    await esbuild.stop();
   }
 }
 
@@ -222,8 +220,6 @@ async function buildSnippet(args: BuildArgs): Promise<boolean> {
 
     console.log(`Snippet built to ${outDir}/snippet.js`);
     return true;
-  } finally {
-    await esbuild.stop();
   }
 }
 
@@ -242,6 +238,8 @@ if (import.meta.main) {
   if (args.target === "snippet" || args.target === "all") {
     success = await buildSnippet(args) && success;
   }
+
+  await esbuild.stop();
 
   if (!success) {
     Deno.exit(1);

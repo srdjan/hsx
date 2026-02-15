@@ -217,7 +217,7 @@ Deno.test("SSR adapter returns 500 for load errors", async () => {
   assertEquals(res.status, 500);
 });
 
-Deno.test("SSR adapter returns 500 for validation errors (via query params)", async () => {
+Deno.test("SSR adapter returns 500 for validation errors (hsxComponent catches generically)", async () => {
   const component = widgetToHsxComponent(testWidget, {
     path: "/widgets/test",
   });
