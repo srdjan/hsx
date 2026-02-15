@@ -54,6 +54,7 @@ const STANDARD_PAGE_TAGS = new Set([
 
 // Non-semantic tags we still allow (may carry class/style)
 const NON_SEMANTIC_TAGS = new Set([
+  "a",
   "div",
   "span",
   "img",
