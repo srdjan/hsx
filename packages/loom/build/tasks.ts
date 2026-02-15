@@ -28,9 +28,21 @@ type BuildArgs = {
   readonly exportName?: string;
   readonly outDir?: string;
 };
+type WidgetTarget = {
+  readonly entry: string;
+  readonly exportName: string;
+};
 
-const DEFAULT_WIDGET_ENTRY = "packages/loom/examples/greeting-widget.tsx";
-const DEFAULT_WIDGET_EXPORT = "greetingWidget";
+const DEFAULT_WIDGETS: ReadonlyArray<WidgetTarget> = [
+  {
+    entry: "packages/loom/examples/greeting-widget.tsx",
+    exportName: "greetingWidget",
+  },
+  {
+    entry: "packages/loom/examples/status-widget.tsx",
+    exportName: "statusWidget",
+  },
+];
 
 function parseArgs(args: string[]): BuildArgs {
   const parsed: Record<string, string> = {};
@@ -49,10 +61,21 @@ function parseArgs(args: string[]): BuildArgs {
 
   return {
     target,
-    entry: parsed.entry ?? DEFAULT_WIDGET_ENTRY,
-    exportName: parsed.export ?? DEFAULT_WIDGET_EXPORT,
+    entry: parsed.entry,
+    exportName: parsed.export,
     outDir: parsed.outDir ?? "dist/loom",
   };
+}
+
+function resolveWidgetTargets(args: BuildArgs): ReadonlyArray<WidgetTarget> {
+  if (args.entry || args.exportName) {
+    if (!args.entry || !args.exportName) {
+      console.error("When using custom widget build, provide both --entry and --export.");
+      return [];
+    }
+    return [{ entry: args.entry, exportName: args.exportName }];
+  }
+  return DEFAULT_WIDGETS;
 }
 
 async function resolveWidgetTag(
@@ -84,10 +107,13 @@ async function resolveWidgetTag(
 // Build: Embeds
 // =============================================================================
 
-async function buildEmbeds(args: BuildArgs): Promise<boolean> {
-  const entry = args.entry ?? DEFAULT_WIDGET_ENTRY;
-  const exportName = args.exportName ?? DEFAULT_WIDGET_EXPORT;
-  const widgetTag = await resolveWidgetTag(entry, exportName);
+async function buildSingleEmbed(
+  target: WidgetTarget,
+  args: BuildArgs,
+): Promise<boolean> {
+  const entry = target.entry;
+  const exportName = target.exportName;
+  const widgetTag = await resolveWidgetTag(target.entry, target.exportName);
   if (!widgetTag) return false;
 
   const outDir = path.resolve(args.outDir ?? "dist/loom");
@@ -149,6 +175,18 @@ async function buildEmbeds(args: BuildArgs): Promise<boolean> {
     try { await Deno.remove(tmpEntry); } catch { /* ignore */ }
     await esbuild.stop();
   }
+}
+
+async function buildEmbeds(args: BuildArgs): Promise<boolean> {
+  const targets = resolveWidgetTargets(args);
+  if (targets.length === 0) return false;
+
+  for (const target of targets) {
+    const ok = await buildSingleEmbed(target, args);
+    if (!ok) return false;
+  }
+
+  return true;
 }
 
 // =============================================================================

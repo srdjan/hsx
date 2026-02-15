@@ -17,6 +17,7 @@ import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import { widgetToHsxComponent } from "@srdjan/loom/ssr";
 import type { Widget } from "@srdjan/loom";
 import { greetingWidget } from "../../packages/loom/examples/greeting-widget.tsx";
+import { statusWidget } from "../../packages/loom/examples/status-widget.tsx";
 import { createEmbedHandler } from "../../packages/loom/embed/embed-handler.ts";
 
 // =============================================================================
@@ -27,12 +28,17 @@ const GreetingRoute = widgetToHsxComponent(greetingWidget, {
   path: "/widgets/greeting/:name",
 });
 
+const StatusRoute = widgetToHsxComponent(statusWidget, {
+  path: "/widgets/status/:label",
+});
+
 // =============================================================================
 // Embed Handler - Widget served as iframe shell
 // =============================================================================
 
 const widgets = new Map<string, Widget<unknown>>([
   ["loom-greeting", greetingWidget as unknown as Widget<unknown>],
+  ["loom-status", statusWidget as unknown as Widget<unknown>],
 ]);
 
 const embedHandler = createEmbedHandler(widgets, {
@@ -59,22 +65,33 @@ const Page = hsxPage(() => (
         <div class="card">
           <h2>SSR Mode</h2>
           <p>
-            The widget below is rendered server-side through the HSX pipeline.
+            These widgets are rendered server-side through the HSX pipeline.
             Try: <a href="/widgets/greeting/World">/widgets/greeting/World</a>
+            {" "}
+            and
+            {" "}
+            <a href="/widgets/status/Build%20Healthy?tone=ok">/widgets/status/Build%20Healthy?tone=ok</a>
           </p>
         </div>
 
         <div class="card">
           <h2>Embed Mode</h2>
           <p>
-            The widget shell is served for iframe embedding.
-            Try: <a href="/embed/loom-greeting?name=World&amp;message=Hi!">/embed/loom-greeting?name=World&amp;message=Hi!</a>
+            Widget shells are served for iframe embedding.
+            Try:
+            {" "}
+            <a href="/embed/loom-greeting?name=World&amp;message=Hi!">/embed/loom-greeting?name=World&amp;message=Hi!</a>
+            {" "}
+            and
+            {" "}
+            <a href="/embed/loom-status?label=Build%20Healthy&amp;tone=ok">/embed/loom-status?label=Build%20Healthy&amp;tone=ok</a>
           </p>
           <p>
             Build client assets with <code>deno task build:loom</code>, then
             use this on a third-party site:
           </p>
           <pre><code>{`<div data-loom-uri="https://yoursite.com/embed/loom-greeting?name=World"></div>
+<div data-loom-uri="https://yoursite.com/embed/loom-status?label=Build%20Healthy&tone=ok"></div>
 <script src="https://yoursite.com/static/loom/snippet.js"></script>`}</code></pre>
         </div>
       </main>
@@ -146,6 +163,9 @@ Deno.serve((req) => {
   // SSR widget route
   if (GreetingRoute.match(pathname)) {
     return GreetingRoute.handle(req);
+  }
+  if (StatusRoute.match(pathname)) {
+    return StatusRoute.handle(req);
   }
 
   // Embed handler

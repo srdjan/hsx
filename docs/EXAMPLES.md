@@ -21,7 +21,7 @@ deno task example:<name>
 | HSX Components | `deno task example:hsx-components` | `examples/hsx-components/server.tsx` | Co-located route/handler/render with `hsxComponent` |
 | HSX Page | `deno task example:hsx-page` | `examples/hsx-page/server.tsx` | Full-document guardrails with `hsxPage` |
 | Low-Level API | `deno task example:low-level-api` | `examples/low-level-api/server.tsx` | Direct `render` / `renderHtml` and manual routing |
-| Loom Widget | `deno task example:loom-widget` | `examples/loom-widget/server.tsx` | Widget SSR route + iframe embed shell |
+| Loom Widget | `deno task example:loom-widget` | `examples/loom-widget/server.tsx` | Two widgets across SSR routes + iframe embed shells |
 
 ## Widget Example Workflow
 
@@ -35,7 +35,9 @@ deno task example:loom-widget
 Then try:
 
 - `/widgets/greeting/World` for server-rendered widget output
+- `/widgets/status/Build%20Healthy?tone=ok` for query-driven server-rendered widget output
 - `/embed/loom-greeting?name=World&message=Hi!` for embed shell output
+- `/embed/loom-status?label=Build%20Healthy&tone=ok` for status embed shell output
 
 ## Notes
 

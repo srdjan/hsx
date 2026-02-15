@@ -10,6 +10,7 @@ Loom lets you define a `Widget<P>` once and use it in two places:
 ## Files To Start With
 
 - `packages/loom/examples/greeting-widget.tsx` - minimal widget definition
+- `packages/loom/examples/status-widget.tsx` - query-driven status widget example
 - `examples/loom-widget/server.tsx` - runnable SSR + embed example server
 - `packages/loom/ssr-adapter.ts` - `widgetToHsxComponent()` bridge
 - `packages/loom/embed/embed-handler.ts` - embed shell handler
@@ -85,8 +86,9 @@ if (GreetingRoute.match(url.pathname)) {
 Try it with:
 
 ```bash
+deno task build:loom
 deno task example:loom-widget
-# then open /widgets/greeting/World
+# then open /widgets/greeting/World and /widgets/status/Build%20Healthy?tone=ok
 ```
 
 ## 3. Serve Embed Shells For Iframes
@@ -96,7 +98,10 @@ The repo example uses `createEmbedHandler()` to serve `/embed/:tag` HTML shells.
 ```tsx
 import { createEmbedHandler } from "../../packages/loom/embed/embed-handler.ts";
 
-const widgets = new Map([["loom-greeting", greetingWidget]]);
+const widgets = new Map([
+  ["loom-greeting", greetingWidget],
+  ["loom-status", statusWidget],
+]);
 
 const embedHandler = createEmbedHandler(widgets, {
   basePath: "/embed",
@@ -107,7 +112,7 @@ const res = embedHandler(req);
 if (res) return res;
 ```
 
-Each shell includes a script URL like `/static/loom/loom-greeting.js`.
+Each shell includes script URLs like `/static/loom/loom-greeting.js` and `/static/loom/loom-status.js`.
 
 ## 4. Build Embed Assets
 
@@ -117,9 +122,10 @@ Build both the widget bundle and the host snippet:
 deno task build:loom
 ```
 
-This writes assets into `dist/loom/`, including:
+By default this writes assets into `dist/loom/` for both example widgets:
 
 - `dist/loom/loom-greeting.js`
+- `dist/loom/loom-status.js`
 - `dist/loom/snippet.js`
 
 The example server (`examples/loom-widget/server.tsx`) serves these files from `/static/loom/*`.
@@ -130,6 +136,7 @@ On a third-party page, use a placeholder plus snippet script:
 
 ```html
 <div data-loom-uri="https://yoursite.com/embed/loom-greeting?name=World&message=Hi!"></div>
+<div data-loom-uri="https://yoursite.com/embed/loom-status?label=Build%20Healthy&tone=ok"></div>
 <script src="https://yoursite.com/static/loom/snippet.js"></script>
 ```
 
@@ -161,8 +168,8 @@ const page = (
 
 ## Quick Start Checklist
 
-1. Define widget (`packages/loom/examples/greeting-widget.tsx` as reference).
+1. Define widgets (`packages/loom/examples/greeting-widget.tsx` and `packages/loom/examples/status-widget.tsx` as references).
 2. Build assets: `deno task build:loom`.
 3. Run demo server: `deno task example:loom-widget`.
-4. Test SSR route: `/widgets/greeting/World`.
-5. Test embed shell: `/embed/loom-greeting?name=World&message=Hi!`.
+4. Test SSR routes: `/widgets/greeting/World` and `/widgets/status/Build%20Healthy?tone=ok`.
+5. Test embed shells: `/embed/loom-greeting?name=World&message=Hi!` and `/embed/loom-status?label=Build%20Healthy&tone=ok`.
