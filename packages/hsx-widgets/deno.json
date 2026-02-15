@@ -6,6 +6,9 @@
     "./ssr": "./ssr-adapter.ts",
     "./styles": "./styles.ts"
   },
+  "publish": {
+    "exclude": ["build/", "examples/"]
+  },
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "hsx",
