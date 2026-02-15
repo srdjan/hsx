@@ -754,8 +754,8 @@ export const hsxStyles: string = `/* HSX Default Styles - Light Theme */
   }
 
   /* Toggle/checkbox group */
-  .toggle { display: flex; align-items: center; gap: var(--hsx-space-sm); }
-  .toggle input { width: auto; }
+  .toggle-group { display: flex; align-items: center; gap: var(--hsx-space-sm); }
+  .toggle-group input { width: auto; }
   .paragraph p { margin-bottom: var(--hsx-space-md); }
   .bullets ul { margin-top: var(--hsx-space-md); padding-left: var(--hsx-space-lg); }
   /* Surface helpers */

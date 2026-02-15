@@ -24,7 +24,6 @@ const todos: Todo[] = [
 let nextId = 4;
 
 const ids = {
-  app: id("todo-app"),
   list: id("todo-list"),
 };
 
@@ -64,6 +63,7 @@ const TodoList = hsxComponent("/todos", {
               />
               <span class={t.done ? "done" : ""}>{t.text}</span>
               <button
+                type="button"
                 class="delete"
                 delete={TodoDelete}
                 params={{ id: t.id }}

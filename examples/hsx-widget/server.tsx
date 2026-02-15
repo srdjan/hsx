@@ -15,6 +15,7 @@
 import { hsxPage } from "@srdjan/hsx";
 import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
+import type { EmbeddableWidget } from "../../packages/hsx-widgets/embed/embed-handler.ts";
 import { greetingWidget } from "../../packages/hsx-widgets/examples/greeting-widget.tsx";
 import { statusWidget } from "../../packages/hsx-widgets/examples/status-widget.tsx";
 import { createEmbedHandler } from "../../packages/hsx-widgets/embed/embed-handler.ts";
@@ -35,7 +36,7 @@ const StatusRoute = widgetToHsxComponent(statusWidget, {
 // Embed Handler - Widget served as iframe shell
 // =============================================================================
 
-const widgets = new Map([
+const widgets = new Map<string, EmbeddableWidget>([
   ["hsx-greeting", greetingWidget],
   ["hsx-status", statusWidget],
 ]);

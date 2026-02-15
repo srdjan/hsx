@@ -14,6 +14,7 @@ function TabButton(props: { tab: Tab; current: Tab; label: string }) {
   } as const;
   return (
     <button
+      type="button"
       class="tab"
       get={routeMap[props.tab]}
       target={ids.tabContent}
@@ -64,6 +65,7 @@ function OverviewContent() {
       </div>
       <div class="btn-group">
         <button
+          type="button"
           class="btn btn-primary"
           get={ModalOpen}
           target="body"
@@ -104,12 +106,12 @@ function SettingsContent() {
         <label>Email</label>
         <input type="email" value="john@example.com" />
       </div>
-      <div class="form-group toggle">
+      <div class="form-group toggle-group">
         <input type="checkbox" id="notif" checked />
         <label htmlFor="notif">Notifications</label>
       </div>
       <div class="btn-group">
-        <button class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-primary">Save</button>
       </div>
     </>
   );
@@ -123,6 +125,7 @@ function ModalDialog() {
         <p>Are you sure you want to proceed?</p>
         <div class="btn-group">
           <button
+            type="button"
             class="btn btn-secondary"
             get={ModalClose}
             target="#modal-overlay"
@@ -131,6 +134,7 @@ function ModalDialog() {
             Cancel
           </button>
           <button
+            type="button"
             class="btn btn-danger"
             post={ModalConfirm}
             target={ids.modalContainer}
@@ -177,7 +181,7 @@ const ModalOpen = hsxComponent("/modal/open", {
 const ModalClose = hsxComponent("/modal/close", {
   methods: ["GET"],
   handler: () => ({} as VoidProps),
-  render: () => <></>,
+  render: () => null,
 });
 
 const ModalConfirm = hsxComponent("/modal/confirm", {

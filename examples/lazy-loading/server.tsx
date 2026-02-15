@@ -60,12 +60,12 @@ function ChartContent() {
   const heights = [40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88];
   return (
     <div class="chart">
-      {heights.map((h) => <div class="bar" style={{ height: `${h}%` }} />)}
+      {heights.map((h, index) => <div key={index} class="bar" style={{ height: `${h}%` }} />)}
     </div>
   );
 }
 
-function UserItem(props: { name: string; email: string }) {
+function UserItem(props: { key?: string; name: string; email: string }) {
   const initials = props.name.split(" ").map((n) => n[0]).join("");
   return (
     <li>
@@ -154,7 +154,7 @@ const LoadMore = hsxComponent("/content/more", {
   },
   render: ({ users, nextPage }) => (
     <>
-      {users.map((u) => <UserItem name={u.name} email={u.email} />)}
+      {users.map((u) => <UserItem key={u.email} name={u.name} email={u.email} />)}
       {nextPage && <LoadMoreTrigger page={nextPage} />}
     </>
   ),

@@ -34,9 +34,9 @@ const contacts: Contact[] = [
   { id: 8, name: "Henry Wilson", email: "henry@example.com", company: "Big Corp" },
 ];
 
-// =============================================================================
-// Styles
-// =============================================================================
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 // =============================================================================
 // Components
@@ -52,10 +52,12 @@ function SearchResults(props: { contacts: Contact[]; query: string }) {
   // Highlight matching text
   const highlight = (text: string) => {
     if (!query) return text;
-    const regex = new RegExp(`(${query})`, "gi");
+    const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
     const parts = text.split(regex);
-    return parts.map((part) =>
-      part.toLowerCase() === query.toLowerCase() ? <mark>{part}</mark> : part
+    return parts.map((part, index) =>
+      part.toLowerCase() === query.toLowerCase()
+        ? <mark key={`${part}-${index}`}>{part}</mark>
+        : part
     );
   };
 
@@ -64,7 +66,7 @@ function SearchResults(props: { contacts: Contact[]; query: string }) {
       <thead><tr><th>Name</th><th>Email</th><th>Company</th></tr></thead>
       <tbody>
         {contacts.map((c) => (
-          <tr>
+          <tr key={c.id}>
             <td>{highlight(c.name)}</td>
             <td>{highlight(c.email)}</td>
             <td>{highlight(c.company)}</td>
