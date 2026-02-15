@@ -30,6 +30,7 @@ HSX is a monorepo with two packages:
 **Packages:**
 - `@srdjan/hsx` (packages/hsx/) - Core JSX renderer, `render()`, `renderHtml()`, `route()`, `id()`, `Fragment`, `hsxComponent()`, `hsxPage()`
 - `@srdjan/hsx-styles` (packages/hsx-styles/) - `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
+- `@srdjan/loom` (packages/loom/) - Widget protocol, `widgetToHsxComponent()`, `collectWidgetStyles()`, Declarative Shadow DOM SSR
 
 **JSX Transform Pipeline (packages/hsx/):**
 1. `jsx-runtime.ts` - Minimal JSX runtime producing VNode tree
@@ -47,6 +48,8 @@ HSX is a monorepo with two packages:
 **Styling:** Style objects are supported; they render to inline CSS (`backgroundColor` → `background-color`).
 
 **Safety:** `script`/`style` children are emitted verbatim (no escaping); never pass user input there.
+
+**Loom Shadow DOM:** Widgets with `shadow: "open"` or `shadow: "closed"` render via Declarative Shadow DOM (`<template shadowrootmode="...">`). The wrapper becomes the custom element tag instead of `<div>`, and styles always go inside the shadow root (hoistStyles is ignored).
 
 **Imports (Workspace-aware):**
 ```ts

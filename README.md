@@ -540,8 +540,11 @@ packages/
   loom/                  # Loom widgets package (@srdjan/loom)
     mod.ts               # Main entry point
     widget.ts            # Widget protocol
-    ssr-adapter.ts       # Widget -> hsxComponent bridge
+    ssr-adapter.ts       # Widget -> hsxComponent bridge (with Declarative Shadow DOM)
+    styles.ts            # Style collection for hsxPage
+    result.ts            # Result<T,E> type utilities
     embed/               # Embed helpers (iframe shell + snippet)
+    build/               # Dual-compile build pipeline (esbuild + Preact)
 examples/
   todos/                 # Full todo app example
   active-search/         # Search example

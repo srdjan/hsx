@@ -358,3 +358,25 @@ Deno.test("Default behavior (no shadow field) unchanged - uses div wrapper", asy
   assertEquals(html.includes("<template"), false);
   assertEquals(html.includes("shadowrootmode"), false);
 });
+
+Deno.test("Explicit shadow: none behaves identically to omitting shadow field", async () => {
+  const shadowNoneWidget: Widget<GreetingProps> = {
+    ...greetingWidget,
+    tag: "loom-shadow-none",
+    shadow: "none",
+  };
+
+  const component = widgetToHsxComponent(shadowNoneWidget, {
+    path: "/widgets/shadow-none",
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-none?name=Explicit");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<div data-widget="loom-shadow-none">');
+  assertStringIncludes(html, "<style>.greeting { color: blue; }</style>");
+  assertStringIncludes(html, "Hello, Explicit!");
+  assertEquals(html.includes("<template"), false);
+  assertEquals(html.includes("shadowrootmode"), false);
+});

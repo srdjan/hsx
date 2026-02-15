@@ -64,6 +64,10 @@ export const greetingWidget: Widget<GreetingProps> = {
     if (!name) return fail({ tag: "load_error", message: "Missing name parameter" });
     return ok({ name, message: `Hello, ${name}!` });
   },
+
+  // Optional: Declarative Shadow DOM and observed attributes
+  shadow: "open",                  // "open" | "closed" | "none" (default: none)
+  observed: ["name", "message"],   // attributes to observe for client-side reactivity
 };
 ```
 
@@ -164,6 +168,48 @@ const page = (
     <body>{/* content */}</body>
   </html>
 );
+```
+
+## 7. Declarative Shadow DOM (SSR)
+
+Widgets can render inside a Declarative Shadow DOM by setting the `shadow` field. This is useful for style isolation: the widget's CSS cannot leak into the host page.
+
+**Enable it** by setting `shadow: "open"` or `shadow: "closed"` on your widget definition:
+
+```ts
+const myWidget: Widget<MyProps> = {
+  tag: "loom-example",
+  shadow: "open",   // or "closed"
+  // ...
+};
+```
+
+**What SSR produces:** the adapter wraps content in a `<template shadowrootmode="...">` inside the custom element tag. The browser upgrades this to a real shadow root on parse.
+
+**Key behaviors:**
+
+- The wrapper element is the custom element tag (e.g., `<loom-example>`) instead of `<div>`.
+- Styles always go inside the shadow root. The `hoistStyles` option is ignored for shadow DOM widgets - scoped styles belong in the shadow root.
+- When `shadow` is omitted or set to `"none"`, behavior is unchanged (light DOM `<div>` wrapper).
+
+**Light DOM output** (default):
+
+```html
+<div data-widget="loom-example">
+  <style>.example { color: blue; }</style>
+  <div class="example">Hello</div>
+</div>
+```
+
+**Shadow DOM output** (`shadow: "open"`):
+
+```html
+<loom-example data-widget="loom-example">
+  <template shadowrootmode="open">
+    <style>.example { color: blue; }</style>
+    <div class="example">Hello</div>
+  </template>
+</loom-example>
 ```
 
 ## Quick Start Checklist
