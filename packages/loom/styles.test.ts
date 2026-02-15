@@ -250,3 +250,111 @@ Deno.test("hsxPage with no-style widgets renders without style tag", () => {
   const response = page.render();
   assertEquals(response.status, 200);
 });
+
+// =============================================================================
+// Declarative Shadow DOM Tests
+// =============================================================================
+
+const shadowOpenWidget: Widget<GreetingProps> = {
+  ...greetingWidget,
+  tag: "loom-shadow-open",
+  shadow: "open",
+};
+
+const shadowClosedWidget: Widget<GreetingProps> = {
+  ...greetingWidget,
+  tag: "loom-shadow-closed",
+  shadow: "closed",
+};
+
+const shadowNoStyleWidget: Widget<GreetingProps> = {
+  ...greetingWidget,
+  tag: "loom-shadow-nostyle",
+  styles: "",
+  shadow: "open",
+};
+
+Deno.test("SSR adapter renders declarative shadow DOM for shadow: open", async () => {
+  const component = widgetToHsxComponent(shadowOpenWidget, {
+    path: "/widgets/shadow-open",
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-open?name=Alice");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<template shadowrootmode="open">');
+  assertStringIncludes(html, "<style>.greeting { color: blue; }</style>");
+  assertStringIncludes(html, "Hello, Alice!");
+});
+
+Deno.test("SSR adapter renders declarative shadow DOM for shadow: closed", async () => {
+  const component = widgetToHsxComponent(shadowClosedWidget, {
+    path: "/widgets/shadow-closed",
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-closed?name=Bob");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<template shadowrootmode="closed">');
+  assertStringIncludes(html, "Hello, Bob!");
+});
+
+Deno.test("SSR adapter uses widget tag as wrapper element with shadow DOM", async () => {
+  const component = widgetToHsxComponent(shadowOpenWidget, {
+    path: "/widgets/shadow-tag",
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-tag?name=Test");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<loom-shadow-open data-widget="loom-shadow-open">');
+  assertStringIncludes(html, "</loom-shadow-open>");
+  // Should NOT use <div> wrapper
+  assertEquals(html.includes("<div data-widget="), false);
+});
+
+Deno.test("Shadow DOM wrapper includes styles inside template even with hoistStyles: true", async () => {
+  const component = widgetToHsxComponent(shadowOpenWidget, {
+    path: "/widgets/shadow-hoist",
+    hoistStyles: true,
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-hoist?name=Hoist");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  // Styles must be inside the shadow root regardless of hoistStyles
+  assertStringIncludes(html, '<template shadowrootmode="open">');
+  assertStringIncludes(html, "<style>.greeting { color: blue; }</style>");
+});
+
+Deno.test("Shadow DOM wrapper omits styles when widget has empty styles", async () => {
+  const component = widgetToHsxComponent(shadowNoStyleWidget, {
+    path: "/widgets/shadow-nostyle",
+  });
+
+  const req = new Request("http://localhost/widgets/shadow-nostyle?name=Plain");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<template shadowrootmode="open">');
+  assertEquals(html.includes("<style>"), false);
+  assertStringIncludes(html, "Hello, Plain!");
+});
+
+Deno.test("Default behavior (no shadow field) unchanged - uses div wrapper", async () => {
+  const component = widgetToHsxComponent(greetingWidget, {
+    path: "/widgets/no-shadow",
+  });
+
+  const req = new Request("http://localhost/widgets/no-shadow?name=Default");
+  const res = await component.handle(req);
+  const html = await res.text();
+
+  assertStringIncludes(html, '<div data-widget="loom-greeting">');
+  assertEquals(html.includes("<template"), false);
+  assertEquals(html.includes("shadowrootmode"), false);
+});

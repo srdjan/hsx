@@ -80,23 +80,48 @@ async function resolveProps<P>(
  *
  * When `hoistStyles` is true, the inline `<style>` is omitted - the caller
  * is responsible for placing styles in `<head>` via `WidgetStyles`.
+ *
+ * When the widget has `shadow: "open"` or `shadow: "closed"`, renders using
+ * Declarative Shadow DOM (`<template shadowrootmode="...">`) with the widget's
+ * custom element tag as the host element. Styles always go inside the shadow
+ * root (hoistStyles is ignored for shadow DOM widgets).
  */
 function createWidgetWrapper<P>(
   widget: Widget<P>,
   hoistStyles: boolean,
 ): (props: P) => Renderable {
-  return (props: P): Renderable => {
-    const children: Renderable[] = [];
+  const shadowMode = widget.shadow ?? "none";
 
-    if (!hoistStyles && widget.styles.length > 0) {
-      children.push(jsx("style", { children: widget.styles }));
+  return (props: P): Renderable => {
+    const content: Renderable[] = [];
+
+    // In shadow DOM mode, styles always go inside the shadow root.
+    // In light DOM mode, styles are included unless hoisted.
+    const includeStyles = shadowMode !== "none"
+      ? widget.styles.length > 0
+      : !hoistStyles && widget.styles.length > 0;
+
+    if (includeStyles) {
+      content.push(jsx("style", { children: widget.styles }));
     }
 
-    children.push(widget.render(props));
+    content.push(widget.render(props));
 
+    // Declarative Shadow DOM: wrap content in <template shadowrootmode="...">
+    if (shadowMode !== "none") {
+      return jsx(widget.tag, {
+        "data-widget": widget.tag,
+        children: jsx("template", {
+          shadowrootmode: shadowMode,
+          children: content,
+        }),
+      });
+    }
+
+    // Light DOM (default)
     return jsx("div", {
       "data-widget": widget.tag,
-      children,
+      children: content,
     });
   };
 }
