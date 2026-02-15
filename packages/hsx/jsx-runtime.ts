@@ -495,6 +495,18 @@ export namespace JSX {
 // =============================================================================
 
 /**
+ * Type guard: check if a value is a VNode (has `type` and `props`).
+ */
+export function isVNode(x: unknown): x is VNode {
+  return (
+    typeof x === "object" &&
+    x !== null &&
+    "type" in x &&
+    "props" in x
+  );
+}
+
+/**
  * JSX factory function for elements with a single child.
  * Called automatically by the TypeScript JSX transform.
  *

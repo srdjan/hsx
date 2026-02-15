@@ -190,6 +190,9 @@ export function normalizeAnchorProps(
     return props;
   }
 
+  // Extract params before baseNormalize (which deletes it from the copy)
+  const params = props.params as Params | undefined;
+
   // Get base normalization (may or may not copy)
   let next = baseNormalize(props, ctx);
 
@@ -199,8 +202,6 @@ export function normalizeAnchorProps(
     if (next === props) {
       next = { ...props };
     }
-
-    const params = props.params as Params | undefined;
 
     if (behavior !== undefined) {
       delete next.behavior;

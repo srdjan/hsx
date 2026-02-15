@@ -1,5 +1,5 @@
 import type { Renderable, VNode } from "./jsx-runtime.ts";
-import { Fragment } from "./jsx-runtime.ts";
+import { Fragment, isVNode } from "./jsx-runtime.ts";
 import {
   type RenderContext,
   type Props,
@@ -37,14 +37,6 @@ const HTML_ESCAPE_RE = /[&<>"']/g;
  */
 function escapeHtml(text: string): string {
   return text.replace(HTML_ESCAPE_RE, (char) => HTML_ESCAPE_MAP[char]);
-}
-
-/**
- * Escape characters for safe use in HTML attributes.
- * Includes single quote escaping for attributes using single quotes.
- */
-function escapeAttr(text: string): string {
-  return escapeHtml(text);
 }
 
 /**
@@ -116,19 +108,19 @@ function propsToAttrs(props: Props): string {
     }
 
     if (key === "style" && value && typeof value === "object" && !Array.isArray(value)) {
-      parts.push(` style="${escapeAttr(styleObjectToCss(value as Record<string, string | number>))}"`);
+      parts.push(` style="${escapeHtml(styleObjectToCss(value as Record<string, string | number>))}"`);
       continue;
     }
 
     if (typeof value === "string" || typeof value === "number") {
-      parts.push(` ${attrName}="${escapeAttr(String(value))}"`);
+      parts.push(` ${attrName}="${escapeHtml(String(value))}"`);
       continue;
     }
 
     // Fallback: JSON stringify for objects (hx-vals, hx-headers, etc.)
     try {
       parts.push(
-        ` ${attrName}="${escapeAttr(JSON.stringify(value))}"`,
+        ` ${attrName}="${escapeHtml(JSON.stringify(value))}"`,
       );
     } catch (e) {
       if (e instanceof TypeError && String(e.message).includes("circular")) {
@@ -141,15 +133,6 @@ function propsToAttrs(props: Props): string {
     }
   }
   return parts.join("");
-}
-
-function isVNode(x: unknown): x is VNode {
-  return (
-    typeof x === "object" &&
-    x !== null &&
-    "type" in x &&
-    "props" in x
-  );
 }
 
 function assertNoManualHxProps(tag: string, props: Props): void {
@@ -264,11 +247,7 @@ function renderElement(node: VNode, ctx: RenderContext): string {
 
     // Special handling for <body>: inject HTMX script if needed
     if (tag === "body") {
-      const shouldInject = ctx.injectHtmxOverride === true
-        ? true
-        : ctx.injectHtmxOverride === false
-          ? false
-          : ctx.usesHtmx;
+      const shouldInject = ctx.injectHtmxOverride ?? ctx.usesHtmx;
       const script = shouldInject
         ? `<script src="/static/htmx.js"></script>`
         : "";

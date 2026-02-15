@@ -438,3 +438,38 @@ Deno.test("explicit action is not overridden by HSX verb", () => {
   assertEquals(html.includes('action="/custom"'), true);
   assertEquals(html.includes('hx-post="/submit"'), true);
 });
+
+Deno.test("explicit method is not overridden by HSX verb", () => {
+  const html = renderHtml(jsx("form", { post: "/submit", method: "dialog" }));
+  assertEquals(html.includes('method="dialog"'), true);
+  assertEquals(html.includes('hx-post="/submit"'), true);
+});
+
+// =============================================================================
+// Multi-Attribute HSX Tests
+// =============================================================================
+
+Deno.test("get + target + swap render together", () => {
+  const html = renderHtml(jsx("button", { get: "/data", target: "#list", swap: "innerHTML" }));
+  assertEquals(html.includes('hx-get="/data"'), true);
+  assertEquals(html.includes('hx-target="#list"'), true);
+  assertEquals(html.includes('hx-swap="innerHTML"'), true);
+});
+
+Deno.test("post + vals + headers render together", () => {
+  const html = renderHtml(jsx("form", {
+    post: "/submit",
+    vals: JSON.stringify({ extra: "data" }),
+    headers: JSON.stringify({ "X-Custom": "value" }),
+  }));
+  assertEquals(html.includes('hx-post="/submit"'), true);
+  assertEquals(html.includes('hx-vals='), true);
+  assertEquals(html.includes('hx-headers='), true);
+});
+
+Deno.test("get + trigger + swap on div", () => {
+  const html = renderHtml(jsx("div", { get: "/poll", trigger: "every 2s", swap: "outerHTML" }));
+  assertEquals(html.includes('hx-get="/poll"'), true);
+  assertEquals(html.includes('hx-trigger="every 2s"'), true);
+  assertEquals(html.includes('hx-swap="outerHTML"'), true);
+});

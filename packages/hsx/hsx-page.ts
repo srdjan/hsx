@@ -1,4 +1,5 @@
 import { render as renderResponse } from "./render.ts";
+import { isVNode } from "./jsx-runtime.ts";
 import type { ComponentType, Renderable, VNode } from "./jsx-runtime.ts";
 
 // Semantic elements that must remain free of class/style for structural purity
@@ -101,15 +102,6 @@ const ALLOWED_TAGS = new Set<string>([
 ]);
 
 type Ancestors = string[];
-
-function isVNode(value: unknown): value is VNode {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    "props" in value
-  );
-}
 
 function childrenOf(node: VNode): Renderable[] {
   const c = (node.props as Record<string, unknown>).children as Renderable;

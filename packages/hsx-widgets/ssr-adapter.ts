@@ -94,11 +94,8 @@ function createWidgetWrapper<P>(
   return (props: P): Renderable => {
     const content: Renderable[] = [];
 
-    // In shadow DOM mode, styles always go inside the shadow root.
-    // In light DOM mode, styles are included unless hoisted.
-    const includeStyles = shadowMode !== "none"
-      ? widget.styles.length > 0
-      : !hoistStyles && widget.styles.length > 0;
+    // Include styles when: non-empty AND (shadow DOM mode OR not hoisted)
+    const includeStyles = widget.styles.length > 0 && (shadowMode !== "none" || !hoistStyles);
 
     if (includeStyles) {
       content.push(jsx("style", { children: widget.styles }));

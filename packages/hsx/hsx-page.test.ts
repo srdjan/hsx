@@ -7,12 +7,8 @@
 
 import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { hsxPage } from "./hsx-page.ts";
-import { jsx } from "./jsx-runtime.ts";
-import type { Renderable, VNode, VNodeType } from "./jsx-runtime.ts";
-
-function isVNode(x: Renderable): x is VNode {
-  return typeof x === "object" && x !== null && !Array.isArray(x) && "type" in x;
-}
+import { jsx, isVNode } from "./jsx-runtime.ts";
+import type { Renderable, VNodeType } from "./jsx-runtime.ts";
 
 // Helper to create a valid page structure
 function validPage(bodyContent: Renderable) {
@@ -255,6 +251,20 @@ Deno.test("allows non-semantic layout tags", () => {
     // Should not throw
     page.Component({});
   }
+});
+
+Deno.test("allows anchor tags in body", () => {
+  const page = hsxPage(() =>
+    validPage(
+      jsx("p", {
+        children: ["Visit ", jsx("a", { href: "/about", children: "About" })],
+      })
+    )
+  );
+
+  // Should not throw
+  const result = page.Component({});
+  assertEquals(isVNode(result) && result.type, "html");
 });
 
 // =============================================================================

@@ -126,25 +126,6 @@ function extractParamNames(path: string): string[] {
   return Array.from(matches, (m) => m[1]);
 }
 
-/**
- * Match a pathname against a pattern and extract params.
- */
-function matchPath<Params>(
-  pattern: string,
-  pathname: string,
-): Params | null {
-  const regex = pathToRegex(pattern);
-  const match = pathname.match(regex);
-  if (!match) return null;
-
-  const names = extractParamNames(pattern);
-  const params: Record<string, string> = {};
-  names.forEach((name, i) => {
-    params[name] = match[i + 1];
-  });
-  return params as Params;
-}
-
 // =============================================================================
 // hsxComponent Factory
 // =============================================================================
