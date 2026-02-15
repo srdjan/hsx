@@ -30,3 +30,6 @@ export type { Widget, WidgetError, PropsValidator } from "./widget.ts";
 
 // SSR adapter
 export { widgetToHsxComponent, type WidgetToHsxOptions } from "./ssr-adapter.ts";
+
+// Style collection (for hsxPage compatibility)
+export { collectWidgetStyles, WidgetStyles, type WidgetStylesProps } from "./styles.ts";

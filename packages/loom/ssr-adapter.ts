@@ -30,6 +30,12 @@ export type WidgetToHsxOptions = {
   readonly path: string;
   /** HTTP methods to handle. Defaults to ["GET"]. */
   readonly methods?: readonly HttpMethod[];
+  /**
+   * When true, the wrapper `<div>` omits the inline `<style>` tag.
+   * Use this with `WidgetStyles` in `<head>` for hsxPage compatibility.
+   * @default false
+   */
+  readonly hoistStyles?: boolean;
 };
 
 // =============================================================================
@@ -71,14 +77,18 @@ async function resolveProps<P>(
 /**
  * Creates a wrapper component that renders the widget output inside a
  * `<div data-widget="...">` with scoped `<style>`.
+ *
+ * When `hoistStyles` is true, the inline `<style>` is omitted - the caller
+ * is responsible for placing styles in `<head>` via `WidgetStyles`.
  */
 function createWidgetWrapper<P>(
   widget: Widget<P>,
+  hoistStyles: boolean,
 ): (props: P) => Renderable {
   return (props: P): Renderable => {
     const children: Renderable[] = [];
 
-    if (widget.styles.length > 0) {
+    if (!hoistStyles && widget.styles.length > 0) {
       children.push(jsx("style", { children: widget.styles }));
     }
 
@@ -119,7 +129,7 @@ export function widgetToHsxComponent<P>(
   widget: Widget<P>,
   options: WidgetToHsxOptions,
 ): HsxComponent<string, Record<string, string>, P> {
-  const wrapperRender = createWidgetWrapper(widget);
+  const wrapperRender = createWidgetWrapper(widget, options.hoistStyles ?? false);
 
   return hsxComponent(options.path, {
     methods: options.methods ? [...options.methods] : ["GET"],

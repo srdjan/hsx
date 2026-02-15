@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "exports": {
     ".": "./mod.ts",
-    "./ssr": "./ssr-adapter.ts"
+    "./ssr": "./ssr-adapter.ts",
+    "./styles": "./styles.ts"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

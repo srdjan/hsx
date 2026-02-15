@@ -16,6 +16,7 @@
     "@srdjan/hsx-styles": "./packages/hsx-styles/mod.ts",
     "@srdjan/loom": "./packages/loom/mod.ts",
     "@srdjan/loom/ssr": "./packages/loom/ssr-adapter.ts",
+    "@srdjan/loom/styles": "./packages/loom/styles.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
