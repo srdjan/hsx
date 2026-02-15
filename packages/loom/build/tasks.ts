@@ -2,8 +2,10 @@
  * Build Tasks CLI - Orchestrates esbuild compilation for Loom embeds.
  *
  * Usage:
+ *   deno run --allow-all packages/loom/build/tasks.ts --target=embeds
  *   deno run --allow-all packages/loom/build/tasks.ts --target=embeds --entry=packages/loom/examples/greeting-widget.tsx --export=greetingWidget
  *   deno run --allow-all packages/loom/build/tasks.ts --target=snippet
+ *   deno run --allow-all packages/loom/build/tasks.ts --target=all
  *   deno run --allow-all packages/loom/build/tasks.ts --target=all --entry=packages/loom/examples/greeting-widget.tsx --export=greetingWidget
  *
  * @module tasks
@@ -27,6 +29,9 @@ type BuildArgs = {
   readonly outDir?: string;
 };
 
+const DEFAULT_WIDGET_ENTRY = "packages/loom/examples/greeting-widget.tsx";
+const DEFAULT_WIDGET_EXPORT = "greetingWidget";
+
 function parseArgs(args: string[]): BuildArgs {
   const parsed: Record<string, string> = {};
   for (const arg of args) {
@@ -44,10 +49,35 @@ function parseArgs(args: string[]): BuildArgs {
 
   return {
     target,
-    entry: parsed.entry,
-    exportName: parsed.export,
+    entry: parsed.entry ?? DEFAULT_WIDGET_ENTRY,
+    exportName: parsed.export ?? DEFAULT_WIDGET_EXPORT,
     outDir: parsed.outDir ?? "dist/loom",
   };
+}
+
+async function resolveWidgetTag(
+  entry: string,
+  exportName: string,
+): Promise<string | null> {
+  const moduleUrl = path.toFileUrl(path.resolve(entry)).href;
+
+  try {
+    const mod = await import(moduleUrl);
+    const candidate = mod[exportName] as { tag?: unknown } | undefined;
+
+    if (!candidate || typeof candidate.tag !== "string") {
+      console.error(
+        `Expected "${exportName}" from ${entry} to export a widget with a string "tag".`,
+      );
+      return null;
+    }
+
+    return candidate.tag;
+  } catch (error) {
+    console.error(`Failed to import widget module: ${entry}`);
+    console.error(error);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -55,21 +85,20 @@ function parseArgs(args: string[]): BuildArgs {
 // =============================================================================
 
 async function buildEmbeds(args: BuildArgs): Promise<boolean> {
-  if (!args.entry || !args.exportName) {
-    console.error("--entry and --export are required for embeds target");
-    return false;
-  }
+  const entry = args.entry ?? DEFAULT_WIDGET_ENTRY;
+  const exportName = args.exportName ?? DEFAULT_WIDGET_EXPORT;
+  const widgetTag = await resolveWidgetTag(entry, exportName);
+  if (!widgetTag) return false;
 
   const outDir = path.resolve(args.outDir ?? "dist/loom");
   const configPath = path.resolve("deno.json");
   const shimPath = path.resolve("packages/loom/build/shims/hsx-noop.ts");
+  const outFile = path.join(outDir, `${widgetTag}.js`);
 
   // Generate the entry point source
   const entrySource = generateEmbedEntry({
-    widgetImportPath: args.entry.startsWith(".")
-      ? args.entry
-      : `./${args.entry}`,
-    widgetExportName: args.exportName,
+    widgetImportPath: path.toFileUrl(path.resolve(entry)).href,
+    widgetExportName: exportName,
   });
 
   // Write temporary entry file
@@ -77,12 +106,12 @@ async function buildEmbeds(args: BuildArgs): Promise<boolean> {
   await Deno.mkdir(outDir, { recursive: true });
   await Deno.writeTextFile(tmpEntry, entrySource);
 
-  console.log(`Building embed from ${args.entry}...`);
+  console.log(`Building embed from ${entry}...`);
 
   try {
     const result = await esbuild.build({
       entryPoints: [tmpEntry],
-      outdir: outDir,
+      outfile: outFile,
       bundle: true,
       format: "esm",
       target: "es2020",
@@ -113,7 +142,7 @@ async function buildEmbeds(args: BuildArgs): Promise<boolean> {
       return false;
     }
 
-    console.log(`Embed built to ${outDir}/`);
+    console.log(`Embed built to ${outFile}`);
     return true;
   } finally {
     // Clean up temp file

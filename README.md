@@ -503,7 +503,15 @@ Run examples with `deno task`:
 | **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
 | **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |
 | **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent |
+| **Loom Widget**       | `deno task example:loom-widget`     | Widget SSR route + iframe embed shell                 |
 | **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                 |
+
+For the Loom widget example, build client assets first:
+
+```bash
+deno task build:loom
+deno task example:loom-widget
+```
 
 ## Safety
 
@@ -529,6 +537,11 @@ packages/
     hsx-page.ts          # hsxPage guardrail for full-page layouts
   hsx-styles/            # Styles package (@srdjan/hsx-styles)
     mod.ts               # Main entry point (CSS themes)
+  loom/                  # Loom widgets package (@srdjan/loom)
+    mod.ts               # Main entry point
+    widget.ts            # Widget protocol
+    ssr-adapter.ts       # Widget -> hsxComponent bridge
+    embed/               # Embed helpers (iframe shell + snippet)
 examples/
   todos/                 # Full todo app example
   active-search/         # Search example
@@ -539,12 +552,15 @@ examples/
   hsx-components/        # HSX Component pattern example
   hsx-page/              # hsxPage full-page guardrail example
   low-level-api/         # Manual render/renderHtml without hsxPage/hsxComponent
+  loom-widget/           # Loom widget SSR + embed shell example
 vendor/htmx/
   htmx.js                # Vendored HTMX v4 (alpha)
 docs/
+  EXAMPLES.md            # Full examples matrix
   USER_GUIDE.md          # Comprehensive user guide
   HSX_OVERVIEW.md        # Architecture overview
   HTMX_INTEGRATION.md    # HTMX integration details
+  WIDGETS.md             # Loom widget guide and embed workflow
 ```
 
 ## License

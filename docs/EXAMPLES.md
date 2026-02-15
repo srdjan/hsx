@@ -1,209 +1,44 @@
 # Examples
 
-HSX includes several examples demonstrating different HTMX patterns. Run any example with:
+HSX includes runnable examples for core HSX patterns and Loom widget flows.
+
+Run any example with:
 
 ```bash
 deno task example:<name>
 ```
 
----
+## Example Matrix
 
-## Todos
+| Example | Command | Entry File | What It Demonstrates |
+| --- | --- | --- | --- |
+| Todos | `deno task example:todos` | `examples/todos/server.tsx` | Full CRUD with `hsxPage` + `hsxComponent` |
+| Active Search | `deno task example:active-search` | `examples/active-search/server.tsx` | Debounced live search with `trigger` modifiers |
+| Lazy Loading | `deno task example:lazy-loading` | `examples/lazy-loading/server.tsx` | `revealed` and `load` triggers with skeleton states |
+| Form Validation | `deno task example:form-validation` | `examples/form-validation/server.tsx` | Field and form-level server validation |
+| Polling | `deno task example:polling` | `examples/polling/server.tsx` | Live dashboard updates via `every Ns` polling |
+| Tabs & Modal | `deno task example:tabs-modal` | `examples/tabs-modal/server.tsx` | Tabbed content and modal lifecycle with partial swaps |
+| HSX Components | `deno task example:hsx-components` | `examples/hsx-components/server.tsx` | Co-located route/handler/render with `hsxComponent` |
+| HSX Page | `deno task example:hsx-page` | `examples/hsx-page/server.tsx` | Full-document guardrails with `hsxPage` |
+| Low-Level API | `deno task example:low-level-api` | `examples/low-level-api/server.tsx` | Direct `render` / `renderHtml` and manual routing |
+| Loom Widget | `deno task example:loom-widget` | `examples/loom-widget/server.tsx` | Widget SSR route + iframe embed shell |
 
-**Command:** `deno task example:todos`
-**Port:** 8000
-**File:** `examples/todos/server.tsx`
+## Widget Example Workflow
 
-A full CRUD todo application demonstrating:
+The Loom widget demo has one extra step so embed assets exist:
 
-- SSR full page rendering at `/`
-- Partial updates via HTMX endpoints
-- Type-safe routes and IDs
-- Filter functionality (all, active, completed)
-- Clear completed action
-
-**Key patterns:**
-
-```tsx
-<form
-  post={routes.todos.list}
-  target={ids.list}
-  swap="outerHTML"
-  headers={{ "X-Flow-Id": "todos-example" }}
->
-  <input name="text" required />
-  <button type="submit">Add</button>
-</form>
-
-<button
-  type="button"
-  get={routes.todos.list}
-  target={ids.list}
-  swap="outerHTML"
-  vals={{ status: "all" }}
->
-  Refresh
-</button>
+```bash
+deno task build:loom
+deno task example:loom-widget
 ```
 
----
+Then try:
 
-## Active Search
+- `/widgets/greeting/World` for server-rendered widget output
+- `/embed/loom-greeting?name=World&message=Hi!` for embed shell output
 
-**Command:** `deno task example:active-search`
-**Port:** 8001
-**File:** `examples/active-search/server.tsx`
+## Notes
 
-Live search that filters results as you type:
-
-- Search input with debounced trigger
-- Result highlighting
-- Keyboard-driven search
-
-**Key patterns:**
-
-```tsx
-<input
-  type="search"
-  name="q"
-  get={routes.search}
-  target={ids.results}
-  trigger="keyup changed delay:300ms"
-  swap="innerHTML"
-/>
-```
-
----
-
-## Lazy Loading
-
-**Command:** `deno task example:lazy-loading`
-**Port:** 8002
-**File:** `examples/lazy-loading/server.tsx`
-
-Deferred content loading patterns:
-
-- Load on reveal (infinite scroll)
-- Load on page load
-- Skeleton loaders
-
-**Key patterns:**
-
-```tsx
-// Load when element enters viewport
-<div get="/content" trigger="revealed" swap="outerHTML">
-  <Skeleton />
-</div>
-
-// Load immediately on page load
-<div get="/data" trigger="load" swap="innerHTML">
-  Loading...
-</div>
-```
-
----
-
-## Form Validation
-
-**Command:** `deno task example:form-validation`
-**Port:** 8003
-**File:** `examples/form-validation/server.tsx`
-
-Server-side form validation:
-
-- Per-field validation on blur
-- Real-time error messages
-- Validation on form submission
-
-**Key patterns:**
-
-```tsx
-<input
-  name="email"
-  type="email"
-  get={routes.validate.email}
-  target={ids.emailError}
-  trigger="blur changed"
-  swap="innerHTML"
-/>
-<span id="email-error"></span>
-```
-
----
-
-## Polling
-
-**Command:** `deno task example:polling`
-**Port:** 8004
-**File:** `examples/polling/server.tsx`
-
-Live updates with polling:
-
-- Dashboard with auto-refreshing stats
-- Activity feed with new items
-- Configurable polling intervals
-
-**Key patterns:**
-
-```tsx
-<div
-  get="/stats"
-  target={ids.stats}
-  swap="innerHTML"
-  trigger="every 2s"
->
-  <Stats />
-</div>
-
-<div
-  get="/activity"
-  trigger="every 5s"
-  swap="afterbegin"
->
-  {/* New items appear at top */}
-</div>
-```
-
----
-
-## Tabs & Modal
-
-**Command:** `deno task example:tabs-modal`
-**Port:** 8005
-**File:** `examples/tabs-modal/server.tsx`
-
-Tab navigation and modal dialogs:
-
-- Tab switching with partial updates
-- Modal open/close patterns
-- Multiple targets
-
-**Key patterns:**
-
-```tsx
-// Tab navigation
-<button get={routes.tab} params={{ id: "users" }} target={ids.content}>
-  Users
-</button>
-
-// Modal trigger
-<button get="/modal" target={ids.modal} swap="innerHTML">
-  Open Modal
-</button>
-```
-
----
-
-## Running Examples
-
-1. Clone the repository
-2. Run the desired example:
-   ```bash
-   deno task example:todos
-   ```
-3. Open the URL shown in the console (e.g., http://localhost:8000)
-
-Each example is self-contained with its own:
-- `server.tsx` - Main server and components
-- `routes.ts` - Type-safe route definitions
-- `ids.ts` - Branded element ID definitions
+- Most examples are self-contained in `server.tsx` plus optional `components.tsx`/`ids.ts` helpers.
+- Not every example has a separate `routes.ts` file; routes are often co-located with components.
+- By default, each example serves on port `8000` unless you override it in your own runtime wrapper.

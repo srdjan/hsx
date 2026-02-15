@@ -727,13 +727,33 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 
 ## Examples Index
 
-Browse `examples/README.md` for a quick map of each demo and when to use it.
+| Example | Command | File |
+| --- | --- | --- |
+| Todos | `deno task example:todos` | `examples/todos/server.tsx` |
+| Active Search | `deno task example:active-search` | `examples/active-search/server.tsx` |
+| Lazy Loading | `deno task example:lazy-loading` | `examples/lazy-loading/server.tsx` |
+| Form Validation | `deno task example:form-validation` | `examples/form-validation/server.tsx` |
+| Polling | `deno task example:polling` | `examples/polling/server.tsx` |
+| Tabs & Modal | `deno task example:tabs-modal` | `examples/tabs-modal/server.tsx` |
+| HSX Components | `deno task example:hsx-components` | `examples/hsx-components/server.tsx` |
+| HSX Page | `deno task example:hsx-page` | `examples/hsx-page/server.tsx` |
+| Low-Level API | `deno task example:low-level-api` | `examples/low-level-api/server.tsx` |
+| Loom Widget | `deno task example:loom-widget` | `examples/loom-widget/server.tsx` |
+
+For the Loom demo, build assets once before starting the server:
+
+```bash
+deno task build:loom
+deno task example:loom-widget
+```
+
+More detail: `examples/README.md` and `docs/WIDGETS.md`.
 
 ## Troubleshooting
 
 ### Common Errors
 
-__"Manual hx-_ attributes are not allowed"_*
+**"Manual hx-* attributes are not allowed"**
 
 HSX throws if you use `hx-*` attributes directly:
 

@@ -5,12 +5,17 @@
  * 1. SSR mode - rendered through the HSX pipeline via widgetToHsxComponent
  * 2. Embed mode - served as an iframe-ready HTML shell with a Preact bundle
  *
- * Run with: deno run --allow-net --allow-read examples/loom-widget/server.tsx
+ * Build assets first:
+ *   deno task build:loom
+ *
+ * Then run:
+ *   deno task example:loom-widget
  */
 
 import { hsxPage } from "@srdjan/hsx";
 import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import { widgetToHsxComponent } from "@srdjan/loom/ssr";
+import type { Widget } from "@srdjan/loom";
 import { greetingWidget } from "../../packages/loom/examples/greeting-widget.tsx";
 import { createEmbedHandler } from "../../packages/loom/embed/embed-handler.ts";
 
@@ -26,8 +31,8 @@ const GreetingRoute = widgetToHsxComponent(greetingWidget, {
 // Embed Handler - Widget served as iframe shell
 // =============================================================================
 
-const widgets = new Map<string, typeof greetingWidget>([
-  ["loom-greeting", greetingWidget],
+const widgets = new Map<string, Widget<unknown>>([
+  ["loom-greeting", greetingWidget as unknown as Widget<unknown>],
 ]);
 
 const embedHandler = createEmbedHandler(widgets, {
@@ -62,11 +67,12 @@ const Page = hsxPage(() => (
         <div class="card">
           <h2>Embed Mode</h2>
           <p>
-            The widget below would be served as an iframe shell for embedding.
+            The widget shell is served for iframe embedding.
             Try: <a href="/embed/loom-greeting?name=World&amp;message=Hi!">/embed/loom-greeting?name=World&amp;message=Hi!</a>
           </p>
           <p>
-            On a third-party site, you would use:
+            Build client assets with <code>deno task build:loom</code>, then
+            use this on a third-party site:
           </p>
           <pre><code>{`<div data-loom-uri="https://yoursite.com/embed/loom-greeting?name=World"></div>
 <script src="https://yoursite.com/static/loom/snippet.js"></script>`}</code></pre>
@@ -107,6 +113,29 @@ Deno.serve((req) => {
     return new Response(hsxStyles, {
       headers: { "content-type": "text/css; charset=utf-8" },
     });
+  }
+
+  // Built Loom assets (dist/loom)
+  if (pathname.startsWith("/static/loom/")) {
+    const asset = pathname.slice("/static/loom/".length);
+    if (!asset || asset.includes("/") || asset.includes("..")) {
+      return new Response("Not Found", { status: 404 });
+    }
+
+    const fileUrl = new URL(`../../dist/loom/${asset}`, import.meta.url);
+    return Deno.readTextFile(fileUrl).then(
+      (js) => new Response(js, {
+        headers: { "content-type": "text/javascript; charset=utf-8" },
+      }),
+      () =>
+        new Response(
+          `// ${asset} not found. Run: deno task build:loom`,
+          {
+            status: 404,
+            headers: { "content-type": "text/javascript; charset=utf-8" },
+          },
+        ),
+    );
   }
 
   // Home page

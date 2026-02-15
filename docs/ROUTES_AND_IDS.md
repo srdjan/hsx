@@ -17,7 +17,7 @@ export type Route<Path extends string, Params> = {
 You can use `route()` to build these:
 
 ```ts
-import { route } from "../src/hsx-types.ts";
+import { route } from "jsr:@srdjan/hsx";
 
 export const routes = {
   todos: {
@@ -36,7 +36,7 @@ URLs using `build(params)` when provided.
 Element IDs can be created via `id(name)`:
 
 ```ts
-import { id } from "../src/hsx-types.ts";
+import { id } from "jsr:@srdjan/hsx";
 
 export const ids = {
   list: id("todo-list"),
