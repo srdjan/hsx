@@ -37,14 +37,14 @@ export type PropsValidator<P> = {
  * A Widget is a self-contained UI component that can render in both SSR
  * and client-side contexts.
  *
- * The `tag` must follow custom element naming: `loom-${string}` (contains a hyphen).
+ * The `tag` must follow custom element naming: `hsx-${string}` (contains a hyphen).
  * The `render` function is a pure function of props - no side effects.
  *
  * @typeParam P - The props type for this widget
  */
 export type Widget<P> = {
-  /** Custom element tag name. Must start with "loom-". */
-  readonly tag: `loom-${string}`;
+  /** Custom element tag name. Must start with "hsx-". */
+  readonly tag: `hsx-${string}`;
 
   /** Validates raw input (query params, attributes, etc.) into typed props. */
   readonly props: PropsValidator<P>;

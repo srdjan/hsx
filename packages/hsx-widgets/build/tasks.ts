@@ -1,12 +1,12 @@
 /**
- * Build Tasks CLI - Orchestrates esbuild compilation for Loom embeds.
+ * Build Tasks CLI - Orchestrates esbuild compilation for HSX Widgets embeds.
  *
  * Usage:
- *   deno run --allow-all packages/loom/build/tasks.ts --target=embeds
- *   deno run --allow-all packages/loom/build/tasks.ts --target=embeds --entry=packages/loom/examples/greeting-widget.tsx --export=greetingWidget
- *   deno run --allow-all packages/loom/build/tasks.ts --target=snippet
- *   deno run --allow-all packages/loom/build/tasks.ts --target=all
- *   deno run --allow-all packages/loom/build/tasks.ts --target=all --entry=packages/loom/examples/greeting-widget.tsx --export=greetingWidget
+ *   deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds
+ *   deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds --entry=packages/hsx-widgets/examples/greeting-widget.tsx --export=greetingWidget
+ *   deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=snippet
+ *   deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=all
+ *   deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=all --entry=packages/hsx-widgets/examples/greeting-widget.tsx --export=greetingWidget
  *
  * @module tasks
  */
@@ -35,11 +35,11 @@ type WidgetTarget = {
 
 const DEFAULT_WIDGETS: ReadonlyArray<WidgetTarget> = [
   {
-    entry: "packages/loom/examples/greeting-widget.tsx",
+    entry: "packages/hsx-widgets/examples/greeting-widget.tsx",
     exportName: "greetingWidget",
   },
   {
-    entry: "packages/loom/examples/status-widget.tsx",
+    entry: "packages/hsx-widgets/examples/status-widget.tsx",
     exportName: "statusWidget",
   },
 ];
@@ -63,7 +63,7 @@ function parseArgs(args: string[]): BuildArgs {
     target,
     entry: parsed.entry,
     exportName: parsed.export,
-    outDir: parsed.outDir ?? "dist/loom",
+    outDir: parsed.outDir ?? "dist/hsx",
   };
 }
 
@@ -115,9 +115,9 @@ async function buildSingleEmbed(
   const widgetTag = await resolveWidgetTag(entry, exportName);
   if (!widgetTag) return false;
 
-  const outDir = path.resolve(args.outDir ?? "dist/loom");
+  const outDir = path.resolve(args.outDir ?? "dist/hsx");
   const configPath = path.resolve("deno.json");
-  const shimPath = path.resolve("packages/loom/build/shims/hsx-noop.ts");
+  const shimPath = path.resolve("packages/hsx-widgets/build/shims/hsx-noop.ts");
   const outFile = path.join(outDir, `${widgetTag}.js`);
 
   // Generate the entry point source
@@ -146,7 +146,7 @@ async function buildSingleEmbed(
       platform: "browser",
       plugins: [
         {
-          name: "loom-hsx-redirect",
+          name: "hsx-widgets-hsx-redirect",
           setup(build) {
             build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
               path: shimPath,
@@ -192,35 +192,33 @@ async function buildEmbeds(args: BuildArgs): Promise<boolean> {
 // =============================================================================
 
 async function buildSnippet(args: BuildArgs): Promise<boolean> {
-  const outDir = path.resolve(args.outDir ?? "dist/loom");
+  const outDir = path.resolve(args.outDir ?? "dist/hsx");
   const configPath = path.resolve("deno.json");
-  const snippetPath = path.resolve("packages/loom/embed/snippet.ts");
+  const snippetPath = path.resolve("packages/hsx-widgets/embed/snippet.ts");
 
   await Deno.mkdir(outDir, { recursive: true });
 
   console.log("Building snippet script...");
 
-  try {
-    const result = await esbuild.build({
-      entryPoints: [snippetPath],
-      outdir: outDir,
-      bundle: true,
-      format: "iife",
-      target: "es2020",
-      minify: true,
-      platform: "browser",
-      plugins: [...denoPlugins({ configPath })],
-      write: true,
-    });
+  const result = await esbuild.build({
+    entryPoints: [snippetPath],
+    outdir: outDir,
+    bundle: true,
+    format: "iife",
+    target: "es2020",
+    minify: true,
+    platform: "browser",
+    plugins: [...denoPlugins({ configPath })],
+    write: true,
+  });
 
-    if (result.errors.length > 0) {
-      console.error("Build errors:", result.errors);
-      return false;
-    }
-
-    console.log(`Snippet built to ${outDir}/snippet.js`);
-    return true;
+  if (result.errors.length > 0) {
+    console.error("Build errors:", result.errors);
+    return false;
   }
+
+  console.log(`Snippet built to ${outDir}/snippet.js`);
+  return true;
 }
 
 // =============================================================================

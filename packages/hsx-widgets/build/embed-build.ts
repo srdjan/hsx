@@ -19,7 +19,7 @@ import * as path from "https://deno.land/std@0.208.0/path/mod.ts";
 // =============================================================================
 
 export type EmbedBuildOptions = {
-  /** Path to the widget entry file (e.g., "packages/loom/examples/greeting-widget.tsx"). */
+  /** Path to the widget entry file (e.g., "packages/hsx-widgets/examples/greeting-widget.tsx"). */
   readonly entryPoint: string;
   /** Output directory for the built bundle. */
   readonly outDir: string;
@@ -48,7 +48,7 @@ export type EmbedBuildResult = {
  */
 function hsxRedirectPlugin(shimPath: string): esbuild.Plugin {
   return {
-    name: "loom-hsx-redirect",
+    name: "hsx-widgets-hsx-redirect",
     setup(build) {
       // Redirect all @srdjan/hsx imports to the noop shim
       build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
@@ -77,7 +77,7 @@ function hsxRedirectPlugin(shimPath: string): esbuild.Plugin {
 export async function buildEmbed(options: EmbedBuildOptions): Promise<EmbedBuildResult> {
   const shimPath = options.hsxShimPath
     ? path.resolve(options.hsxShimPath)
-    : path.resolve("packages/loom/build/shims/hsx-noop.ts");
+    : path.resolve("packages/hsx-widgets/build/shims/hsx-noop.ts");
 
   const configPath = options.configPath
     ? path.resolve(options.configPath)

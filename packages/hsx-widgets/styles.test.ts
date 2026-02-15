@@ -1,7 +1,7 @@
 /**
- * Unit tests for Loom style collection and hoistStyles behavior.
+ * Unit tests for HSX Widgets style collection and hoistStyles behavior.
  *
- * Run with: deno test --allow-read --allow-net packages/loom/styles.test.ts
+ * Run with: deno test --allow-read --allow-net packages/hsx-widgets/styles.test.ts
  */
 
 import {
@@ -25,7 +25,7 @@ type GreetingProps = { readonly name: string };
 type CounterProps = { readonly count: number };
 
 const greetingWidget: Widget<GreetingProps> = {
-  tag: "loom-greeting",
+  tag: "hsx-greeting",
   props: {
     validate(raw: unknown) {
       const obj = raw as Record<string, unknown>;
@@ -40,7 +40,7 @@ const greetingWidget: Widget<GreetingProps> = {
 };
 
 const counterWidget: Widget<CounterProps> = {
-  tag: "loom-counter",
+  tag: "hsx-counter",
   props: {
     validate(raw: unknown) {
       const obj = raw as Record<string, unknown>;
@@ -57,7 +57,7 @@ const counterWidget: Widget<CounterProps> = {
 
 const noStyleWidget: Widget<GreetingProps> = {
   ...greetingWidget,
-  tag: "loom-nostyle",
+  tag: "hsx-nostyle",
   styles: "",
 };
 
@@ -137,7 +137,7 @@ Deno.test("SSR adapter with hoistStyles: true omits inline style tag", async () 
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, 'data-widget="loom-greeting"');
+  assertStringIncludes(html, 'data-widget="hsx-greeting"');
   assertStringIncludes(html, "Hello, Alice!");
   assertEquals(html.includes("<style>"), false);
 });
@@ -164,7 +164,7 @@ Deno.test("SSR adapter with hoistStyles: true still renders content correctly", 
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, 'data-widget="loom-counter"');
+  assertStringIncludes(html, 'data-widget="hsx-counter"');
   assertStringIncludes(html, "42");
   assertEquals(html.includes("<style>"), false);
 });
@@ -257,19 +257,19 @@ Deno.test("hsxPage with no-style widgets renders without style tag", () => {
 
 const shadowOpenWidget: Widget<GreetingProps> = {
   ...greetingWidget,
-  tag: "loom-shadow-open",
+  tag: "hsx-shadow-open",
   shadow: "open",
 };
 
 const shadowClosedWidget: Widget<GreetingProps> = {
   ...greetingWidget,
-  tag: "loom-shadow-closed",
+  tag: "hsx-shadow-closed",
   shadow: "closed",
 };
 
 const shadowNoStyleWidget: Widget<GreetingProps> = {
   ...greetingWidget,
-  tag: "loom-shadow-nostyle",
+  tag: "hsx-shadow-nostyle",
   styles: "",
   shadow: "open",
 };
@@ -310,8 +310,8 @@ Deno.test("SSR adapter uses widget tag as wrapper element with shadow DOM", asyn
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, '<loom-shadow-open data-widget="loom-shadow-open">');
-  assertStringIncludes(html, "</loom-shadow-open>");
+  assertStringIncludes(html, '<hsx-shadow-open data-widget="hsx-shadow-open">');
+  assertStringIncludes(html, "</hsx-shadow-open>");
   // Should NOT use <div> wrapper
   assertEquals(html.includes("<div data-widget="), false);
 });
@@ -354,7 +354,7 @@ Deno.test("Default behavior (no shadow field) unchanged - uses div wrapper", asy
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, '<div data-widget="loom-greeting">');
+  assertStringIncludes(html, '<div data-widget="hsx-greeting">');
   assertEquals(html.includes("<template"), false);
   assertEquals(html.includes("shadowrootmode"), false);
 });
@@ -362,7 +362,7 @@ Deno.test("Default behavior (no shadow field) unchanged - uses div wrapper", asy
 Deno.test("Explicit shadow: none behaves identically to omitting shadow field", async () => {
   const shadowNoneWidget: Widget<GreetingProps> = {
     ...greetingWidget,
-    tag: "loom-shadow-none",
+    tag: "hsx-shadow-none",
     shadow: "none",
   };
 
@@ -374,7 +374,7 @@ Deno.test("Explicit shadow: none behaves identically to omitting shadow field", 
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, '<div data-widget="loom-shadow-none">');
+  assertStringIncludes(html, '<div data-widget="hsx-shadow-none">');
   assertStringIncludes(html, "<style>.greeting { color: blue; }</style>");
   assertStringIncludes(html, "Hello, Explicit!");
   assertEquals(html.includes("<template"), false);

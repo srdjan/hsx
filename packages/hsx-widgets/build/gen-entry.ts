@@ -35,7 +35,7 @@ export type GenEntryOptions = {
  * @returns A string of TypeScript source code ready for esbuild compilation.
  */
 export function generateEmbedEntry(options: GenEntryOptions): string {
-  return `// Auto-generated Loom embed entry point
+  return `// Auto-generated HSX Widgets embed entry point
 import { render, h } from "npm:preact@10.25.4";
 import { ${options.widgetExportName} as widget } from "${options.widgetImportPath}";
 
@@ -50,10 +50,10 @@ if (root) {
         const vnode = widget.render(result.value);
         render(vnode, root);
       } else {
-        console.error("[loom] Validation failed:", result.error);
+        console.error("[hsx] Validation failed:", result.error);
       }
     } catch (e) {
-      console.error("[loom] Failed to parse props:", e);
+      console.error("[hsx] Failed to parse props:", e);
     }
   }
 }

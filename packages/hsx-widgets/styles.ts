@@ -1,5 +1,5 @@
 /**
- * Style collection utilities for Loom widgets in hsxPage contexts.
+ * Style collection utilities for HSX widgets in hsxPage contexts.
  *
  * When rendering widgets inside an hsxPage, `<style>` tags must live in
  * `<head>`. These utilities collect and deduplicate widget CSS so the user

@@ -1,7 +1,7 @@
 /**
- * Unit tests for Loom embed entry point generator.
+ * Unit tests for HSX Widgets embed entry point generator.
  *
- * Run with: deno test --allow-all packages/loom/build/gen-entry.test.ts
+ * Run with: deno test --allow-all packages/hsx-widgets/build/gen-entry.test.ts
  */
 
 import {

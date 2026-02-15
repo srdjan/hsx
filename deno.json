@@ -2,7 +2,7 @@
   "workspace": [
     "./packages/hsx",
     "./packages/hsx-styles",
-    "./packages/loom"
+    "./packages/hsx-widgets"
   ],
   "exports": {
     ".": "./packages/hsx/mod.ts",
@@ -14,9 +14,9 @@
     "@srdjan/hsx/core": "./packages/hsx/core.ts",
     "@srdjan/hsx/components": "./packages/hsx/components.ts",
     "@srdjan/hsx-styles": "./packages/hsx-styles/mod.ts",
-    "@srdjan/loom": "./packages/loom/mod.ts",
-    "@srdjan/loom/ssr": "./packages/loom/ssr-adapter.ts",
-    "@srdjan/loom/styles": "./packages/loom/styles.ts",
+    "@srdjan/hsx-widgets": "./packages/hsx-widgets/mod.ts",
+    "@srdjan/hsx-widgets/ssr": "./packages/hsx-widgets/ssr-adapter.ts",
+    "@srdjan/hsx-widgets/styles": "./packages/hsx-widgets/styles.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
@@ -26,11 +26,11 @@
     "strict": true
   },
   "tasks": {
-    "test": "deno test --allow-read --allow-net --ignore=packages/loom/build/ packages/",
-    "test:loom": "deno test --allow-read --allow-net --ignore=packages/loom/build/ packages/loom/",
-    "test:loom:build": "deno test --allow-all packages/loom/build/",
-    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/loom/mod.ts",
-    "check:loom": "deno check packages/loom/mod.ts",
+    "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/",
+    "test:hsx-widgets": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/hsx-widgets/",
+    "test:hsx-widgets:build": "deno test --allow-all packages/hsx-widgets/build/",
+    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts",
+    "check:hsx-widgets": "deno check packages/hsx-widgets/mod.ts",
     "publish": "deno publish",
     "publish:hsx": "cd packages/hsx && deno publish",
     "publish:styles": "cd packages/hsx-styles && deno publish",
@@ -43,9 +43,9 @@
     "example:hsx-components": "deno run --allow-net --allow-read examples/hsx-components/server.tsx",
     "example:hsx-page": "deno run --allow-net --allow-read examples/hsx-page/server.tsx",
     "example:low-level-api": "deno run --allow-net --allow-read examples/low-level-api/server.tsx",
-    "example:loom-widget": "deno run --allow-net --allow-read examples/loom-widget/server.tsx",
-    "build:loom:embeds": "deno run --allow-all packages/loom/build/tasks.ts --target=embeds",
-    "build:loom:snippet": "deno run --allow-all packages/loom/build/tasks.ts --target=snippet",
-    "build:loom": "deno run --allow-all packages/loom/build/tasks.ts --target=all"
+    "example:hsx-widget": "deno run --allow-net --allow-read examples/hsx-widget/server.tsx",
+    "build:hsx-widgets:embeds": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds",
+    "build:hsx-widgets:snippet": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=snippet",
+    "build:hsx-widgets": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=all"
   }
 }

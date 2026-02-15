@@ -20,7 +20,7 @@ export type EmbeddableWidget = Pick<Widget<unknown>, "tag" | "styles">;
 export type EmbedHandlerOptions = {
   /** Base path for embed routes. Defaults to "/embed". */
   readonly basePath?: string;
-  /** Base URL for bundle assets. Defaults to "/static/loom". */
+  /** Base URL for bundle assets. Defaults to "/static/hsx". */
   readonly bundlePath?: string;
 };
 
@@ -62,7 +62,7 @@ function embedShell(
 // Height negotiation: inform parent iframe of content height
 const ro = new ResizeObserver(() => {
   const h = document.documentElement.scrollHeight;
-  window.parent.postMessage({ type: "loom-resize", tag: "${tag}", height: h }, "*");
+  window.parent.postMessage({ type: "hsx-resize", tag: "${tag}", height: h }, "*");
 });
 ro.observe(document.body);
 </script>
@@ -83,10 +83,10 @@ ro.observe(document.body);
  *
  * @example
  * ```ts
- * const widgets = new Map([["loom-greeting", greetingWidget]]);
+ * const widgets = new Map([["hsx-greeting", greetingWidget]]);
  * const embedHandler = createEmbedHandler(widgets, {
  *   basePath: "/embed",
- *   bundlePath: "/static/loom",
+ *   bundlePath: "/static/hsx",
  * });
  *
  * // In your server:
@@ -100,7 +100,7 @@ export function createEmbedHandler(
   options: EmbedHandlerOptions = {},
 ): (req: Request) => Response | null {
   const basePath = (options.basePath ?? "/embed").replace(/\/$/, "");
-  const bundlePath = (options.bundlePath ?? "/static/loom").replace(/\/$/, "");
+  const bundlePath = (options.bundlePath ?? "/static/hsx").replace(/\/$/, "");
 
   return (req: Request): Response | null => {
     const url = new URL(req.url);

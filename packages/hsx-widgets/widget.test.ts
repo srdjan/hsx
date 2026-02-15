@@ -1,7 +1,7 @@
 /**
- * Unit tests for Loom Widget protocol and SSR adapter.
+ * Unit tests for HSX Widget protocol and SSR adapter.
  *
- * Run with: deno test --allow-read --allow-net packages/loom/widget.test.ts
+ * Run with: deno test --allow-read --allow-net packages/hsx-widgets/widget.test.ts
  */
 
 import {
@@ -22,7 +22,7 @@ import { widgetToHsxComponent } from "./ssr-adapter.ts";
 type TestProps = { readonly name: string; readonly count: number };
 
 const testWidget: Widget<TestProps> = {
-  tag: "loom-test",
+  tag: "hsx-test",
   props: {
     validate(raw: unknown) {
       if (typeof raw !== "object" || raw === null) {
@@ -39,10 +39,10 @@ const testWidget: Widget<TestProps> = {
       return ok({ name: obj.name as string, count });
     },
   },
-  styles: ".loom-test { color: red; }",
+  styles: ".hsx-test { color: red; }",
   render(props) {
     return jsx("div", {
-      class: "loom-test",
+      class: "hsx-test",
       children: `${props.name}: ${props.count}`,
     });
   },
@@ -93,7 +93,7 @@ Deno.test("match() handles fail case", () => {
 Deno.test("widget render produces valid VNode serializable by renderHtml", () => {
   const vnode = testWidget.render({ name: "Alice", count: 5 });
   const html = renderHtml(vnode);
-  assertEquals(html, '<div class="loom-test">Alice: 5</div>');
+  assertEquals(html, '<div class="hsx-test">Alice: 5</div>');
 });
 
 Deno.test("widget render escapes HTML in props", () => {
@@ -171,8 +171,8 @@ Deno.test("SSR adapter wraps output in data-widget div with style", async () => 
 
   assertEquals(res.status, 200);
   const html = await res.text();
-  assertStringIncludes(html, 'data-widget="loom-test"');
-  assertStringIncludes(html, "<style>.loom-test { color: red; }</style>");
+  assertStringIncludes(html, 'data-widget="hsx-test"');
+  assertStringIncludes(html, "<style>.hsx-test { color: red; }</style>");
   assertStringIncludes(html, "Alice: 5");
 });
 
@@ -287,6 +287,6 @@ Deno.test("SSR adapter omits style tag when widget has empty styles", async () =
   const res = await component.handle(req);
   const html = await res.text();
 
-  assertStringIncludes(html, 'data-widget="loom-test"');
+  assertStringIncludes(html, 'data-widget="hsx-test"');
   assertEquals(html.includes("<style>"), false);
 });

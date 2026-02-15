@@ -1,28 +1,28 @@
-# Loom Widgets Guide
+# HSX Widgets Guide
 
 This guide documents the current widget workflow in this repository.
 
-Loom lets you define a `Widget<P>` once and use it in two places:
+HSX Widgets lets you define a `Widget<P>` once and use it in two places:
 
 - SSR: render through HSX routes
 - Embed: serve an iframe shell that loads a compiled client bundle
 
 ## Files To Start With
 
-- `packages/loom/examples/greeting-widget.tsx` - minimal widget definition
-- `packages/loom/examples/status-widget.tsx` - query-driven status widget example
-- `examples/loom-widget/server.tsx` - runnable SSR + embed example server
-- `packages/loom/ssr-adapter.ts` - `widgetToHsxComponent()` bridge
-- `packages/loom/embed/embed-handler.ts` - embed shell handler
-- `packages/loom/embed/snippet.ts` - host page snippet loader
+- `packages/hsx-widgets/examples/greeting-widget.tsx` - minimal widget definition
+- `packages/hsx-widgets/examples/status-widget.tsx` - query-driven status widget example
+- `examples/hsx-widget/server.tsx` - runnable SSR + embed example server
+- `packages/hsx-widgets/ssr-adapter.ts` - `widgetToHsxComponent()` bridge
+- `packages/hsx-widgets/embed/embed-handler.ts` - embed shell handler
+- `packages/hsx-widgets/embed/snippet.ts` - host page snippet loader
 
 ## 1. Define A Widget
 
 A widget is a typed record with validation, styles, pure rendering, and optional loading.
 
 ```tsx
-import type { Widget } from "@srdjan/loom";
-import { ok, fail } from "@srdjan/loom";
+import type { Widget } from "@srdjan/hsx-widgets";
+import { ok, fail } from "@srdjan/hsx-widgets";
 
 type GreetingProps = {
   readonly name: string;
@@ -30,7 +30,7 @@ type GreetingProps = {
 };
 
 export const greetingWidget: Widget<GreetingProps> = {
-  tag: "loom-greeting",
+  tag: "hsx-greeting",
 
   props: {
     validate(raw) {
@@ -48,11 +48,11 @@ export const greetingWidget: Widget<GreetingProps> = {
     },
   },
 
-  styles: `.loom-greeting { font-family: system-ui, sans-serif; padding: 1rem; }`,
+  styles: `.hsx-greeting { font-family: system-ui, sans-serif; padding: 1rem; }`,
 
   render(props) {
     return (
-      <div class="loom-greeting">
+      <div class="hsx-greeting">
         <h2>{props.name}</h2>
         <p>{props.message}</p>
       </div>
@@ -76,7 +76,7 @@ export const greetingWidget: Widget<GreetingProps> = {
 Use `widgetToHsxComponent()` to convert the widget into an HSX route.
 
 ```tsx
-import { widgetToHsxComponent } from "@srdjan/loom/ssr";
+import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
 
 const GreetingRoute = widgetToHsxComponent(greetingWidget, {
   path: "/widgets/greeting/:name",
@@ -90,8 +90,8 @@ if (GreetingRoute.match(url.pathname)) {
 Try it with:
 
 ```bash
-deno task build:loom
-deno task example:loom-widget
+deno task build:hsx-widgets
+deno task example:hsx-widget
 # then open /widgets/greeting/World and /widgets/status/Build%20Healthy?tone=ok
 ```
 
@@ -100,48 +100,48 @@ deno task example:loom-widget
 The repo example uses `createEmbedHandler()` to serve `/embed/:tag` HTML shells.
 
 ```tsx
-import { createEmbedHandler } from "../../packages/loom/embed/embed-handler.ts";
+import { createEmbedHandler } from "../../packages/hsx-widgets/embed/embed-handler.ts";
 
 const widgets = new Map([
-  ["loom-greeting", greetingWidget],
-  ["loom-status", statusWidget],
+  ["hsx-greeting", greetingWidget],
+  ["hsx-status", statusWidget],
 ]);
 
 const embedHandler = createEmbedHandler(widgets, {
   basePath: "/embed",
-  bundlePath: "/static/loom",
+  bundlePath: "/static/hsx",
 });
 
 const res = embedHandler(req);
 if (res) return res;
 ```
 
-Each shell includes script URLs like `/static/loom/loom-greeting.js` and `/static/loom/loom-status.js`.
+Each shell includes script URLs like `/static/hsx/hsx-greeting.js` and `/static/hsx/hsx-status.js`.
 
 ## 4. Build Embed Assets
 
 Build both the widget bundle and the host snippet:
 
 ```bash
-deno task build:loom
+deno task build:hsx-widgets
 ```
 
-By default this writes assets into `dist/loom/` for both example widgets:
+By default this writes assets into `dist/hsx/` for both example widgets:
 
-- `dist/loom/loom-greeting.js`
-- `dist/loom/loom-status.js`
-- `dist/loom/snippet.js`
+- `dist/hsx/hsx-greeting.js`
+- `dist/hsx/hsx-status.js`
+- `dist/hsx/snippet.js`
 
-The example server (`examples/loom-widget/server.tsx`) serves these files from `/static/loom/*`.
+The example server (`examples/hsx-widget/server.tsx`) serves these files from `/static/hsx/*`.
 
 ## 5. Host Page Integration
 
 On a third-party page, use a placeholder plus snippet script:
 
 ```html
-<div data-loom-uri="https://yoursite.com/embed/loom-greeting?name=World&message=Hi!"></div>
-<div data-loom-uri="https://yoursite.com/embed/loom-status?label=Build%20Healthy&tone=ok"></div>
-<script src="https://yoursite.com/static/loom/snippet.js"></script>
+<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World&message=Hi!"></div>
+<div data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"></div>
+<script src="https://yoursite.com/static/hsx/snippet.js"></script>
 ```
 
 The snippet replaces the placeholder with an iframe and listens for resize messages.
@@ -151,8 +151,8 @@ The snippet replaces the placeholder with an iframe and listens for resize messa
 If you need styles in `<head>` (instead of inline in each widget wrapper), use `hoistStyles` and `WidgetStyles`.
 
 ```tsx
-import { widgetToHsxComponent } from "@srdjan/loom/ssr";
-import { WidgetStyles } from "@srdjan/loom/styles";
+import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
+import { WidgetStyles } from "@srdjan/hsx-widgets/styles";
 
 const GreetingRoute = widgetToHsxComponent(greetingWidget, {
   path: "/widgets/greeting/:name",
@@ -178,7 +178,7 @@ Widgets can render inside a Declarative Shadow DOM by setting the `shadow` field
 
 ```ts
 const myWidget: Widget<MyProps> = {
-  tag: "loom-example",
+  tag: "hsx-example",
   shadow: "open",   // or "closed"
   // ...
 };
@@ -188,14 +188,14 @@ const myWidget: Widget<MyProps> = {
 
 **Key behaviors:**
 
-- The wrapper element is the custom element tag (e.g., `<loom-example>`) instead of `<div>`.
+- The wrapper element is the custom element tag (e.g., `<hsx-example>`) instead of `<div>`.
 - Styles always go inside the shadow root. The `hoistStyles` option is ignored for shadow DOM widgets - scoped styles belong in the shadow root.
 - When `shadow` is omitted or set to `"none"`, behavior is unchanged (light DOM `<div>` wrapper).
 
 **Light DOM output** (default):
 
 ```html
-<div data-widget="loom-example">
+<div data-widget="hsx-example">
   <style>.example { color: blue; }</style>
   <div class="example">Hello</div>
 </div>
@@ -204,18 +204,18 @@ const myWidget: Widget<MyProps> = {
 **Shadow DOM output** (`shadow: "open"`):
 
 ```html
-<loom-example data-widget="loom-example">
+<hsx-example data-widget="hsx-example">
   <template shadowrootmode="open">
     <style>.example { color: blue; }</style>
     <div class="example">Hello</div>
   </template>
-</loom-example>
+</hsx-example>
 ```
 
 ## Quick Start Checklist
 
-1. Define widgets (`packages/loom/examples/greeting-widget.tsx` and `packages/loom/examples/status-widget.tsx` as references).
-2. Build assets: `deno task build:loom`.
-3. Run demo server: `deno task example:loom-widget`.
+1. Define widgets (`packages/hsx-widgets/examples/greeting-widget.tsx` and `packages/hsx-widgets/examples/status-widget.tsx` as references).
+2. Build assets: `deno task build:hsx-widgets`.
+3. Run demo server: `deno task example:hsx-widget`.
 4. Test SSR routes: `/widgets/greeting/World` and `/widgets/status/Build%20Healthy?tone=ok`.
-5. Test embed shells: `/embed/loom-greeting?name=World&message=Hi!` and `/embed/loom-status?label=Build%20Healthy&tone=ok`.
+5. Test embed shells: `/embed/hsx-greeting?name=World&message=Hi!` and `/embed/hsx-status?label=Build%20Healthy&tone=ok`.

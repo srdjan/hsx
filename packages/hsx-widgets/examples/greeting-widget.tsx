@@ -1,5 +1,5 @@
 /**
- * Greeting Widget - A minimal Loom widget example.
+ * Greeting Widget - A minimal HSX widget example.
  *
  * Demonstrates the Widget<P> protocol with validation, styles, and a
  * pure render function using only standard HTML elements.
@@ -22,7 +22,7 @@ type GreetingProps = {
 // =============================================================================
 
 export const greetingWidget: Widget<GreetingProps> = {
-  tag: "loom-greeting",
+  tag: "hsx-greeting",
 
   props: {
     validate(raw: unknown) {
@@ -58,14 +58,14 @@ export const greetingWidget: Widget<GreetingProps> = {
   },
 
   styles: `
-    .loom-greeting { font-family: system-ui, sans-serif; padding: 1rem; }
-    .loom-greeting h2 { margin: 0 0 0.5rem 0; }
-    .loom-greeting p { margin: 0; color: #555; }
+    .hsx-greeting { font-family: system-ui, sans-serif; padding: 1rem; }
+    .hsx-greeting h2 { margin: 0 0 0.5rem 0; }
+    .hsx-greeting p { margin: 0; color: #555; }
   `,
 
   render(props) {
     return (
-      <div class="loom-greeting">
+      <div class="hsx-greeting">
         <h2>{props.name}</h2>
         <p>{props.message}</p>
       </div>

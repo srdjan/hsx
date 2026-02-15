@@ -1,7 +1,7 @@
 /**
- * Unit tests for Loom embed handler.
+ * Unit tests for HSX Widgets embed handler.
  *
- * Run with: deno test --allow-read --allow-net packages/loom/embed/embed-handler.test.ts
+ * Run with: deno test --allow-read --allow-net packages/hsx-widgets/embed/embed-handler.test.ts
  */
 
 import {
@@ -15,12 +15,12 @@ import { createEmbedHandler, type EmbeddableWidget } from "./embed-handler.ts";
 // =============================================================================
 
 const testWidget: EmbeddableWidget = {
-  tag: "loom-test",
-  styles: ".loom-test { color: red; }",
+  tag: "hsx-test",
+  styles: ".hsx-test { color: red; }",
 };
 
 const noStyleWidget: EmbeddableWidget = {
-  tag: "loom-bare",
+  tag: "hsx-bare",
   styles: "",
 };
 
@@ -31,7 +31,7 @@ function makeWidgets(
 }
 
 function makeHandler(
-  widgets: ReadonlyMap<string, EmbeddableWidget> = makeWidgets(["loom-test", testWidget]),
+  widgets: ReadonlyMap<string, EmbeddableWidget> = makeWidgets(["hsx-test", testWidget]),
   options: { basePath?: string; bundlePath?: string } = {},
 ) {
   return createEmbedHandler(widgets, options);
@@ -57,12 +57,12 @@ Deno.test("returns null for base path without tag", () => {
 
 Deno.test("returns null for paths with nested segments", () => {
   const handler = makeHandler();
-  assertEquals(handler(req("/embed/loom-test/extra")), null);
+  assertEquals(handler(req("/embed/hsx-test/extra")), null);
 });
 
 Deno.test("returns 404 for unknown widget tag", async () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-unknown"));
+  const res = handler(req("/embed/hsx-unknown"));
   assertEquals(res?.status, 404);
   assertEquals(await res?.text(), "Widget not found");
 });
@@ -73,19 +73,19 @@ Deno.test("returns 404 for unknown widget tag", async () => {
 
 Deno.test("returns 200 HTML shell for known widget", async () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-test?name=World"));
+  const res = handler(req("/embed/hsx-test?name=World"));
 
   assertEquals(res?.status, 200);
   assertEquals(res?.headers.get("content-type"), "text/html; charset=utf-8");
 
   const html = await res!.text();
   assertStringIncludes(html, "<!DOCTYPE html>");
-  assertStringIncludes(html, ".loom-test { color: red; }");
+  assertStringIncludes(html, ".hsx-test { color: red; }");
 });
 
 Deno.test("query params appear in data-props attribute", async () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-test?name=World&count=5"));
+  const res = handler(req("/embed/hsx-test?name=World&count=5"));
   const html = await res!.text();
 
   assertStringIncludes(html, "data-props=");
@@ -95,15 +95,15 @@ Deno.test("query params appear in data-props attribute", async () => {
 
 Deno.test("bundle URL uses default bundlePath", async () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-test"));
+  const res = handler(req("/embed/hsx-test"));
   const html = await res!.text();
 
-  assertStringIncludes(html, 'src="/static/loom/loom-test.js"');
+  assertStringIncludes(html, 'src="/static/hsx/hsx-test.js"');
 });
 
 Deno.test("CSP header is present", () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-test"));
+  const res = handler(req("/embed/hsx-test"));
   const csp = res?.headers.get("content-security-policy");
 
   assertEquals(typeof csp, "string");
@@ -112,7 +112,7 @@ Deno.test("CSP header is present", () => {
 
 Deno.test("cache-control header is present", () => {
   const handler = makeHandler();
-  const res = handler(req("/embed/loom-test"));
+  const res = handler(req("/embed/hsx-test"));
 
   assertEquals(res?.headers.get("cache-control"), "public, max-age=300");
 });
@@ -122,23 +122,23 @@ Deno.test("cache-control header is present", () => {
 // =============================================================================
 
 Deno.test("custom basePath routes correctly", () => {
-  const handler = makeHandler(makeWidgets(["loom-test", testWidget]), {
+  const handler = makeHandler(makeWidgets(["hsx-test", testWidget]), {
     basePath: "/widgets/embed",
   });
 
-  assertEquals(handler(req("/embed/loom-test")), null);
-  assertEquals(handler(req("/widgets/embed/loom-test"))?.status, 200);
+  assertEquals(handler(req("/embed/hsx-test")), null);
+  assertEquals(handler(req("/widgets/embed/hsx-test"))?.status, 200);
 });
 
 Deno.test("custom bundlePath appears in script URL", async () => {
-  const handler = makeHandler(makeWidgets(["loom-test", testWidget]), {
+  const handler = makeHandler(makeWidgets(["hsx-test", testWidget]), {
     bundlePath: "/assets/widgets",
   });
 
-  const res = handler(req("/embed/loom-test"));
+  const res = handler(req("/embed/hsx-test"));
   const html = await res!.text();
 
-  assertStringIncludes(html, 'src="/assets/widgets/loom-test.js"');
+  assertStringIncludes(html, 'src="/assets/widgets/hsx-test.js"');
 });
 
 // =============================================================================
@@ -146,18 +146,18 @@ Deno.test("custom bundlePath appears in script URL", async () => {
 // =============================================================================
 
 Deno.test("widget with empty styles renders without extra CSS", async () => {
-  const handler = makeHandler(makeWidgets(["loom-bare", noStyleWidget]));
-  const res = handler(req("/embed/loom-bare"));
+  const handler = makeHandler(makeWidgets(["hsx-bare", noStyleWidget]));
+  const res = handler(req("/embed/hsx-bare"));
   const html = await res!.text();
 
   assertStringIncludes(html, "<!DOCTYPE html>");
   // The base reset styles are always present, but no widget-specific styles
-  assertEquals(html.includes(".loom-bare"), false);
+  assertEquals(html.includes(".hsx-bare"), false);
 });
 
 Deno.test("special characters in query params are escaped", async () => {
   const handler = makeHandler();
-  const res = handler(req('/embed/loom-test?name=<script>alert(1)</script>'));
+  const res = handler(req('/embed/hsx-test?name=<script>alert(1)</script>'));
   const html = await res!.text();
 
   // Should be escaped in the data-props attribute

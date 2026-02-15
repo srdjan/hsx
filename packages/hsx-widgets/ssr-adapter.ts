@@ -134,12 +134,12 @@ function createWidgetWrapper<P>(
  *
  * The adapter:
  * - Calls `widget.load(params)` if present, otherwise validates query params
- * - Wraps rendered output in `<div data-widget="loom-...">` with scoped `<style>`
+ * - Wraps rendered output in `<div data-widget="hsx-...">` with scoped `<style>`
  * - Returns proper error responses for validation/load failures
  *
  * @example
  * ```tsx
- * import { widgetToHsxComponent } from "@srdjan/loom/ssr";
+ * import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
  *
  * const GreetingRoute = widgetToHsxComponent(greetingWidget, {
  *   path: "/widgets/greeting/:name",

@@ -1,23 +1,23 @@
 /**
- * Loom Widget Example Server
+ * HSX Widget Example Server
  *
  * Demonstrates a widget served in two modes:
  * 1. SSR mode - rendered through the HSX pipeline via widgetToHsxComponent
  * 2. Embed mode - served as an iframe-ready HTML shell with a Preact bundle
  *
  * Build assets first:
- *   deno task build:loom
+ *   deno task build:hsx-widgets
  *
  * Then run:
- *   deno task example:loom-widget
+ *   deno task example:hsx-widget
  */
 
 import { hsxPage } from "@srdjan/hsx";
 import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
-import { widgetToHsxComponent } from "@srdjan/loom/ssr";
-import { greetingWidget } from "../../packages/loom/examples/greeting-widget.tsx";
-import { statusWidget } from "../../packages/loom/examples/status-widget.tsx";
-import { createEmbedHandler } from "../../packages/loom/embed/embed-handler.ts";
+import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
+import { greetingWidget } from "../../packages/hsx-widgets/examples/greeting-widget.tsx";
+import { statusWidget } from "../../packages/hsx-widgets/examples/status-widget.tsx";
+import { createEmbedHandler } from "../../packages/hsx-widgets/embed/embed-handler.ts";
 
 // =============================================================================
 // SSR Route - Widget rendered through HSX pipeline
@@ -36,13 +36,13 @@ const StatusRoute = widgetToHsxComponent(statusWidget, {
 // =============================================================================
 
 const widgets = new Map([
-  ["loom-greeting", greetingWidget],
-  ["loom-status", statusWidget],
+  ["hsx-greeting", greetingWidget],
+  ["hsx-status", statusWidget],
 ]);
 
 const embedHandler = createEmbedHandler(widgets, {
   basePath: "/embed",
-  bundlePath: "/static/loom",
+  bundlePath: "/static/hsx",
 });
 
 // =============================================================================
@@ -54,12 +54,12 @@ const Page = hsxPage(() => (
     <head>
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Loom Widget Example</title>
+      <title>HSX Widget Example</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
       <main>
-        <h1>Loom Widget Demo</h1>
+        <h1>HSX Widget Demo</h1>
 
         <div class="card">
           <h2>SSR Mode</h2>
@@ -79,19 +79,19 @@ const Page = hsxPage(() => (
             Widget shells are served for iframe embedding.
             Try:
             {" "}
-            <a href="/embed/loom-greeting?name=World&amp;message=Hi!">/embed/loom-greeting?name=World&amp;message=Hi!</a>
+            <a href="/embed/hsx-greeting?name=World&amp;message=Hi!">/embed/hsx-greeting?name=World&amp;message=Hi!</a>
             {" "}
             and
             {" "}
-            <a href="/embed/loom-status?label=Build%20Healthy&amp;tone=ok">/embed/loom-status?label=Build%20Healthy&amp;tone=ok</a>
+            <a href="/embed/hsx-status?label=Build%20Healthy&amp;tone=ok">/embed/hsx-status?label=Build%20Healthy&amp;tone=ok</a>
           </p>
           <p>
-            Build client assets with <code>deno task build:loom</code>, then
+            Build client assets with <code>deno task build:hsx-widgets</code>, then
             use this on a third-party site:
           </p>
-          <pre><code>{`<div data-loom-uri="https://yoursite.com/embed/loom-greeting?name=World"></div>
-<div data-loom-uri="https://yoursite.com/embed/loom-status?label=Build%20Healthy&tone=ok"></div>
-<script src="https://yoursite.com/static/loom/snippet.js"></script>`}</code></pre>
+          <pre><code>{`<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World"></div>
+<div data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"></div>
+<script src="https://yoursite.com/static/hsx/snippet.js"></script>`}</code></pre>
         </div>
       </main>
     </body>
@@ -131,21 +131,21 @@ Deno.serve((req) => {
     });
   }
 
-  // Built Loom assets (dist/loom)
-  if (pathname.startsWith("/static/loom/")) {
-    const asset = pathname.slice("/static/loom/".length);
+  // Built HSX Widgets assets (dist/hsx)
+  if (pathname.startsWith("/static/hsx/")) {
+    const asset = pathname.slice("/static/hsx/".length);
     if (!asset || asset.includes("/") || asset.includes("..")) {
       return new Response("Not Found", { status: 404 });
     }
 
-    const fileUrl = new URL(`../../dist/loom/${asset}`, import.meta.url);
+    const fileUrl = new URL(`../../dist/hsx/${asset}`, import.meta.url);
     return Deno.readTextFile(fileUrl).then(
       (js) => new Response(js, {
         headers: { "content-type": "text/javascript; charset=utf-8" },
       }),
       () =>
         new Response(
-          `// ${asset} not found. Run: deno task build:loom`,
+          `// ${asset} not found. Run: deno task build:hsx-widgets`,
           {
             status: 404,
             headers: { "content-type": "text/javascript; charset=utf-8" },

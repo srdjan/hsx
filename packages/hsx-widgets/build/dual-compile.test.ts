@@ -7,7 +7,7 @@
  * HSX compilation is verified by the regular test suite (widget.test.ts).
  * This test verifies Preact compilation via esbuild with the Deno loader.
  *
- * Run with: deno test --allow-all packages/loom/build/dual-compile.test.ts
+ * Run with: deno test --allow-all packages/hsx-widgets/build/dual-compile.test.ts
  */
 
 import {
@@ -26,8 +26,8 @@ Deno.test({
   sanitizeResources: false,
   sanitizeOps: false,
   fn: async () => {
-  const shimPath = path.join(ROOT, "packages/loom/build/shims/hsx-noop.ts");
-  const entryPoint = path.join(ROOT, "packages/loom/examples/greeting-widget.tsx");
+  const shimPath = path.join(ROOT, "packages/hsx-widgets/build/shims/hsx-noop.ts");
+  const entryPoint = path.join(ROOT, "packages/hsx-widgets/examples/greeting-widget.tsx");
   const configPath = path.join(ROOT, "deno.json");
 
   const result = await esbuild.build({
@@ -41,7 +41,7 @@ Deno.test({
     write: false,
     plugins: [
       {
-        name: "loom-hsx-redirect",
+        name: "hsx-widgets-hsx-redirect",
         setup(build) {
           build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
             path: shimPath,
@@ -81,5 +81,5 @@ Deno.test("HSX compilation of greeting widget works (SSR side)", async () => {
 
   assertStringIncludes(html, "Test");
   assertStringIncludes(html, "Hello!");
-  assertStringIncludes(html, "loom-greeting");
+  assertStringIncludes(html, "hsx-greeting");
 });

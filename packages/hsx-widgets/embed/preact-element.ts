@@ -28,11 +28,11 @@ import type { Result } from "../result.ts";
  *
  * @example
  * ```ts
- * import { toCustomElement } from "@srdjan/loom/embed/preact-element";
+ * import { toCustomElement } from "@srdjan/hsx-widgets/embed/preact-element";
  * import { greetingWidget } from "./greeting-widget.tsx";
  *
  * toCustomElement(greetingWidget);
- * // Now <loom-greeting data-props='{"name":"World","message":"Hi!"}'>
+ * // Now <hsx-greeting data-props='{"name":"World","message":"Hi!"}'>
  * // renders as a web component
  * ```
  */
@@ -78,32 +78,32 @@ export function toCustomElement<P>(widget: Widget<P>): void {
       try {
         raw = JSON.parse(propsJson);
       } catch {
-        console.error(`[loom] Invalid JSON in data-props for <${widget.tag}>`);
+        console.error(`[hsx] Invalid JSON in data-props for <${widget.tag}>`);
         return;
       }
 
       const result: Result<P, unknown> = widget.props.validate(raw);
       if (!result.ok) {
-        console.error(`[loom] Validation failed for <${widget.tag}>:`, result.error);
+        console.error(`[hsx] Validation failed for <${widget.tag}>:`, result.error);
         return;
       }
 
       // Inject styles into shadow root if using shadow DOM
       if (this.mountPoint instanceof ShadowRoot && widget.styles.length > 0) {
         // Only inject styles once
-        if (!this.mountPoint.querySelector("style[data-loom]")) {
+        if (!this.mountPoint.querySelector("style[data-hsx]")) {
           const styleEl = document.createElement("style");
-          styleEl.setAttribute("data-loom", "");
+          styleEl.setAttribute("data-hsx", "");
           styleEl.textContent = widget.styles;
           this.mountPoint.prepend(styleEl);
         }
       }
 
       // Create a container div for Preact to render into
-      let container = this.mountPoint.querySelector("[data-loom-root]") as HTMLElement | null;
+      let container = this.mountPoint.querySelector("[data-hsx-root]") as HTMLElement | null;
       if (!container) {
         container = document.createElement("div");
-        container.setAttribute("data-loom-root", "");
+        container.setAttribute("data-hsx-root", "");
         this.mountPoint.appendChild(container);
       }
 

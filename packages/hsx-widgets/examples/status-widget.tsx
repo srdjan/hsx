@@ -1,5 +1,5 @@
 /**
- * Status Widget - A second Loom widget example with query-param validation.
+ * Status Widget - A second HSX widget example with query-param validation.
  *
  * Demonstrates a Widget<P> without `load`, where props are validated from
  * route/query params by the SSR adapter.
@@ -22,7 +22,7 @@ function normalizeTone(raw: unknown): StatusTone | null {
 }
 
 export const statusWidget: Widget<StatusProps> = {
-  tag: "loom-status",
+  tag: "hsx-status",
 
   props: {
     validate(raw: unknown) {
@@ -51,7 +51,7 @@ export const statusWidget: Widget<StatusProps> = {
   },
 
   styles: `
-    .loom-status {
+    .hsx-status {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
@@ -65,7 +65,7 @@ export const statusWidget: Widget<StatusProps> = {
       line-height: 1;
     }
 
-    .loom-status__dot {
+    .hsx-status__dot {
       width: 0.55rem;
       height: 0.55rem;
       border-radius: 999px;
@@ -73,14 +73,14 @@ export const statusWidget: Widget<StatusProps> = {
       background: #16a34a;
     }
 
-    .loom-status[data-tone="warn"] .loom-status__dot { background: #d97706; }
-    .loom-status[data-tone="error"] .loom-status__dot { background: #dc2626; }
+    .hsx-status[data-tone="warn"] .hsx-status__dot { background: #d97706; }
+    .hsx-status[data-tone="error"] .hsx-status__dot { background: #dc2626; }
   `,
 
   render(props) {
     return (
-      <div class="loom-status" data-tone={props.tone}>
-        <span class="loom-status__dot" />
+      <div class="hsx-status" data-tone={props.tone}>
+        <span class="hsx-status__dot" />
         <strong>{props.label}</strong>
       </div>
     );

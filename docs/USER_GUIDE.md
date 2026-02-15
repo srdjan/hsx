@@ -738,13 +738,13 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 | HSX Components | `deno task example:hsx-components` | `examples/hsx-components/server.tsx` |
 | HSX Page | `deno task example:hsx-page` | `examples/hsx-page/server.tsx` |
 | Low-Level API | `deno task example:low-level-api` | `examples/low-level-api/server.tsx` |
-| Loom Widget | `deno task example:loom-widget` | `examples/loom-widget/server.tsx` |
+| HSX Widget | `deno task example:hsx-widget` | `examples/hsx-widget/server.tsx` |
 
-For the Loom demo, build assets once before starting the server:
+For the HSX Widgets demo, build assets once before starting the server:
 
 ```bash
-deno task build:loom
-deno task example:loom-widget
+deno task build:hsx-widgets
+deno task example:hsx-widget
 ```
 
 More detail: `examples/README.md` and `docs/WIDGETS.md`.

@@ -1,16 +1,16 @@
 /**
- * Loom - SSR-first component framework with embeddable web components.
+ * HSX Widgets - SSR-first component framework with embeddable web components.
  *
  * Define a Widget<P> once. Render it server-side through HSX, or compile
  * it as a standalone web component for embedding on third-party sites.
  *
  * @example
  * ```tsx
- * import { widgetToHsxComponent } from "@srdjan/loom/ssr";
- * import type { Widget } from "@srdjan/loom";
+ * import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
+ * import type { Widget } from "@srdjan/hsx-widgets";
  *
  * const myWidget: Widget<{ name: string }> = {
- *   tag: "loom-greeting",
+ *   tag: "hsx-greeting",
  *   props: { validate: (raw) => ok({ name: String(raw.name) }) },
  *   styles: ".greeting { color: blue; }",
  *   render: ({ name }) => <div class="greeting">Hello, {name}!</div>,
