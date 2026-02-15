@@ -21,8 +21,8 @@ HSX Widgets lets you define a `Widget<P>` once and use it in two places:
 A widget is a typed record with validation, styles, pure rendering, and optional loading.
 
 ```tsx
-import type { Widget } from "@srdjan/hsx-widgets";
-import { ok, fail } from "@srdjan/hsx-widgets";
+import type { Widget } from "jsr:@srdjan/hsx-widgets";
+import { ok, fail } from "jsr:@srdjan/hsx-widgets";
 
 type GreetingProps = {
   readonly name: string;
@@ -76,7 +76,7 @@ export const greetingWidget: Widget<GreetingProps> = {
 Use `widgetToHsxComponent()` to convert the widget into an HSX route.
 
 ```tsx
-import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
+import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
 
 const GreetingRoute = widgetToHsxComponent(greetingWidget, {
   path: "/widgets/greeting/:name",
@@ -100,9 +100,10 @@ deno task example:hsx-widget
 The repo example uses `createEmbedHandler()` to serve `/embed/:tag` HTML shells.
 
 ```tsx
-import { createEmbedHandler } from "../../packages/hsx-widgets/embed/embed-handler.ts";
+import { createEmbedHandler } from "jsr:@srdjan/hsx-widgets";
+import type { EmbeddableWidget } from "jsr:@srdjan/hsx-widgets";
 
-const widgets = new Map([
+const widgets = new Map<string, EmbeddableWidget>([
   ["hsx-greeting", greetingWidget],
   ["hsx-status", statusWidget],
 ]);
@@ -151,8 +152,8 @@ The snippet replaces the placeholder with an iframe and listens for resize messa
 If you need styles in `<head>` (instead of inline in each widget wrapper), use `hoistStyles` and `WidgetStyles`.
 
 ```tsx
-import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
-import { WidgetStyles } from "@srdjan/hsx-widgets/styles";
+import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
+import { WidgetStyles } from "jsr:@srdjan/hsx-widgets/styles";
 
 const GreetingRoute = widgetToHsxComponent(greetingWidget, {
   path: "/widgets/greeting/:name",

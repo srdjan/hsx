@@ -15,9 +15,10 @@ applications.
 8. [Branded IDs](#branded-ids)
 9. [HTMX Script Injection](#htmx-script-injection)
 10. [Render Options](#render-options)
-11. [Best Practices](#best-practices)
-12. [Troubleshooting](#troubleshooting)
-13. [Examples Index](#examples-index)
+11. [HSX Widgets](#hsx-widgets)
+12. [Best Practices](#best-practices)
+13. [Troubleshooting](#troubleshooting)
+14. [Examples Index](#examples-index)
 
 ---
 
@@ -647,6 +648,134 @@ Recommended production values:
 
 - `maxDepth: 100` - Sufficient for any reasonable HTML
 - `maxNodes: 50000` - Allows large pages without abuse
+
+---
+
+## HSX Widgets
+
+The `@srdjan/hsx-widgets` package lets you define a widget once and use it in
+two places: SSR (rendered through HSX routes) and embeddable iframe shells for
+third-party pages.
+
+### Installation
+
+```bash
+deno add jsr:@srdjan/hsx-widgets
+```
+
+### Defining a Widget
+
+A widget is a typed record with validation, styles, a pure render function, and
+optional data loading:
+
+```tsx
+import type { Widget } from "jsr:@srdjan/hsx-widgets";
+import { ok, fail } from "jsr:@srdjan/hsx-widgets";
+
+type GreetingProps = { readonly name: string; readonly message: string };
+
+export const greetingWidget: Widget<GreetingProps> = {
+  tag: "hsx-greeting",
+  props: {
+    validate(raw) {
+      const obj = raw as Record<string, unknown>;
+      if (typeof obj.name !== "string") {
+        return fail({ tag: "validation_error", message: "Name required", field: "name" });
+      }
+      return ok({ name: obj.name, message: String(obj.message ?? "") });
+    },
+  },
+  styles: `.hsx-greeting { font-family: system-ui; padding: 1rem; }`,
+  render: (props) => (
+    <div class="hsx-greeting">
+      <h2>{props.name}</h2>
+      <p>{props.message}</p>
+    </div>
+  ),
+  load: async (params) => {
+    if (!params.name) return fail({ tag: "load_error", message: "Missing name" });
+    return ok({ name: params.name, message: `Hello, ${params.name}!` });
+  },
+};
+```
+
+### SSR: Serving Through HSX Routes
+
+Use `widgetToHsxComponent()` to bridge a widget into an HSX route. The adapter
+handles props validation, data loading, scoped style injection, and error
+responses:
+
+```tsx
+import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
+
+const GreetingRoute = widgetToHsxComponent(greetingWidget, {
+  path: "/widgets/greeting/:name",
+});
+
+// In your server:
+if (GreetingRoute.match(url.pathname)) return GreetingRoute.handle(req);
+```
+
+### Embed: Iframe Shells for Third-Party Pages
+
+Use `createEmbedHandler()` to serve `/embed/:tag` HTML shells:
+
+```tsx
+import { createEmbedHandler } from "jsr:@srdjan/hsx-widgets";
+
+const widgets = new Map([["hsx-greeting", greetingWidget]]);
+const embedHandler = createEmbedHandler(widgets, {
+  basePath: "/embed",
+  bundlePath: "/static/hsx",
+});
+
+const res = embedHandler(req);
+if (res) return res;
+```
+
+On a host page, use the snippet loader:
+
+```html
+<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World"></div>
+<script src="https://yoursite.com/static/hsx/snippet.js"></script>
+```
+
+### Declarative Shadow DOM
+
+Widgets can render inside a Declarative Shadow DOM for style isolation. Set
+`shadow: "open"` or `shadow: "closed"` on the widget definition:
+
+```tsx
+const myWidget: Widget<MyProps> = {
+  tag: "hsx-example",
+  shadow: "open",
+  // ...
+};
+```
+
+The SSR adapter wraps content in `<template shadowrootmode="...">` inside the
+custom element tag. Styles go inside the shadow root automatically.
+
+### Style Hoisting for hsxPage
+
+When using `hsxPage`, you can hoist widget styles into `<head>` instead of
+inlining them in each widget wrapper:
+
+```tsx
+import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
+import { WidgetStyles } from "jsr:@srdjan/hsx-widgets/styles";
+
+const GreetingRoute = widgetToHsxComponent(greetingWidget, {
+  path: "/widgets/greeting/:name",
+  hoistStyles: true,
+});
+
+// In your page <head>:
+<WidgetStyles widgets={[greetingWidget]} />
+```
+
+For the full widget guide including the build pipeline, see
+[WIDGETS.md](WIDGETS.md).
 
 ---
 

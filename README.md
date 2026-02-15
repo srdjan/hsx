@@ -59,6 +59,7 @@ Install individually:
 ```bash
 deno add jsr:@srdjan/hsx
 deno add jsr:@srdjan/hsx-styles
+deno add jsr:@srdjan/hsx-widgets
 ```
 
 ### Selective Imports (Tree-Shaking)
@@ -410,6 +411,57 @@ Available variables: `--hsx-accent`, `--hsx-accent-hover`, `--hsx-bg`,
 (`--hsx-font-size-*`, `--hsx-leading-*`), shadows (`--hsx-shadow-*`),
 breakpoints (`--hsx-breakpoint-sm|md|lg`), and layout tokens
 (`--hsx-container-max`, `--hsx-container-padding`, `--hsx-measure`).
+
+## HSX Widgets
+
+The `@srdjan/hsx-widgets` package provides a widget protocol for building
+components that work in two contexts: SSR through HSX routes, and embeddable
+iframe shells for third-party pages.
+
+### Define a Widget
+
+A widget is a typed record with validation, styles, rendering, and optional
+data loading:
+
+```tsx
+import type { Widget } from "jsr:@srdjan/hsx-widgets";
+import { ok, fail } from "jsr:@srdjan/hsx-widgets";
+
+export const greetingWidget: Widget<GreetingProps> = {
+  tag: "hsx-greeting",
+  props: { validate(raw) { /* ... */ } },
+  styles: `.hsx-greeting { padding: 1rem; }`,
+  render: (props) => <div class="hsx-greeting"><h2>{props.name}</h2></div>,
+  load: async (params) => ok({ name: params.name, message: `Hello!` }),
+  shadow: "open",  // Optional: Declarative Shadow DOM
+};
+```
+
+### Serve via SSR
+
+Use `widgetToHsxComponent()` to bridge a widget into an HSX route:
+
+```tsx
+import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
+
+const GreetingRoute = widgetToHsxComponent(greetingWidget, {
+  path: "/widgets/greeting/:name",
+});
+
+if (GreetingRoute.match(url.pathname)) return GreetingRoute.handle(req);
+```
+
+### Embed on Third-Party Pages
+
+Serve iframe shells with `createEmbedHandler()`, then embed with a snippet:
+
+```html
+<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World"></div>
+<script src="https://yoursite.com/static/hsx/snippet.js"></script>
+```
+
+See [docs/WIDGETS.md](docs/WIDGETS.md) for the full widget guide including
+Declarative Shadow DOM, style hoisting, and the build pipeline.
 
 ## API Reference
 

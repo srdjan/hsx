@@ -115,6 +115,53 @@ HSX provides compile-time safety for:
 - **Attributes**: Only valid HSX attributes are allowed on elements
 - **HSX Components**: `handler` return values must match `render` props
 
+## HSX Widgets Package
+
+The `@srdjan/hsx-widgets` package extends HSX with a widget protocol that
+bridges the gap between SSR and embeddable components.
+
+### Widget Architecture
+
+```
+Widget<P> definition
+  ├─ SSR path:   widgetToHsxComponent() → HsxComponent → HSX render pipeline
+  └─ Embed path: createEmbedHandler() → iframe HTML shell → client bundle
+```
+
+### Module Responsibilities
+
+**widget.ts**
+
+- `Widget<P>` type: tag, props validation, styles, render, optional load
+- Result types (`ok`/`fail`) for validation and loading errors
+
+**ssr-adapter.ts**
+
+- `widgetToHsxComponent()` bridges a Widget into the HSX component pipeline
+- Handles props validation, data loading, scoped style injection
+- Supports Declarative Shadow DOM (`shadow: "open"` or `"closed"`)
+- Supports style hoisting for `hsxPage` integration
+
+**styles.ts**
+
+- `collectWidgetStyles()` deduplicates and collects CSS from multiple widgets
+- `WidgetStyles` component renders a `<style>` tag for `hsxPage` `<head>`
+
+**embed/embed-handler.ts**
+
+- `createEmbedHandler()` serves `/embed/:tag` HTML shells with CSP headers
+- Each shell loads a compiled client bundle for the specific widget
+
+**embed/snippet.ts**
+
+- Host page snippet that replaces `data-hsx-uri` placeholders with iframes
+- Listens for resize messages from embedded widgets
+
+**build/tasks.ts**
+
+- Dual-compile build pipeline using esbuild
+- Produces per-widget client bundles and the host snippet
+
 ## Performance Considerations
 
 - **Lazy Copy**: Props are only copied when HSX attributes are present
