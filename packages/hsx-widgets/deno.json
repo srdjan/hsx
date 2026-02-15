@@ -6,12 +6,17 @@
     "./ssr": "./ssr-adapter.ts",
     "./styles": "./styles.ts"
   },
+  "imports": {
+    "@srdjan/hsx": "jsr:@srdjan/hsx@^1.2.0",
+    "@srdjan/hsx/core": "jsr:@srdjan/hsx@^1.2.0/core",
+    "@srdjan/hsx/components": "jsr:@srdjan/hsx@^1.2.0/components"
+  },
   "publish": {
-    "exclude": ["build/", "examples/"]
+    "exclude": ["build/", "examples/", "*.test.ts"]
   },
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "hsx",
+    "jsxImportSource": "@srdjan/hsx",
     "strict": true
   }
 }
