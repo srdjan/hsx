@@ -1,7 +1,8 @@
 {
   "workspace": [
     "./packages/hsx",
-    "./packages/hsx-styles"
+    "./packages/hsx-styles",
+    "./packages/loom"
   ],
   "exports": {
     ".": "./packages/hsx/mod.ts",
@@ -13,6 +14,8 @@
     "@srdjan/hsx/core": "./packages/hsx/core.ts",
     "@srdjan/hsx/components": "./packages/hsx/components.ts",
     "@srdjan/hsx-styles": "./packages/hsx-styles/mod.ts",
+    "@srdjan/loom": "./packages/loom/mod.ts",
+    "@srdjan/loom/ssr": "./packages/loom/ssr-adapter.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
@@ -22,8 +25,11 @@
     "strict": true
   },
   "tasks": {
-    "test": "deno test --allow-read --allow-net packages/",
-    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts",
+    "test": "deno test --allow-read --allow-net --ignore=packages/loom/build/ packages/",
+    "test:loom": "deno test --allow-read --allow-net --ignore=packages/loom/build/ packages/loom/",
+    "test:loom:build": "deno test --allow-all packages/loom/build/",
+    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/loom/mod.ts",
+    "check:loom": "deno check packages/loom/mod.ts",
     "publish": "deno publish",
     "publish:hsx": "cd packages/hsx && deno publish",
     "publish:styles": "cd packages/hsx-styles && deno publish",
@@ -35,6 +41,10 @@
     "example:polling": "deno run --allow-net --allow-read examples/polling/server.tsx",
     "example:hsx-components": "deno run --allow-net --allow-read examples/hsx-components/server.tsx",
     "example:hsx-page": "deno run --allow-net --allow-read examples/hsx-page/server.tsx",
-    "example:low-level-api": "deno run --allow-net --allow-read examples/low-level-api/server.tsx"
+    "example:low-level-api": "deno run --allow-net --allow-read examples/low-level-api/server.tsx",
+    "example:loom-widget": "deno run --allow-net --allow-read examples/loom-widget/server.tsx",
+    "build:loom:embeds": "deno run --allow-all packages/loom/build/tasks.ts --target=embeds",
+    "build:loom:snippet": "deno run --allow-all packages/loom/build/tasks.ts --target=snippet",
+    "build:loom": "deno run --allow-all packages/loom/build/tasks.ts --target=all"
   }
 }

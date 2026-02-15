@@ -1,0 +1,13 @@
+{
+  "name": "@srdjan/loom",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./ssr": "./ssr-adapter.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hsx",
+    "strict": true
+  }
+}
