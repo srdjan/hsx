@@ -1,6 +1,6 @@
 {
   "name": "@srdjan/hsx",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "exports": {
     ".": "./mod.ts",
     "./jsx-runtime": "./jsx-runtime.ts",
