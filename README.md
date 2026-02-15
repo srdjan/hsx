@@ -10,7 +10,7 @@ SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during 
 > Disclaimer: this was a quick hack in my free time, held together by vibe
 > coding and espresso. I like it a lot, but consider it an early release. I feel it is getting better (a lot)
 
-## TL;DR: : Like JSX, but for SSR HTML + HTMX.
+## TL;DR: Like JSX, but for SSR HTML + HTMX.
 
 ## Features
 
@@ -24,6 +24,8 @@ SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during 
 - **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when
   needed
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
+- **Widgets** - Define once, serve via SSR or embed as iframes with
+  Declarative Shadow DOM
 
 ## Installation
 
