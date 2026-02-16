@@ -45,6 +45,7 @@
     "example:hsx-components": "deno run --allow-net --allow-read examples/hsx-components/server.tsx",
     "example:hsx-page": "deno run --allow-net --allow-read examples/hsx-page/server.tsx",
     "example:low-level-api": "deno run --allow-net --allow-read examples/low-level-api/server.tsx",
+    "example:ats": "deno run --allow-net --allow-read examples/ats/server.tsx",
     "example:hsx-widget": "deno run --allow-net --allow-read examples/hsx-widget/server.tsx",
     "build:hsx-widgets:embeds": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds",
     "build:hsx-widgets:snippet": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=snippet",
