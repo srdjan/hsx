@@ -315,6 +315,40 @@ interface IframeAttrs extends GlobalAttrs {
 // Fallback for any unknown attributes
 type ExtensibleAttrs = Record<string, unknown>;
 
+/** Attributes common to SVG elements. Uses ExtensibleAttrs as a base since SVG
+ *  has a very large attribute surface (presentation, geometry, filter primitives,
+ *  etc.) and strict typing would be impractical for an HTML-focused SSR library. */
+type SvgAttrs = GlobalAttrs & {
+  xmlns?: string;
+  viewBox?: string;
+  width?: number | string;
+  height?: number | string;
+  x?: number | string;
+  y?: number | string;
+  fill?: string;
+  stroke?: string;
+  "stroke-width"?: number | string;
+  opacity?: number | string;
+  transform?: string;
+  d?: string;
+  cx?: number | string;
+  cy?: number | string;
+  r?: number | string;
+  rx?: number | string;
+  ry?: number | string;
+  x1?: number | string;
+  y1?: number | string;
+  x2?: number | string;
+  y2?: number | string;
+  points?: string;
+  href?: string;
+  "text-anchor"?: "start" | "middle" | "end";
+  "dominant-baseline"?: string;
+  "marker-end"?: string;
+  "marker-start"?: string;
+  "marker-mid"?: string;
+} & ExtensibleAttrs;
+
 // =============================================================================
 // JSX Namespace - Exported for TypeScript JSX support
 // =============================================================================
@@ -477,7 +511,38 @@ export namespace JSX {
     param: GlobalAttrs & { name?: string; value?: string } & ExtensibleAttrs;
     picture: GlobalAttrs & ExtensibleAttrs;
     canvas: GlobalAttrs & { width?: number | string; height?: number | string } & ExtensibleAttrs;
-    svg: GlobalAttrs & { xmlns?: string; viewBox?: string; width?: number | string; height?: number | string; fill?: string; stroke?: string } & ExtensibleAttrs;
+    svg: SvgAttrs;
+
+    // SVG elements
+    g: SvgAttrs;
+    rect: SvgAttrs;
+    circle: SvgAttrs;
+    ellipse: SvgAttrs;
+    line: SvgAttrs;
+    polyline: SvgAttrs;
+    polygon: SvgAttrs;
+    path: SvgAttrs;
+    text: SvgAttrs;
+    tspan: SvgAttrs;
+    textPath: SvgAttrs;
+    defs: SvgAttrs;
+    symbol: SvgAttrs;
+    use: SvgAttrs;
+    marker: SvgAttrs;
+    clipPath: SvgAttrs;
+    mask: SvgAttrs;
+    pattern: SvgAttrs;
+    linearGradient: SvgAttrs;
+    radialGradient: SvgAttrs;
+    stop: SvgAttrs;
+    filter: SvgAttrs;
+    feGaussianBlur: SvgAttrs;
+    feOffset: SvgAttrs;
+    feMerge: SvgAttrs;
+    feMergeNode: SvgAttrs;
+    feBlend: SvgAttrs;
+    feColorMatrix: SvgAttrs;
+    foreignObject: SvgAttrs;
 
     // Template
     template: GlobalAttrs & ExtensibleAttrs;

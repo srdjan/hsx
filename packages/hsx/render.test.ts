@@ -473,3 +473,111 @@ Deno.test("get + trigger + swap on div", () => {
   assertEquals(html.includes('hx-trigger="every 2s"'), true);
   assertEquals(html.includes('hx-swap="outerHTML"'), true);
 });
+
+// =============================================================================
+// SVG Rendering Tests
+// =============================================================================
+
+Deno.test("renders basic SVG with viewBox and children", () => {
+  const html = renderHtml(
+    jsx("svg", {
+      viewBox: "0 0 100 100",
+      xmlns: "http://www.w3.org/2000/svg",
+      children: jsx("circle", { cx: 50, cy: 50, r: 40, fill: "red" }),
+    }),
+  );
+  assertEquals(html.includes("<svg"), true);
+  assertEquals(html.includes('viewBox="0 0 100 100"'), true);
+  assertEquals(html.includes("<circle"), true);
+  assertEquals(html.includes('cx="50"'), true);
+  assertEquals(html.includes('fill="red"'), true);
+  assertEquals(html.includes("</svg>"), true);
+});
+
+Deno.test("renders SVG group with nested elements", () => {
+  const html = renderHtml(
+    jsx("g", {
+      class: "my-group",
+      children: [
+        jsx("rect", { x: 0, y: 0, width: 100, height: 50, rx: 8 }),
+        jsx("text", { x: 50, y: 25, "text-anchor": "middle", children: "Hello" }),
+      ],
+    }),
+  );
+  assertEquals(html.includes('<g class="my-group">'), true);
+  assertEquals(html.includes('<rect x="0"'), true);
+  assertEquals(html.includes('rx="8"'), true);
+  assertEquals(html.includes("<text"), true);
+  assertEquals(html.includes('text-anchor="middle"'), true);
+  assertEquals(html.includes("Hello"), true);
+  assertEquals(html.includes("</g>"), true);
+});
+
+Deno.test("renders SVG path and line elements", () => {
+  const html = renderHtml(
+    jsx("svg", {
+      width: 200, height: 200,
+      children: [
+        jsx("path", { d: "M 10 10 L 90 90", fill: "none", stroke: "black" }),
+        jsx("line", { x1: 0, y1: 0, x2: 100, y2: 100, "stroke-width": 2 }),
+      ],
+    }),
+  );
+  assertEquals(html.includes('d="M 10 10 L 90 90"'), true);
+  assertEquals(html.includes('stroke="black"'), true);
+  assertEquals(html.includes("<line"), true);
+  assertEquals(html.includes('stroke-width="2"'), true);
+});
+
+Deno.test("renders SVG defs with marker", () => {
+  const html = renderHtml(
+    jsx("defs", {
+      children: jsx("marker", {
+        id: "arrow",
+        viewBox: "0 0 10 10",
+        refX: 10,
+        refY: 5,
+        markerWidth: 6,
+        markerHeight: 6,
+        orient: "auto",
+        children: jsx("path", { d: "M 0 0 L 10 5 L 0 10 z" }),
+      }),
+    }),
+  );
+  assertEquals(html.includes('<marker id="arrow"'), true);
+  assertEquals(html.includes('refX="10"'), true);
+  assertEquals(html.includes("</marker>"), true);
+  assertEquals(html.includes("</defs>"), true);
+});
+
+Deno.test("renders SVG textPath with href", () => {
+  const html = renderHtml(
+    jsx("text", {
+      children: jsx("textPath", { href: "#my-path", startOffset: "50%", children: "Along the path" }),
+    }),
+  );
+  assertEquals(html.includes('<textPath href="#my-path"'), true);
+  assertEquals(html.includes("Along the path"), true);
+});
+
+Deno.test("renders SVG pattern element", () => {
+  const html = renderHtml(
+    jsx("pattern", {
+      id: "grid",
+      width: 20,
+      height: 20,
+      patternUnits: "userSpaceOnUse",
+      children: jsx("circle", { cx: 1, cy: 1, r: 0.5, fill: "gray" }),
+    }),
+  );
+  assertEquals(html.includes('<pattern id="grid"'), true);
+  assertEquals(html.includes('patternUnits="userSpaceOnUse"'), true);
+});
+
+Deno.test("renders SVG polygon element", () => {
+  const html = renderHtml(
+    jsx("polygon", { points: "28,2 32,5 28,8", fill: "blue" }),
+  );
+  assertEquals(html.includes('<polygon points="28,2 32,5 28,8"'), true);
+  assertEquals(html.includes('fill="blue"'), true);
+});
