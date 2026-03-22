@@ -11,7 +11,7 @@
  */
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
 import { id } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 
 // =============================================================================
 // Sample Data
@@ -24,19 +24,123 @@ const ids = {
 };
 
 const contacts: Contact[] = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", company: "Acme Corp" },
+  {
+    id: 1,
+    name: "Alice Johnson",
+    email: "alice@example.com",
+    company: "Acme Corp",
+  },
   { id: 2, name: "Bob Smith", email: "bob@example.com", company: "Tech Inc" },
-  { id: 3, name: "Carol Williams", email: "carol@example.com", company: "Acme Corp" },
-  { id: 4, name: "David Brown", email: "david@example.com", company: "Startup LLC" },
-  { id: 5, name: "Eva Martinez", email: "eva@example.com", company: "Tech Inc" },
+  {
+    id: 3,
+    name: "Carol Williams",
+    email: "carol@example.com",
+    company: "Acme Corp",
+  },
+  {
+    id: 4,
+    name: "David Brown",
+    email: "david@example.com",
+    company: "Startup LLC",
+  },
+  {
+    id: 5,
+    name: "Eva Martinez",
+    email: "eva@example.com",
+    company: "Tech Inc",
+  },
   { id: 6, name: "Frank Lee", email: "frank@example.com", company: "Big Corp" },
-  { id: 7, name: "Grace Chen", email: "grace@example.com", company: "Startup LLC" },
-  { id: 8, name: "Henry Wilson", email: "henry@example.com", company: "Big Corp" },
+  {
+    id: 7,
+    name: "Grace Chen",
+    email: "grace@example.com",
+    company: "Startup LLC",
+  },
+  {
+    id: 8,
+    name: "Henry Wilson",
+    email: "henry@example.com",
+    company: "Big Corp",
+  },
 ];
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+const ACTIVE_SEARCH_STYLES = `
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-subtle: #dbeafe;
+  }
+
+  .search-shell {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .search-form {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .search-form input {
+    border: 0;
+    padding-inline: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .search-form input:focus {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .search-icon,
+  .indicator {
+    color: var(--text-muted);
+  }
+
+  .indicator {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+
+  .htmx-request + .indicator,
+  .htmx-request .indicator,
+  .indicator.htmx-request {
+    opacity: 1;
+  }
+
+  .spinner {
+    display: inline-block;
+    inline-size: 0.95rem;
+    block-size: 0.95rem;
+    border: 0.15rem solid currentColor;
+    border-block-start-color: transparent;
+    border-inline-start-color: transparent;
+    border-radius: 9999px;
+    animation: active-search-spin 0.7s linear infinite;
+  }
+
+  .no-results {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+    color: var(--text-muted);
+  }
+
+  @keyframes active-search-spin {
+    to { transform: rotate(1turn); }
+  }
+`;
 
 // =============================================================================
 // Components
@@ -63,7 +167,13 @@ function SearchResults(props: { contacts: Contact[]; query: string }) {
 
   return (
     <table>
-      <thead><tr><th>Name</th><th>Email</th><th>Company</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Company</th>
+        </tr>
+      </thead>
       <tbody>
         {contacts.map((c) => (
           <tr key={c.id}>
@@ -96,7 +206,9 @@ const Search = hsxComponent("/search", {
     if (q) await new Promise((r) => setTimeout(r, 200));
     return { contacts: searchContacts(q), query: q };
   },
-  render: ({ contacts, query }) => <SearchResults contacts={contacts} query={query} />,
+  render: ({ contacts, query }) => (
+    <SearchResults contacts={contacts} query={query} />
+  ),
 });
 
 const Page = hsxPage(() => (
@@ -106,26 +218,31 @@ const Page = hsxPage(() => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Active Search - HSX Example</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
+      <style>{ACTIVE_SEARCH_STYLES}</style>
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <h1>Contact Search</h1>
-        <div class="search-form">
-          <span class="search-icon">🔍</span>
-          <input
-            type="search"
-            name="q"
-            placeholder="Search contacts..."
-            get={Search}
-            trigger="keyup changed delay:300ms, search"
-            target={ids.results}
-            swap="innerHTML"
-            autofocus
-          />
-          <span class="indicator"><span class="spinner" /></span>
-        </div>
-        <div id="search-results">
-          <SearchResults contacts={contacts} query="" />
+        <div class="search-shell" data-surface="card">
+          <div class="search-form">
+            <span class="search-icon">🔍</span>
+            <input
+              type="search"
+              name="q"
+              placeholder="Search contacts..."
+              get={Search}
+              trigger="keyup changed delay:300ms, search"
+              target={ids.results}
+              swap="innerHTML"
+              autofocus
+            />
+            <span class="indicator">
+              <span class="spinner" />
+            </span>
+          </div>
+          <div id="search-results">
+            <SearchResults contacts={contacts} query="" />
+          </div>
         </div>
       </main>
     </body>
@@ -138,7 +255,9 @@ const Page = hsxPage(() => (
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
+  if (url.pathname === "/favicon.ico") {
+    return new Response(null, { status: 204 });
+  }
   if (url.pathname === "/") return Page.render();
 
   const components = [Search];
@@ -151,15 +270,24 @@ Deno.serve(async (req) => {
 
   if (url.pathname === "/static/htmx.js") {
     try {
-      const js = await Deno.readTextFile(new URL("../../vendor/htmx/htmx.js", import.meta.url));
-      return new Response(js, { headers: { "content-type": "text/javascript; charset=utf-8" } });
+      const js = await Deno.readTextFile(
+        new URL("../../vendor/htmx/htmx.js", import.meta.url),
+      );
+      return new Response(js, {
+        headers: { "content-type": "text/javascript; charset=utf-8" },
+      });
     } catch {
-      return new Response("// htmx.js not found", { status: 500, headers: { "content-type": "text/javascript" } });
+      return new Response("// htmx.js not found", {
+        status: 500,
+        headers: { "content-type": "text/javascript" },
+      });
     }
   }
 
   if (url.pathname === HSX_STYLES_PATH) {
-    return new Response(hsxStyles, { headers: { "content-type": "text/css; charset=utf-8" } });
+    return new Response(hsxStyles, {
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
   }
 
   return new Response("Not found", { status: 404 });

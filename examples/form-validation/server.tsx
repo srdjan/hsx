@@ -1,11 +1,89 @@
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import { Card, Subtitle } from "./components.tsx";
 import { ids } from "./ids.ts";
 
 // Simulated taken usernames and emails
 const takenUsernames = ["admin", "user", "john", "jane"];
 const takenEmails = ["admin@example.com", "user@example.com"];
+
+const FORM_VALIDATION_STYLES = `
+  :root {
+    --primary: #0ea5e9;
+    --primary-hover: #0284c7;
+    --primary-subtle: #dbeafe;
+    --bg: #f0f9ff;
+    --surface: #ffffff;
+    --surface-raised: #e0f2fe;
+    --border: #bae6fd;
+    --text: #0c4a6e;
+    --text-muted: #0369a1;
+  }
+
+  form {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .form-group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .field-feedback {
+    min-height: 1.5rem;
+  }
+
+  .error-msg,
+  .success-msg {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .error-msg {
+    color: var(--color-error);
+  }
+
+  .success-msg {
+    color: var(--color-success);
+  }
+
+  .password-strength {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .strength-bar {
+    min-height: 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--surface-raised);
+  }
+
+  .strength-bar.weak { background: var(--color-error); }
+  .strength-bar.medium { background: var(--color-warning); }
+  .strength-bar.strong { background: var(--color-success); }
+
+  .result {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+  }
+
+  .result.success {
+    border-color: color-mix(in oklch, var(--color-success) 45%, var(--border));
+    color: var(--color-success);
+  }
+
+  .result.error {
+    border-color: color-mix(in oklch, var(--color-error) 45%, var(--border));
+    color: var(--color-error);
+  }
+`;
 
 function ErrorMessage(props: { message: string }) {
   return <span class="error-msg">⚠ {props.message}</span>;
@@ -100,9 +178,10 @@ const ValidateUsername = hsxComponent("/validate/username", {
     const result = validateUsername(String(form.get("username") ?? ""));
     return result;
   },
-  render: (result) => result.valid
-    ? <SuccessMessage message={result.message} />
-    : <ErrorMessage message={result.message} />,
+  render: (result) =>
+    result.valid
+      ? <SuccessMessage message={result.message} />
+      : <ErrorMessage message={result.message} />,
 });
 
 const ValidateEmail = hsxComponent("/validate/email", {
@@ -113,9 +192,10 @@ const ValidateEmail = hsxComponent("/validate/email", {
     const result = validateEmail(String(form.get("email") ?? ""));
     return result;
   },
-  render: (result) => result.valid
-    ? <SuccessMessage message={result.message} />
-    : <ErrorMessage message={result.message} />,
+  render: (result) =>
+    result.valid
+      ? <SuccessMessage message={result.message} />
+      : <ErrorMessage message={result.message} />,
 });
 
 const ValidatePassword = hsxComponent("/validate/password", {
@@ -146,9 +226,16 @@ const Register = hsxComponent("/register", {
     const e = validateEmail(String(form.get("email") ?? ""));
     const p = validatePassword(String(form.get("password") ?? ""));
     const success = u.valid && e.valid && p.valid;
-    return { success, message: success ? "Account created successfully!" : "Please fix the errors above" };
+    return {
+      success,
+      message: success
+        ? "Account created successfully!"
+        : "Please fix the errors above",
+    };
   },
-  render: ({ success, message }) => <FormResult success={success} message={message} />,
+  render: ({ success, message }) => (
+    <FormResult success={success} message={message} />
+  ),
 });
 
 // Page
@@ -160,10 +247,10 @@ const Page = hsxPage(() => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Form Validation - HSX Example</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
-      <style>{`:root { --hsx-accent: #0ea5e9; --hsx-bg: #f0f9ff; --hsx-border: #bae6fd; --hsx-text: #0c4a6e; }`}</style>
+      <style>{FORM_VALIDATION_STYLES}</style>
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <header>
           <h1>Create Account</h1>
         </header>
@@ -221,7 +308,7 @@ const Page = hsxPage(() => (
               />
               <div class="field-feedback" id="password-error"></div>
             </div>
-            <button type="submit" class="btn">Create Account</button>
+            <button type="submit" data-variant="solid">Create Account</button>
             <div id="form-result"></div>
           </form>
         </Card>
@@ -239,7 +326,12 @@ Deno.serve(async (req) => {
   if (pathname === "/favicon.ico") return new Response(null, { status: 204 });
   if (pathname === "/") return Page.render();
 
-  const components = [ValidateUsername, ValidateEmail, ValidatePassword, Register];
+  const components = [
+    ValidateUsername,
+    ValidateEmail,
+    ValidatePassword,
+    Register,
+  ];
   for (const component of components) {
     const method = req.method as typeof component.methods[number];
     if (component.match(pathname) && component.methods.includes(method)) {

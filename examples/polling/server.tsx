@@ -1,6 +1,135 @@
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import { Card, Subtitle } from "./components.tsx";
+
+const POLLING_STYLES = `
+  :root {
+    --primary: #f97316;
+    --primary-hover: #ea580c;
+    --primary-subtle: #ffedd5;
+    --bg: #fff7ed;
+    --surface: #ffffff;
+    --surface-raised: #ffedd5;
+    --border: #fdba74;
+    --text: #7c2d12;
+    --text-muted: #9a3412;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .stat {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+  }
+
+  .stat-value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .stat-label,
+  .feed-time {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .stat-change {
+    display: inline-flex;
+    margin-top: var(--space-2);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .stat-change.up {
+    background: color-mix(in oklch, var(--color-success) 18%, white);
+    color: var(--color-success);
+  }
+
+  .stat-change.down {
+    background: color-mix(in oklch, var(--color-error) 16%, white);
+    color: var(--color-error);
+  }
+
+  .feed ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .feed-item {
+    display: flex;
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 75%, transparent);
+  }
+
+  .feed li:last-child .feed-item {
+    border-bottom: 0;
+  }
+
+  .feed-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 9999px;
+    background: var(--primary-subtle);
+    font-weight: 700;
+  }
+
+  .feed-content {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+  }
+
+  .status-dot {
+    inline-size: 0.65rem;
+    block-size: 0.65rem;
+    border-radius: 9999px;
+    background: var(--color-warning);
+  }
+
+  .status-dot.complete {
+    background: var(--color-success);
+  }
+
+  .progress {
+    margin-top: var(--space-3);
+    min-height: 0.75rem;
+    border-radius: var(--radius-full);
+    background: var(--surface-raised);
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    min-height: 0.75rem;
+    background: linear-gradient(90deg, color-mix(in oklch, var(--primary) 72%, white), var(--primary));
+    transition: width var(--transition-base);
+  }
+
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+`;
 
 // Simulated live data
 let visitors = 1247;
@@ -67,7 +196,7 @@ function ActivityFeed() {
           ? (
             <li>
               <div class="feed-item">
-                <div class="feed-text" style={{ color: "var(--muted)" }}>
+                <div class="feed-text" style={{ color: "var(--text-muted)" }}>
                   Waiting for activity...
                 </div>
               </div>
@@ -166,15 +295,15 @@ const Page = hsxPage(() => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Live Polling - HSX Example</title>
         <link rel="stylesheet" href={HSX_STYLES_PATH} />
-        <style>{`:root { --hsx-accent: #f97316; --hsx-bg: #fff7ed; --hsx-border: #fed7aa; --hsx-text: #7c2d12; --hsx-muted: #9a3412; }`}</style>
+        <style>{POLLING_STYLES}</style>
       </head>
       <body>
-        <main>
+        <main data-layout="container stack" data-gap="6">
           <header>
             <h1>Live Dashboard</h1>
           </header>
           <Subtitle>Data updates automatically via polling</Subtitle>
-          <div class="grid">
+          <div data-layout="grid" data-gap="4" data-grid-min="md">
             <Card title="Real-time Stats (every 2s)">
               <div get={Stats} trigger="load, every 2s" swap="outerHTML">
                 <LiveStats />

@@ -1,6 +1,6 @@
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
 import { id } from "@srdjan/hsx";
-import { hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 
 // ---------------------------------------------------------------------------
 // Data (in-memory for demo)
@@ -58,7 +58,7 @@ const TodoList = hsxComponent("/todos", {
 // ---------------------------------------------------------------------------
 
 const Page = hsxPage(() => (
-  <html lang="en">
+  <html lang="en" data-theme="dark">
     <head>
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -66,14 +66,14 @@ const Page = hsxPage(() => (
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
-      <div class="shell">
+      <div data-layout="container stack" data-gap="6">
         <header>
           <h1>hsxPage</h1>
           <p>Semantic layout + CSS in &lt;style&gt; + HSX components.</p>
         </header>
         <main>
           <section>
-            <div class="card">
+            <div data-surface="card" data-layout="stack" data-gap="4">
               <h2>Todos</h2>
               <form post={TodoList} target={ids.list} swap="outerHTML">
                 <input
@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
   }
 
   if (pathname === HSX_STYLES_PATH) {
-    return new Response(hsxStylesDark, {
+    return new Response(hsxStyles, {
       headers: { "content-type": "text/css; charset=utf-8" },
     });
   }

@@ -12,7 +12,7 @@
  */
 
 import { escapeHtml } from "@srdjan/hsx/core";
-import { ok, fail, type Result } from "./result.ts";
+import { fail, ok, type Result } from "./result.ts";
 import type { WidgetError } from "./widget.ts";
 import { sanitizeHtml } from "./sanitize.ts";
 
@@ -32,7 +32,7 @@ export const RAW_WIDGET_TAG = "hsx-raw" as const;
 export const RAW_WIDGET_DESCRIPTION =
   "Renders custom HTML content in an isolated container. " +
   "Use only when no other widget fits the need. " +
-  "The HTML should use CSS custom properties (--color-text-primary, etc.) for theming. " +
+  "The HTML should use Auras-style CSS custom properties (--text, --surface, --border, --primary) for theming. " +
   "Script tags are not supported - use only HTML and CSS.";
 
 export const RAW_WIDGET_SCHEMA: Record<string, unknown> = {
@@ -86,7 +86,7 @@ export function validateRawWidgetProps(
 
 const RAW_WIDGET_HOST_STYLES = `:host {
   display: block;
-  color: var(--hsx-text, var(--color-text-primary, #1f2937));
+  color: var(--text, #1f2937);
   font-family: system-ui, -apple-system, sans-serif;
 }`;
 
@@ -101,7 +101,9 @@ export function renderRawWidget(props: RawWidgetProps): string {
   const sanitized = sanitizeHtml(props.html);
 
   return (
-    `<hsx-raw data-widget="hsx-raw" data-raw-title="${escapeHtml(props.title)}">` +
+    `<hsx-raw data-widget="hsx-raw" data-raw-title="${
+      escapeHtml(props.title)
+    }">` +
     `<template shadowrootmode="closed">` +
     `<style>${RAW_WIDGET_HOST_STYLES}</style>` +
     sanitized +
@@ -109,4 +111,3 @@ export function renderRawWidget(props: RawWidgetProps): string {
     `</hsx-raw>`
   );
 }
-

@@ -12,7 +12,7 @@ import { jsx } from "./jsx-runtime.ts";
 // =============================================================================
 
 export type LoadingProps = {
-  readonly messages?: readonly string[];
+  readonly message?: string;
   readonly id?: string;
 };
 
@@ -29,7 +29,7 @@ const LOADING_STYLES = `@keyframes hsx-loading-pulse {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  color: var(--hsx-muted, var(--color-text-secondary, #6b7280));
+  color: var(--text-muted, #6b7280);
   font-size: 0.875rem;
   animation: hsx-loading-pulse 1.5s ease-in-out infinite;
 }
@@ -48,11 +48,11 @@ const LOADING_STYLES = `@keyframes hsx-loading-pulse {
  *
  * @example
  * ```tsx
- * <Loading id="widget-loading" messages={["Preparing chart..."]} />
+ * <Loading id="widget-loading" message="Preparing chart..." />
  * ```
  */
 export function Loading(props: LoadingProps): Renderable {
-  const displayMessage = props.messages?.[0] ?? "Loading...";
+  const displayMessage = props.message ?? "Loading...";
 
   const containerProps: Record<string, unknown> = {
     "data-loading": "true",

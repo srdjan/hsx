@@ -55,20 +55,33 @@ function TodoItem(props: { todo: Todo }) {
   const inputId = `todo-${todo.id}`;
 
   return (
-    <li>
-      <input
-        type="checkbox"
-        id={inputId}
-        checked={todo.done}
-        post={TodoToggle}
-        params={{ id: todo.id }}
-        target={ids.app}
-        swap="innerHTML"
-        trigger="change"
-      />
-      <label htmlFor={inputId}>{todo.text}</label>
+    <li
+      data-layout="row"
+      data-align="center"
+      data-justify="between"
+      data-gap="3"
+    >
+      <label
+        htmlFor={inputId}
+        data-layout="row"
+        data-align="center"
+        data-gap="3"
+      >
+        <input
+          type="checkbox"
+          id={inputId}
+          checked={todo.done}
+          post={TodoToggle}
+          params={{ id: todo.id }}
+          target={ids.app}
+          swap="innerHTML"
+          trigger="change"
+        />
+        {todo.done ? <s>{todo.text}</s> : <span>{todo.text}</span>}
+      </label>
       <button
         type="button"
+        data-variant="ghost"
         post={TodoDelete}
         params={{ id: todo.id }}
         target={ids.app}
@@ -91,10 +104,8 @@ function TodoListView(props: ViewState) {
   });
 
   return (
-    <ul id="todo-list">
-      {filtered.map((t) => (
-        <TodoItem todo={t} />
-      ))}
+    <ul id="todo-list" data-layout="stack" data-gap="2">
+      {filtered.map((t) => <TodoItem todo={t} />)}
     </ul>
   );
 }
@@ -114,10 +125,16 @@ function TodoFilters(props: { current: Filter }) {
   const filters: Filter[] = ["all", "active", "completed"];
 
   return (
-    <nav id="todo-filters" aria-label="Filter todos">
+    <nav
+      id="todo-filters"
+      aria-label="Filter todos"
+      data-layout="row"
+      data-gap="2"
+    >
       {filters.map((f) => (
         <button
           type="button"
+          data-variant={f === current ? "solid" : "ghost"}
           get={TodoList}
           target={ids.app}
           swap="innerHTML"
@@ -137,6 +154,7 @@ function ClearCompleted(props: { items: Todo[] }) {
     <button
       type="button"
       id="clear-completed"
+      data-variant="ghost"
       post={TodoClear}
       target={ids.app}
       swap="innerHTML"
@@ -150,7 +168,12 @@ function ClearCompleted(props: { items: Todo[] }) {
 export function TodoApp(props: ViewState) {
   const { items, filter } = props;
   return (
-    <section id="todo-app" aria-label="Todo list">
+    <section
+      id="todo-app"
+      aria-label="Todo list"
+      data-layout="stack"
+      data-gap="4"
+    >
       <form post={TodoList} target={ids.app} swap="innerHTML">
         <input
           type="text"
@@ -165,7 +188,13 @@ export function TodoApp(props: ViewState) {
       <TodoListView items={items} filter={filter} />
 
       {items.length > 0 && (
-        <footer>
+        <footer
+          data-layout="row"
+          data-align="center"
+          data-justify="between"
+          data-gap="3"
+          data-stack="mobile"
+        >
           <TodoCount items={items} />
           <TodoFilters current={filter} />
           <ClearCompleted items={items} />

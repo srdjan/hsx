@@ -13,7 +13,7 @@
  */
 
 import { hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import { widgetToHsxComponent } from "@srdjan/hsx-widgets/ssr";
 import type { EmbeddableWidget } from "../../packages/hsx-widgets/embed/embed-handler.ts";
 import { greetingWidget } from "../../packages/hsx-widgets/examples/greeting-widget.tsx";
@@ -59,36 +59,38 @@ const Page = hsxPage(() => (
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <h1>HSX Widget Demo</h1>
 
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="4">
           <h2>SSR Mode</h2>
           <p>
             These widgets are rendered server-side through the HSX pipeline.
             Try: <a href="/widgets/greeting/World">/widgets/greeting/World</a>
             {" "}
-            and
-            {" "}
-            <a href="/widgets/status/Build%20Healthy?tone=ok">/widgets/status/Build%20Healthy?tone=ok</a>
+            and{" "}
+            <a href="/widgets/status/Build%20Healthy?tone=ok">
+              /widgets/status/Build%20Healthy?tone=ok
+            </a>
           </p>
         </div>
 
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="4">
           <h2>Embed Mode</h2>
           <p>
-            Widget shells are served for iframe embedding.
-            Try:
-            {" "}
-            <a href="/embed/hsx-greeting?name=World&amp;message=Hi!">/embed/hsx-greeting?name=World&amp;message=Hi!</a>
-            {" "}
-            and
-            {" "}
-            <a href="/embed/hsx-status?label=Build%20Healthy&amp;tone=ok">/embed/hsx-status?label=Build%20Healthy&amp;tone=ok</a>
+            Widget shells are served for iframe embedding. Try:{" "}
+            <a href="/embed/hsx-greeting?name=World&amp;message=Hi!">
+              /embed/hsx-greeting?name=World&amp;message=Hi!
+            </a>{" "}
+            and{" "}
+            <a href="/embed/hsx-status?label=Build%20Healthy&amp;tone=ok">
+              /embed/hsx-status?label=Build%20Healthy&amp;tone=ok
+            </a>
           </p>
           <p>
-            Build client assets with <code>deno task build:hsx-widgets</code>, then
-            use this on a third-party site:
+            Build client assets with{" "}
+            <code>deno task build:hsx-widgets</code>, then use this on a
+            third-party site:
           </p>
           <pre><code>{`<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World"></div>
 <div data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"></div>
@@ -116,13 +118,15 @@ Deno.serve((req) => {
     return Deno.readTextFile(
       new URL("../../vendor/htmx/htmx.js", import.meta.url),
     ).then(
-      (js) => new Response(js, {
-        headers: { "content-type": "text/javascript; charset=utf-8" },
-      }),
-      () => new Response("// htmx.js not found", {
-        status: 500,
-        headers: { "content-type": "text/javascript" },
-      }),
+      (js) =>
+        new Response(js, {
+          headers: { "content-type": "text/javascript; charset=utf-8" },
+        }),
+      () =>
+        new Response("// htmx.js not found", {
+          status: 500,
+          headers: { "content-type": "text/javascript" },
+        }),
     );
   }
 
@@ -141,9 +145,10 @@ Deno.serve((req) => {
 
     const fileUrl = new URL(`../../dist/hsx/${asset}`, import.meta.url);
     return Deno.readTextFile(fileUrl).then(
-      (js) => new Response(js, {
-        headers: { "content-type": "text/javascript; charset=utf-8" },
-      }),
+      (js) =>
+        new Response(js, {
+          headers: { "content-type": "text/javascript; charset=utf-8" },
+        }),
       () =>
         new Response(
           `// ${asset} not found. Run: deno task build:hsx-widgets`,

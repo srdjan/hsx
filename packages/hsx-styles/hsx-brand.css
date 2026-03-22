@@ -1,0 +1,60 @@
+/* HSX brand layer built on top of the vendored Auras foundation. */
+@layer brands {
+  :root {
+    --hue-primary: 266;
+    --hue-secondary: 205;
+    --primary-l: 53%;
+    --primary-c: 0.16;
+    --bg: oklch(98% 0.01 260);
+    --surface: white;
+    --surface-raised: oklch(96.5% 0.01 260);
+    --border: oklch(89% 0.015 260);
+    --border-strong: oklch(76% 0.03 260);
+    --text: oklch(24% 0.03 260);
+    --text-muted: oklch(50% 0.03 250);
+    --page-padding-block: var(--space-8);
+    --container-max: 72rem;
+    --card-shadow: var(--shadow-md);
+    --card-border-color: color-mix(in oklch, var(--border) 72%, transparent);
+    --notice-shadow: var(--shadow-sm);
+    --dialog-backdrop-blur: 0.65rem;
+  }
+
+  [data-theme~="dark"] {
+    --gray-10: oklch(18% 0.01 var(--hue-primary));
+    --gray-11: oklch(13% 0.008 var(--hue-primary));
+    --gray-12: oklch(9% 0.006 var(--hue-primary));
+    --border: color-mix(in oklch, var(--gray-5) 65%, transparent);
+    --card-border-color: color-mix(in oklch, var(--border) 55%, transparent);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --gray-10: oklch(18% 0.01 var(--hue-primary));
+      --gray-11: oklch(13% 0.008 var(--hue-primary));
+      --gray-12: oklch(9% 0.006 var(--hue-primary));
+      --border: color-mix(in oklch, var(--gray-5) 65%, transparent);
+      --card-border-color: color-mix(in oklch, var(--border) 55%, transparent);
+    }
+  }
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at top left,
+      color-mix(in oklch, var(--primary) 14%, transparent),
+      transparent 45%
+    ),
+    linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--primary) 3%, var(--bg)),
+    var(--bg) 30%
+  );
+}
+
+main {
+  display: grid;
+  gap: var(--space-6);
+}

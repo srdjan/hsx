@@ -1,5 +1,5 @@
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import { Card, Subtitle, UserList } from "./components.tsx";
 
 // =============================================================================
@@ -7,6 +7,129 @@ import { Card, Subtitle, UserList } from "./components.tsx";
 // =============================================================================
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const LAZY_LOADING_STYLES = `
+  :root {
+    --primary: #10b981;
+    --primary-hover: #059669;
+    --primary-subtle: #d1fae5;
+    --bg: #f0fdf4;
+    --surface: #ffffff;
+    --surface-raised: #ecfdf5;
+    --border: #a7f3d0;
+    --text: #064e3b;
+    --text-muted: #047857;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .stat {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+  }
+
+  .stat-value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .skeleton {
+    border-radius: var(--radius-md);
+    background: linear-gradient(90deg, var(--surface-raised), color-mix(in oklch, var(--primary) 18%, white), var(--surface-raised));
+    background-size: 200% 100%;
+    animation: lazy-loading-pulse 1.3s ease-in-out infinite;
+  }
+
+  .skeleton-stat {
+    min-height: 4.5rem;
+  }
+
+  .skeleton-chart {
+    min-height: 12rem;
+  }
+
+  .skeleton-text {
+    min-height: 1rem;
+  }
+
+  .chart {
+    display: flex;
+    align-items: end;
+    gap: var(--space-2);
+    min-height: 12rem;
+    padding-block-start: var(--space-4);
+  }
+
+  .bar {
+    flex: 1;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: linear-gradient(180deg, color-mix(in oklch, var(--primary) 75%, white), var(--primary));
+  }
+
+  #user-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .user-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklch, var(--surface) 90%, var(--primary-subtle));
+  }
+
+  .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 9999px;
+    background: var(--primary-subtle);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .user-name {
+    font-weight: 600;
+  }
+
+  .user-email,
+  .load-more {
+    color: var(--text-muted);
+  }
+
+  .load-more {
+    padding: var(--space-4);
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @keyframes lazy-loading-pulse {
+    from { background-position: 0% 0; }
+    to { background-position: 200% 0; }
+  }
+`;
 
 // =============================================================================
 // Components (render-only)
@@ -60,7 +183,9 @@ function ChartContent() {
   const heights = [40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88];
   return (
     <div class="chart">
-      {heights.map((h, index) => <div key={index} class="bar" style={{ height: `${h}%` }} />)}
+      {heights.map((h, index) => (
+        <div key={index} class="bar" style={{ height: `${h}%` }} />
+      ))}
     </div>
   );
 }
@@ -154,7 +279,9 @@ const LoadMore = hsxComponent("/content/more", {
   },
   render: ({ users, nextPage }) => (
     <>
-      {users.map((u) => <UserItem key={u.email} name={u.name} email={u.email} />)}
+      {users.map((u) => (
+        <UserItem key={u.email} name={u.name} email={u.email} />
+      ))}
       {nextPage && <LoadMoreTrigger page={nextPage} />}
     </>
   ),
@@ -171,10 +298,10 @@ const Page = hsxPage(() => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Lazy Loading - HSX Example</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
-      <style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; --hsx-border: #d1fae5; --hsx-text: #064e3b; }`}</style>
+      <style>{LAZY_LOADING_STYLES}</style>
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <h1>Dashboard</h1>
         <Subtitle>Content loads lazily as it appears in viewport</Subtitle>
         <Card get={Stats} trigger="load" swap="innerHTML">

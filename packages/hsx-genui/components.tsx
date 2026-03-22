@@ -66,27 +66,27 @@ const CHAT_STYLES = `
   display: flex;
   gap: 0.5rem;
   padding: 1rem;
-  border-top: 1px solid var(--hsx-border, var(--color-border, #e5e7eb));
+  border-top: 1px solid var(--border, #e5e7eb);
 }
 .genui-input {
   flex: 1;
   padding: 0.625rem 0.875rem;
-  border: 1px solid var(--hsx-border, var(--color-border, #e5e7eb));
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
   font-family: inherit;
-  background: var(--hsx-bg, var(--color-background-primary, #ffffff));
-  color: var(--hsx-text, var(--color-text-primary, #1f2937));
+  background: var(--surface, #ffffff);
+  color: var(--text, #1f2937);
 }
 .genui-input:focus {
   outline: none;
-  border-color: var(--hsx-accent, var(--color-accent, #4f46e5));
+  border-color: var(--primary, #4f46e5);
 }
 .genui-submit {
   padding: 0.625rem 1.25rem;
   border: none;
   border-radius: 0.5rem;
-  background: var(--hsx-accent, var(--color-accent, #4f46e5));
+  background: var(--primary, #4f46e5);
   color: #ffffff;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -97,7 +97,7 @@ const CHAT_STYLES = `
 }
 .genui-user-message {
   align-self: flex-end;
-  background: var(--hsx-accent, var(--color-accent, #4f46e5));
+  background: var(--primary, #4f46e5);
   color: #ffffff;
   padding: 0.5rem 0.875rem;
   border-radius: 1rem 1rem 0.25rem 1rem;
@@ -187,8 +187,9 @@ export function createGenUIRoutes(
       const conversationId = formData.get("conversation_id");
 
       const userMessage = typeof message === "string" ? message.trim() : "";
-      const convId =
-        typeof conversationId === "string" ? conversationId : undefined;
+      const convId = typeof conversationId === "string"
+        ? conversationId
+        : undefined;
 
       let conversation = convId ? store.get(convId) : undefined;
       if (!conversation) {
@@ -203,7 +204,12 @@ export function createGenUIRoutes(
 
       return { userMessage, conversationId: conversation.id };
     },
-    render({ userMessage, conversationId }: { userMessage: string; conversationId: string }): Renderable {
+    render(
+      { userMessage, conversationId }: {
+        userMessage: string;
+        conversationId: string;
+      },
+    ): Renderable {
       return (
         <div>
           <div class="genui-user-message">{userMessage}</div>
@@ -247,7 +253,10 @@ export function createGenUIRoutes(
       const msgs = conversation.messages;
       let lastUserMsg: typeof msgs[number] | undefined;
       for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i].role === "user") { lastUserMsg = msgs[i]; break; }
+        if (msgs[i].role === "user") {
+          lastUserMsg = msgs[i];
+          break;
+        }
       }
 
       if (!lastUserMsg) {

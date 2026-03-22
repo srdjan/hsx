@@ -16,7 +16,7 @@ declare module "hsx/jsx-runtime" {
 }
 
 import { hsxComponent, hsxPage, id } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import {
   bgcheckWidget,
   getCheckResult,
@@ -46,11 +46,46 @@ type Candidate = {
 };
 
 const candidates: Candidate[] = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", role: "Senior Engineer", status: "screening", appliedAt: "2026-02-01" },
-  { id: 2, name: "Bob Chen", email: "bob@example.com", role: "Product Manager", status: "interview", appliedAt: "2026-02-03" },
-  { id: 3, name: "Carol Davis", email: "carol@example.com", role: "Designer", status: "applied", appliedAt: "2026-02-10" },
-  { id: 4, name: "Dave Wilson", email: "dave@example.com", role: "Backend Engineer", status: "offer", appliedAt: "2026-01-25" },
-  { id: 5, name: "Eva Martinez", email: "eva@example.com", role: "Data Scientist", status: "screening", appliedAt: "2026-02-08" },
+  {
+    id: 1,
+    name: "Alice Johnson",
+    email: "alice@example.com",
+    role: "Senior Engineer",
+    status: "screening",
+    appliedAt: "2026-02-01",
+  },
+  {
+    id: 2,
+    name: "Bob Chen",
+    email: "bob@example.com",
+    role: "Product Manager",
+    status: "interview",
+    appliedAt: "2026-02-03",
+  },
+  {
+    id: 3,
+    name: "Carol Davis",
+    email: "carol@example.com",
+    role: "Designer",
+    status: "applied",
+    appliedAt: "2026-02-10",
+  },
+  {
+    id: 4,
+    name: "Dave Wilson",
+    email: "dave@example.com",
+    role: "Backend Engineer",
+    status: "offer",
+    appliedAt: "2026-01-25",
+  },
+  {
+    id: 5,
+    name: "Eva Martinez",
+    email: "eva@example.com",
+    role: "Data Scientist",
+    status: "screening",
+    appliedAt: "2026-02-08",
+  },
 ];
 
 function findCandidate(idVal: number): Candidate | undefined {
@@ -113,11 +148,16 @@ function BgCheckElement({ candidateId }: { candidateId: number }) {
   });
 
   if (!validationResult.ok) {
-    return <hsx-bgcheck><p>Error loading background check.</p></hsx-bgcheck>;
+    return (
+      <hsx-bgcheck>
+        <p>Error loading background check.</p>
+      </hsx-bgcheck>
+    );
   }
 
   const content = bgcheckWidget.render(validationResult.value);
-  const isPolling = result.status === "pending" || result.status === "in_progress";
+  const isPolling = result.status === "pending" ||
+    result.status === "in_progress";
 
   if (isPolling) {
     return (
@@ -191,7 +231,9 @@ const CandidateDetail = hsxComponent("/candidates/:id", {
         <div class="ats-pipeline-steps">
           {PIPELINE_STEPS.map((step) => (
             <button
-              class={`ats-pipeline-step ${step === candidate.status ? "active" : ""}`}
+              class={`ats-pipeline-step ${
+                step === candidate.status ? "active" : ""
+              }`}
               post={`/candidates/${candidate.id}/status`}
               vals={{ status: step }}
               target={ids.candidateDetail}
@@ -201,7 +243,9 @@ const CandidateDetail = hsxComponent("/candidates/:id", {
             </button>
           ))}
           <button
-            class={`ats-pipeline-step ats-pipeline-reject ${candidate.status === "rejected" ? "active" : ""}`}
+            class={`ats-pipeline-step ats-pipeline-reject ${
+              candidate.status === "rejected" ? "active" : ""
+            }`}
             post={`/candidates/${candidate.id}/status`}
             vals={{ status: "rejected" }}
             target={ids.candidateDetail}
@@ -269,7 +313,14 @@ const Page = hsxPage(() => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>ATS - Applicant Tracking System</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
-      <style>{`
+      <style>
+        {`
+        :root {
+          --primary: #2563eb;
+          --primary-hover: #1d4ed8;
+          --primary-subtle: #dbeafe;
+        }
+
         /* ATS Layout */
         .ats-layout {
           display: grid;
@@ -279,8 +330,8 @@ const Page = hsxPage(() => (
         }
 
         .ats-sidebar {
-          border-right: 1px solid var(--hsx-border, #e2e8f0);
-          background: var(--hsx-bg, #f8fafc);
+          border-right: 1px solid var(--border, #e2e8f0);
+          background: var(--bg, #f8fafc);
           overflow-y: auto;
         }
 
@@ -291,8 +342,8 @@ const Page = hsxPage(() => (
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: var(--hsx-muted, #64748b);
-          border-bottom: 1px solid var(--hsx-border, #e2e8f0);
+          color: var(--text-muted, #64748b);
+          border-bottom: 1px solid var(--border, #e2e8f0);
         }
 
         .ats-detail {
@@ -305,7 +356,7 @@ const Page = hsxPage(() => (
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
           font-style: italic;
         }
 
@@ -321,7 +372,7 @@ const Page = hsxPage(() => (
           flex-direction: column;
           gap: 0.25rem;
           padding: 0.75rem 1.25rem;
-          border-bottom: 1px solid var(--hsx-border, #e2e8f0);
+          border-bottom: 1px solid var(--border, #e2e8f0);
           cursor: pointer;
           text-decoration: none;
           color: inherit;
@@ -333,12 +384,12 @@ const Page = hsxPage(() => (
 
         .ats-candidate-name {
           font-weight: 600;
-          color: var(--hsx-text, #1e293b);
+          color: var(--text, #1e293b);
         }
 
         .ats-candidate-role {
           font-size: 0.875rem;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
         }
 
         /* Status Badges */
@@ -382,7 +433,7 @@ const Page = hsxPage(() => (
 
         .ats-detail-fields dt {
           font-weight: 500;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
           font-size: 0.875rem;
         }
 
@@ -397,7 +448,7 @@ const Page = hsxPage(() => (
           font-size: 0.875rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
           margin: 0 0 0.75rem 0;
         }
 
@@ -409,21 +460,21 @@ const Page = hsxPage(() => (
 
         .ats-pipeline-step {
           padding: 0.375rem 0.75rem;
-          border: 1px solid var(--hsx-border, #e2e8f0);
+          border: 1px solid var(--border, #e2e8f0);
           border-radius: 0.375rem;
           background: white;
           cursor: pointer;
           font-size: 0.8125rem;
-          color: var(--hsx-text, #1e293b);
+          color: var(--text, #1e293b);
           transition: background 0.15s, border-color 0.15s;
         }
 
         .ats-pipeline-step:hover { background: #f1f5f9; }
 
         .ats-pipeline-step.active {
-          background: var(--hsx-accent, #3b82f6);
+          background: var(--primary, #3b82f6);
           color: white;
-          border-color: var(--hsx-accent, #3b82f6);
+          border-color: var(--primary, #3b82f6);
         }
 
         .ats-pipeline-reject.active {
@@ -434,7 +485,7 @@ const Page = hsxPage(() => (
         /* Background Check Widget (host styles for <hsx-bgcheck>) */
         hsx-bgcheck {
           display: block;
-          border: 1px solid var(--hsx-border, #e2e8f0);
+          border: 1px solid var(--border, #e2e8f0);
           border-radius: 0.5rem;
           padding: 1rem;
           margin-top: 0.5rem;
@@ -445,7 +496,7 @@ const Page = hsxPage(() => (
 
         .bgcheck-action {
           padding: 0.5rem 1rem;
-          background: var(--hsx-accent, #3b82f6);
+          background: var(--primary, #3b82f6);
           color: white;
           border: none;
           border-radius: 0.375rem;
@@ -490,13 +541,13 @@ const Page = hsxPage(() => (
         .bgcheck-detail {
           margin: 0;
           font-size: 0.875rem;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
         }
 
         .bgcheck-completed {
           margin: 0;
           font-size: 0.8125rem;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
         }
 
         /* Background Check Section */
@@ -504,10 +555,11 @@ const Page = hsxPage(() => (
           font-size: 0.875rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: var(--hsx-muted, #64748b);
+          color: var(--text-muted, #64748b);
           margin: 0 0 0.5rem 0;
         }
-      `}</style>
+      `}
+      </style>
     </head>
     <body>
       <div class="ats-layout">

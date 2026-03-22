@@ -78,16 +78,17 @@ HSX supports modular imports for smaller bundles:
 
 ```ts
 // Core only - rendering + type-safe routes (smaller bundle)
-import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
+import { Fragment, id, render, route } from "jsr:@srdjan/hsx/core";
 
 // Components only - higher-level abstractions
 import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/components";
 
 // Everything (default)
-import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
+import { hsxComponent, hsxPage, render, route } from "jsr:@srdjan/hsx";
 ```
 
-Use `/core` when you only need the low-level API without `hsxComponent`/`hsxPage`.
+Use `/core` when you only need the low-level API without
+`hsxComponent`/`hsxPage`.
 
 ### JSX Configuration
 
@@ -453,7 +454,7 @@ export const Page = hsxPage(() => (
       </header>
       <main>
         <section>
-          <div class="card">
+          <div data-surface="card">
             <Stats.Component />
           </div>
         </section>
@@ -670,7 +671,7 @@ optional data loading:
 
 ```tsx
 import type { Widget } from "jsr:@srdjan/hsx-widgets";
-import { ok, fail } from "jsr:@srdjan/hsx-widgets";
+import { fail, ok } from "jsr:@srdjan/hsx-widgets";
 
 type GreetingProps = { readonly name: string; readonly message: string };
 
@@ -680,7 +681,11 @@ export const greetingWidget: Widget<GreetingProps> = {
     validate(raw) {
       const obj = raw as Record<string, unknown>;
       if (typeof obj.name !== "string") {
-        return fail({ tag: "validation_error", message: "Name required", field: "name" });
+        return fail({
+          tag: "validation_error",
+          message: "Name required",
+          field: "name",
+        });
       }
       return ok({ name: obj.name, message: String(obj.message ?? "") });
     },
@@ -693,7 +698,9 @@ export const greetingWidget: Widget<GreetingProps> = {
     </div>
   ),
   load: async (params) => {
-    if (!params.name) return fail({ tag: "load_error", message: "Missing name" });
+    if (!params.name) {
+      return fail({ tag: "load_error", message: "Missing name" });
+    }
     return ok({ name: params.name, message: `Hello, ${params.name}!` });
   },
 };
@@ -771,7 +778,7 @@ const GreetingRoute = widgetToHsxComponent(greetingWidget, {
 });
 
 // In your page <head>:
-<WidgetStyles widgets={[greetingWidget]} />
+<WidgetStyles widgets={[greetingWidget]} />;
 ```
 
 For the full widget guide including the build pipeline, see
@@ -846,28 +853,33 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 
 ### Styling with `@srdjan/hsx-styles` (optional)
 
-- Serve `hsxStyles` (light) or `hsxStylesDark` and add `<link rel="stylesheet" href={HSX_STYLES_PATH}>` in your page `<head>`.
-- Layout helpers: `container`, `stack`, `cluster`, `sidebar`, `split`, `auto-grid`, `hero`, `measure`, `bleed`.
-- Components: `card`, `surface`, `badge`, `pill`, `chip`, `callout.{info|success|warning|danger}`, `divider`, `list-inline`, button sizes (`btn-sm`, `btn-lg`) and variants (`btn-ghost`, `btn-outline`).
-- Utilities: text sizing (`text-xs` … `text-3xl`), spacing (`p-sm`, `space-y-md`), flex/grid (`flex`, `cols-2/3`, `gap-sm`), shadows/rounding (`shadow-*`, `rounded-*`), and accessibility (`visually-hidden`).
-- Customize via CSS variables (`--hsx-accent`, `--hsx-bg`, `--hsx-space-*`, `--hsx-breakpoint-*`, etc.) to fit your brand palette.
+- Serve `hsxStyles` and add `<link rel="stylesheet" href={HSX_STYLES_PATH}>` in
+  your page `<head>`.
+- Use Auras-style layout attributes such as
+  `data-layout="stack|cluster|grid|container"`, plus `data-gap`, `data-align`,
+  and `data-grid-min`.
+- Use `data-surface="card"` for ready-made panels and
+  `data-variant="solid|soft|ghost"` for buttons.
+- Customize via Auras tokens like `--primary`, `--bg`, `--surface`, `--border`,
+  `--text`, and `--text-muted`.
+- Force dark mode with `data-theme="dark"` on `<html>` when needed.
 
 ---
 
 ## Examples Index
 
-| Example | Command | File |
-| --- | --- | --- |
-| Todos | `deno task example:todos` | `examples/todos/server.tsx` |
-| Active Search | `deno task example:active-search` | `examples/active-search/server.tsx` |
-| Lazy Loading | `deno task example:lazy-loading` | `examples/lazy-loading/server.tsx` |
+| Example         | Command                             | File                                  |
+| --------------- | ----------------------------------- | ------------------------------------- |
+| Todos           | `deno task example:todos`           | `examples/todos/server.tsx`           |
+| Active Search   | `deno task example:active-search`   | `examples/active-search/server.tsx`   |
+| Lazy Loading    | `deno task example:lazy-loading`    | `examples/lazy-loading/server.tsx`    |
 | Form Validation | `deno task example:form-validation` | `examples/form-validation/server.tsx` |
-| Polling | `deno task example:polling` | `examples/polling/server.tsx` |
-| Tabs & Modal | `deno task example:tabs-modal` | `examples/tabs-modal/server.tsx` |
-| HSX Components | `deno task example:hsx-components` | `examples/hsx-components/server.tsx` |
-| HSX Page | `deno task example:hsx-page` | `examples/hsx-page/server.tsx` |
-| Low-Level API | `deno task example:low-level-api` | `examples/low-level-api/server.tsx` |
-| HSX Widget | `deno task example:hsx-widget` | `examples/hsx-widget/server.tsx` |
+| Polling         | `deno task example:polling`         | `examples/polling/server.tsx`         |
+| Tabs & Modal    | `deno task example:tabs-modal`      | `examples/tabs-modal/server.tsx`      |
+| HSX Components  | `deno task example:hsx-components`  | `examples/hsx-components/server.tsx`  |
+| HSX Page        | `deno task example:hsx-page`        | `examples/hsx-page/server.tsx`        |
+| Low-Level API   | `deno task example:low-level-api`   | `examples/low-level-api/server.tsx`   |
+| HSX Widget      | `deno task example:hsx-widget`      | `examples/hsx-widget/server.tsx`      |
 
 For the HSX Widgets demo, build assets once before starting the server:
 
@@ -882,7 +894,7 @@ More detail: `examples/README.md` and `docs/WIDGETS.md`.
 
 ### Common Errors
 
-**"Manual hx-* attributes are not allowed"**
+__"Manual hx-_ attributes are not allowed"_*
 
 HSX throws if you use `hx-*` attributes directly:
 

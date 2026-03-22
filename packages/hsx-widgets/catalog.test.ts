@@ -11,13 +11,13 @@ import {
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { jsx } from "hsx/jsx-runtime";
 
-import { ok, fail } from "./result.ts";
+import { fail, ok } from "./result.ts";
 import type { GenUIWidget } from "./genui-widget.ts";
 import { createCatalog, type ToolDefinition } from "./catalog.ts";
 import {
-  validateRawWidgetProps,
-  renderRawWidget,
   RAW_WIDGET_TAG,
+  renderRawWidget,
+  validateRawWidgetProps,
 } from "./raw-widget.ts";
 import { sanitizeHtml } from "./sanitize.ts";
 import { createDesignGuidelines, formatForAI } from "./design-guidelines.ts";
@@ -214,7 +214,9 @@ Deno.test("validateRawWidgetProps rejects missing html", () => {
 });
 
 Deno.test("sanitizeHtml removes script elements", () => {
-  const output = sanitizeHtml('<p>Hello</p><script>alert("xss")</script><p>World</p>');
+  const output = sanitizeHtml(
+    '<p>Hello</p><script>alert("xss")</script><p>World</p>',
+  );
   assertEquals(output.includes("script"), false);
   assertEquals(output.includes("<p>Hello</p>"), true);
   assertEquals(output.includes("<p>World</p>"), true);
@@ -240,7 +242,9 @@ Deno.test("sanitizeHtml strips javascript: URIs", () => {
 });
 
 Deno.test("sanitizeHtml removes iframe tags", () => {
-  const output = sanitizeHtml('<p>safe</p><iframe src="evil.com"></iframe><p>also safe</p>');
+  const output = sanitizeHtml(
+    '<p>safe</p><iframe src="evil.com"></iframe><p>also safe</p>',
+  );
   assertEquals(output.includes("iframe"), false);
   assertEquals(output.includes("<p>safe</p>"), true);
 });
@@ -252,7 +256,9 @@ Deno.test("sanitizeHtml removes object and embed tags", () => {
 });
 
 Deno.test("sanitizeHtml removes meta tags", () => {
-  const output = sanitizeHtml('<meta http-equiv="refresh" content="0;url=javascript:alert(1)">');
+  const output = sanitizeHtml(
+    '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">',
+  );
   assertEquals(output.includes("meta"), false);
 });
 
@@ -263,13 +269,16 @@ Deno.test("sanitizeHtml preserves style tags", () => {
 });
 
 Deno.test("sanitizeHtml preserves allowed HTML structure", () => {
-  const input = '<div class="card"><h2>Title</h2><p>Content</p><ul><li>Item</li></ul></div>';
+  const input =
+    '<div class="card"><h2>Title</h2><p>Content</p><ul><li>Item</li></ul></div>';
   const output = sanitizeHtml(input);
   assertEquals(output, input);
 });
 
 Deno.test("sanitizeHtml strips data: URI in src", () => {
-  const output = sanitizeHtml('<img src="data:text/html,<script>alert(1)</script>">');
+  const output = sanitizeHtml(
+    '<img src="data:text/html,<script>alert(1)</script>">',
+  );
   assertEquals(output.includes("data:"), false);
 });
 
@@ -304,7 +313,7 @@ Deno.test("renderRawWidget escapes title attribute", () => {
 
 Deno.test("createDesignGuidelines uses defaults", () => {
   const guidelines = createDesignGuidelines();
-  assertStringIncludes(guidelines.colors, "--color-text-primary");
+  assertStringIncludes(guidelines.colors, "--text");
   assertStringIncludes(guidelines.typography, "system-ui");
   assertStringIncludes(guidelines.constraints, "Streaming-safe");
 });

@@ -5,14 +5,14 @@
  * Components are defined in components.tsx.
  */
 import { hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import {
   TodoApp,
-  TodoList,
-  TodoToggle,
-  TodoDelete,
   TodoClear,
+  TodoDelete,
+  TodoList,
   todos,
+  TodoToggle,
 } from "./components.tsx";
 
 // =============================================================================
@@ -28,12 +28,14 @@ const Page = hsxPage(() => (
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <header>
           <h1>todos</h1>
         </header>
 
-        <TodoApp items={todos} filter="all" />
+        <div data-surface="card">
+          <TodoApp items={todos} filter="all" />
+        </div>
       </main>
     </body>
   </html>

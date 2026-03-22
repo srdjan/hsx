@@ -1,9 +1,111 @@
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 import { ids } from "./ids.ts";
 
 type Tab = "overview" | "details" | "settings";
 type VoidProps = Record<string, never>;
+
+const TABS_MODAL_STYLES = `
+  :root {
+    --primary: #8b5cf6;
+    --primary-hover: #7c3aed;
+    --primary-subtle: #ede9fe;
+    --bg: #faf5ff;
+    --surface: #ffffff;
+    --surface-raised: #f5f3ff;
+    --border: #ddd6fe;
+    --text: #581c87;
+    --text-muted: #7e22ce;
+  }
+
+  .tabs nav {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    border-radius: var(--radius-full);
+  }
+
+  .tab[aria-selected="true"] {
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .paragraph,
+  .bullets,
+  .notification {
+    color: var(--text-muted);
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .card-grid > div {
+    min-height: 100%;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .toggle-group {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    background: rgb(15 23 42 / 0.45);
+    backdrop-filter: blur(10px);
+  }
+
+  .modal {
+    width: min(100%, 28rem);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xl);
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .notification {
+    position: fixed;
+    inset-inline-end: var(--space-4);
+    inset-block-end: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklch, var(--color-success) 18%, white);
+    color: var(--color-success);
+    border: 1px solid color-mix(in oklch, var(--color-success) 35%, var(--border));
+    box-shadow: var(--shadow-md);
+  }
+
+  @media (max-width: 640px) {
+    .card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+`;
 
 function TabButton(props: { tab: Tab; current: Tab; label: string }) {
   const isActive = props.tab === props.current;
@@ -16,6 +118,7 @@ function TabButton(props: { tab: Tab; current: Tab; label: string }) {
     <button
       type="button"
       class="tab"
+      data-variant="ghost"
       get={routeMap[props.tab]}
       target={ids.tabContent}
       swap="innerHTML"
@@ -46,19 +149,19 @@ function OverviewContent() {
         <p>Quick summary of your account.</p>
       </div>
       <div class="card-grid">
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="2">
           <h3>Projects</h3>
           <p>12</p>
         </div>
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="2">
           <h3>Tasks</h3>
           <p>48</p>
         </div>
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="2">
           <h3>Completed</h3>
           <p>36</p>
         </div>
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="2">
           <h3>In Progress</h3>
           <p>12</p>
         </div>
@@ -66,7 +169,7 @@ function OverviewContent() {
       <div class="btn-group">
         <button
           type="button"
-          class="btn btn-primary"
+          data-variant="solid"
           get={ModalOpen}
           target="body"
           swap="beforeend"
@@ -111,7 +214,7 @@ function SettingsContent() {
         <label htmlFor="notif">Notifications</label>
       </div>
       <div class="btn-group">
-        <button type="button" class="btn btn-primary">Save</button>
+        <button type="button" data-variant="solid">Save</button>
       </div>
     </>
   );
@@ -126,7 +229,7 @@ function ModalDialog() {
         <div class="btn-group">
           <button
             type="button"
-            class="btn btn-secondary"
+            data-variant="ghost"
             get={ModalClose}
             target="#modal-overlay"
             swap="outerHTML"
@@ -135,7 +238,7 @@ function ModalDialog() {
           </button>
           <button
             type="button"
-            class="btn btn-danger"
+            data-variant="solid"
             post={ModalConfirm}
             target={ids.modalContainer}
             swap="innerHTML"
@@ -187,7 +290,9 @@ const ModalClose = hsxComponent("/modal/close", {
 const ModalConfirm = hsxComponent("/modal/confirm", {
   methods: ["POST"],
   handler: () => ({ message: "✓ Action confirmed!" }),
-  render: ({ message }: { message: string }) => <Notification message={message} />,
+  render: ({ message }: { message: string }) => (
+    <Notification message={message} />
+  ),
 });
 
 // Page
@@ -199,15 +304,15 @@ const Page = hsxPage(() => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Tabs & Modal - HSX Example</title>
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
-      <style>{`:root { --hsx-accent: #8b5cf6; --hsx-bg: #faf5ff; --hsx-border: #e9d5ff; --hsx-text: #581c87; --hsx-muted: #9333ea; }`}</style>
+      <style>{TABS_MODAL_STYLES}</style>
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <header>
           <h1>Dashboard</h1>
         </header>
         <TabNav current="overview" />
-        <div class="tab-content" id="tab-content">
+        <div class="tab-content" id="tab-content" data-surface="card">
           <OverviewContent />
         </div>
       </main>

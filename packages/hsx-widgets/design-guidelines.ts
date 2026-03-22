@@ -25,15 +25,15 @@ export type DesignGuidelines = {
 // Defaults
 // =============================================================================
 
-const DEFAULT_COLORS = `Use CSS custom properties for all colors:
-- --color-text-primary: Main text color
-- --color-text-secondary: Secondary/muted text
-- --color-background-primary: Main background
-- --color-background-secondary: Card/surface background
-- --color-border: Default border color
-- --color-accent: Primary accent/action color
-All colors must work in both light and dark modes.
-Maximum 2-3 color accents per widget.`;
+const DEFAULT_COLORS = `Use Auras-style CSS custom properties for all colors:
+- --text: Main text color
+- --text-muted: Secondary/muted text
+- --bg: Page background
+- --surface: Card and field background
+- --border: Default border color
+- --primary: Primary accent/action color
+Prefer deriving variants from tokens instead of hardcoding extra colors.
+All colors must work in both light and dark modes.`;
 
 const DEFAULT_TYPOGRAPHY = `Font: system-ui, -apple-system, sans-serif
 Weights: 400 (normal), 500 (medium) only. Never use 600 or 700.
@@ -49,11 +49,14 @@ const DEFAULT_SPACING = `Use consistent spacing scale:
 - 2xl: 2rem (32px)
 - 3xl: 3rem (48px)`;
 
-const DEFAULT_COMPONENTS = `Cards: background var(--color-background-secondary), 1px border, border-radius 0.5rem, padding 1rem 1.25rem
-Buttons: padding 0.5rem 1rem, border-radius 0.375rem, include hover/active states
-Tables: border-collapse, header row with background, alternating row colors optional`;
+const DEFAULT_COMPONENTS =
+  `Layout: prefer semantic HTML plus data-layout and data-gap attributes
+Cards: use data-surface="card" or match its token model (surface, border, radius, padding)
+Buttons: prefer native buttons with data-variant="solid|soft|ghost" when possible
+Tables: border-collapse, clear headers, and restrained decoration`;
 
-const DEFAULT_CONSTRAINTS = `Streaming-safe: No gradients, box-shadows, or blur - they flash during DOM updates.
+const DEFAULT_CONSTRAINTS =
+  `Streaming-safe: No gradients, box-shadows, or blur - they flash during DOM updates.
 No HTML comments - they waste tokens.
 Structure order: <style> first, then HTML content.
 Keep widget output compact - server-side rendering means large output increases latency.`;

@@ -29,7 +29,7 @@ HSX is a monorepo with four packages:
 
 **Packages:**
 - `@srdjan/hsx` (packages/hsx/) - Core JSX renderer, `render()`, `renderHtml()`, `renderSSE()`, `route()`, `id()`, `Fragment`, `hsxComponent()`, `hsxPage()`, `Loading`
-- `@srdjan/hsx-styles` (packages/hsx-styles/) - `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
+- `@srdjan/hsx-styles` (packages/hsx-styles/) - `hsxStyles`, `HSX_STYLES_PATH` (Auras Elements + HSX brand layer)
 - `@srdjan/hsx-widgets` (packages/hsx-widgets/) - Widget protocol, `widgetToHsxComponent()`, `collectWidgetStyles()`, Declarative Shadow DOM SSR, `GenUIWidget`, `createCatalog()`, `formatForAI()`
 - `@srdjan/hsx-genui` (packages/hsx-genui/) - Generative UI server: `createGenUIHandler()`, `createGenUIRoutes()`, `AIProvider` port, Claude adapter
 
@@ -55,7 +55,7 @@ HSX is a monorepo with four packages:
 **Imports (Workspace-aware):**
 ```ts
 import { render, renderSSE, id, route, Fragment, hsxComponent, hsxPage } from "@srdjan/hsx";
-import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
 import { createCatalog, type GenUIWidget } from "@srdjan/hsx-widgets";
 import { createGenUIHandler, createGenUIRoutes, createConversationStore } from "@srdjan/hsx-genui";
 import { claudeProvider } from "@srdjan/hsx-genui/claude";

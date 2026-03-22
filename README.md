@@ -5,10 +5,12 @@ for **S**erver-Side e**X**tensions'. :0
 
 But, honestly, I prefer: **H**TMX **S**laps **X**tremely :)
 
-SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during the rendering process, and compiles them to `hx-*` attributes.
+SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during
+the rendering process, and compiles them to `hx-*` attributes.
 
 > Disclaimer: this was a quick hack in my free time, held together by vibe
-> coding and espresso. I like it a lot, but consider it an early release. I feel it is getting better (a lot)
+> coding and espresso. I like it a lot, but consider it an early release. I feel
+> it is getting better (a lot)
 
 ## TL;DR: Like JSX, but for SSR HTML + HTMX.
 
@@ -24,8 +26,8 @@ SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during 
 - **Auto HTMX injection** - `<script src="/static/htmx.js">` injected when
   needed
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
-- **Widgets** - Define once, serve via SSR or embed as iframes with
-  Declarative Shadow DOM
+- **Widgets** - Define once, serve via SSR or embed as iframes with Declarative
+  Shadow DOM
 - **Generative UI** - AI models select and render widgets via tool calling,
   streamed to the browser via SSE + HTMX
 
@@ -49,7 +51,15 @@ HSX is a monorepo with four packages:
 
 ```ts
 // Core - JSX rendering, type-safe routes, hsxComponent, hsxPage, SSE
-import { Fragment, hsxComponent, hsxPage, id, render, renderSSE, route } from "jsr:@srdjan/hsx";
+import {
+  Fragment,
+  hsxComponent,
+  hsxPage,
+  id,
+  render,
+  renderSSE,
+  route,
+} from "jsr:@srdjan/hsx";
 
 // Styles - ready-to-use CSS with theming support
 import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx-styles";
@@ -59,7 +69,11 @@ import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
 import { createCatalog, type GenUIWidget } from "jsr:@srdjan/hsx-widgets";
 
 // GenUI - AI-powered generative UI with tool calling
-import { createGenUIHandler, createGenUIRoutes, createConversationStore } from "jsr:@srdjan/hsx-genui";
+import {
+  createConversationStore,
+  createGenUIHandler,
+  createGenUIRoutes,
+} from "jsr:@srdjan/hsx-genui";
 import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
 ```
 
@@ -78,13 +92,13 @@ For smaller bundles, import only what you need:
 
 ```ts
 // Core only - render, route, id, Fragment (smaller bundle)
-import { render, route, id, Fragment } from "jsr:@srdjan/hsx/core";
+import { Fragment, id, render, route } from "jsr:@srdjan/hsx/core";
 
 // Components only - hsxComponent, hsxPage
 import { hsxComponent, hsxPage } from "jsr:@srdjan/hsx/components";
 
 // Everything (default)
-import { render, route, hsxComponent, hsxPage } from "jsr:@srdjan/hsx";
+import { hsxComponent, hsxPage, render, route } from "jsr:@srdjan/hsx";
 ```
 
 ### From Source
@@ -217,7 +231,7 @@ const Page = hsxPage(() => (
       </header>
       <main>
         <section>
-          <div class="card">
+          <div data-surface="card">
             <Widget.Component />
           </div>
         </section>
@@ -301,7 +315,14 @@ function Card(props: {
   swap?: HsxSwap;
 }) {
   return (
-    <div class="card" get={props.get} trigger={props.trigger} swap={props.swap}>
+    <div
+      data-surface="card"
+      data-layout="stack"
+      data-gap="4"
+      get={props.get}
+      trigger={props.trigger}
+      swap={props.swap}
+    >
       {props.title && <h2>{props.title}</h2>}
       {props.children}
     </div>
@@ -309,7 +330,11 @@ function Card(props: {
 }
 
 function Subtitle(props: { children: string }) {
-  return <p class="subtitle">{props.children}</p>;
+  return (
+    <div data-ui="prose">
+      <p>{props.children}</p>
+    </div>
+  );
 }
 ```
 
@@ -376,14 +401,11 @@ if (url.pathname === "/static/htmx.js") {
 
 ### Optional Styles Module
 
-HSX includes an optional CSS module with a default theme and dark variant:
+HSX includes an optional Auras-based CSS module with a single bundled
+stylesheet:
 
 ```ts
-import {
-  HSX_STYLES_PATH,
-  hsxStyles,
-  hsxStylesDark,
-} from "jsr:@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx-styles";
 
 // Serve the styles
 if (url.pathname === HSX_STYLES_PATH) {
@@ -398,29 +420,33 @@ if (url.pathname === HSX_STYLES_PATH) {
 
 **Exports:**
 
-- `hsxStyles` - Default light theme (indigo accent)
-- `hsxStylesDark` - Dark theme variant
+- `hsxStyles` - Auras Elements + HSX brand layer
 - `HSX_STYLES_PATH` - Default path: `/static/hsx.css`
 
-**What you get (Fizzy-inspired defaults):**
+**What you get:**
 
-- Layout helpers: `container`, `stack`, `cluster`, `sidebar`, `split`, `auto-grid`, `hero`, `bleed`, `measure`
-- Components: `card`, `surface`, `callout.{info|success|warning|danger}`, `badge`, `pill`, `chip`, `divider`, `list-inline`, button sizes (`btn-sm`, `btn-lg`) and variants (`btn-ghost`, `btn-outline`)
-- Utilities: text sizes (`text-xs` … `text-3xl`), spacing (`p-sm`, `px-md`, `space-y-md`), flex/grid helpers (`flex`, `cols-2/3`, `gap-sm`), shadows/rounding (`shadow-sm`, `rounded-lg`), visibility (`visually-hidden`, `hidden`)
+- Layout via data attributes:
+  `data-layout="row|col|stack|cluster|grid|container"`, `data-gap`,
+  `data-align`, `data-justify`, `data-grid-min`
+- Surfaces via attributes: `data-surface="card"` and `data-surface="notice"`
+- Button variants via `data-variant="solid|soft|ghost"`
+- Theme controls via `data-theme="dark"`, `data-contrast="more"`, and
+  `data-motion="reduce"`
 
 **Customization:** Override CSS variables in your page:
 
 ```tsx
-<style>{`:root { --hsx-accent: #10b981; --hsx-bg: #f0fdf4; }`}</style>;
+<style>
+  {`:root { --primary: #10b981; --bg: #f0fdf4; --border: #a7f3d0; }`}
+</style>;
 ```
 
-Available variables: `--hsx-accent`, `--hsx-accent-hover`, `--hsx-bg`,
-`--hsx-surface`, `--hsx-border`, `--hsx-text`, `--hsx-muted`, `--hsx-error`,
-`--hsx-success`, `--hsx-info`, `--hsx-warning`, `--hsx-neutral`, spacing
-(`--hsx-space-2xs` … `--hsx-space-3xl`), radius (`--hsx-radius-*`), typography
-(`--hsx-font-size-*`, `--hsx-leading-*`), shadows (`--hsx-shadow-*`),
-breakpoints (`--hsx-breakpoint-sm|md|lg`), and layout tokens
-(`--hsx-container-max`, `--hsx-container-padding`, `--hsx-measure`).
+Core tokens include `--primary`, `--primary-hover`, `--primary-subtle`, `--bg`,
+`--surface`, `--surface-raised`, `--border`, `--text`, `--text-muted`, spacing
+(`--space-*`), radius (`--radius-*`), typography (`--text-*`, `--leading-*`),
+shadows (`--shadow-*`), and layout tokens such as `--container-max`.
+
+To force dark mode for a specific page, add `data-theme="dark"` to `<html>`.
 
 ## HSX Widgets
 
@@ -430,20 +456,24 @@ iframe shells for third-party pages.
 
 ### Define a Widget
 
-A widget is a typed record with validation, styles, rendering, and optional
-data loading:
+A widget is a typed record with validation, styles, rendering, and optional data
+loading:
 
 ```tsx
 import type { Widget } from "jsr:@srdjan/hsx-widgets";
-import { ok, fail } from "jsr:@srdjan/hsx-widgets";
+import { fail, ok } from "jsr:@srdjan/hsx-widgets";
 
 export const greetingWidget: Widget<GreetingProps> = {
   tag: "hsx-greeting",
-  props: { validate(raw) { /* ... */ } },
+  props: { validate(raw) {/* ... */} },
   styles: `.hsx-greeting { padding: 1rem; }`,
-  render: (props) => <div class="hsx-greeting"><h2>{props.name}</h2></div>,
+  render: (props) => (
+    <div class="hsx-greeting">
+      <h2>{props.name}</h2>
+    </div>
+  ),
   load: async (params) => ok({ name: params.name, message: `Hello!` }),
-  shadow: "open",  // Optional: Declarative Shadow DOM
+  shadow: "open", // Optional: Declarative Shadow DOM
 };
 ```
 
@@ -477,7 +507,8 @@ Declarative Shadow DOM, style hoisting, and the build pipeline.
 
 The `@srdjan/hsx-genui` package lets AI models render interactive widgets
 directly in a chat interface. The AI selects from a catalog of pre-registered
-widgets via tool calling, and rendered HTML streams to the browser via SSE + HTMX.
+widgets via tool calling, and rendered HTML streams to the browser via SSE +
+HTMX.
 
 ### Define GenUI Widgets
 
@@ -490,7 +521,8 @@ import { ok } from "jsr:@srdjan/hsx-widgets";
 
 const weatherWidget: GenUIWidget<WeatherProps> = {
   tag: "hsx-weather",
-  description: "Shows current weather for a city with temperature and conditions",
+  description:
+    "Shows current weather for a city with temperature and conditions",
   schema: {
     type: "object",
     properties: {
@@ -499,7 +531,11 @@ const weatherWidget: GenUIWidget<WeatherProps> = {
     required: ["city"],
   },
   category: "display",
-  props: { validate(raw) { /* ... */ return ok({ city: raw.city }); } },
+  props: {
+    validate(raw) {
+      /* ... */ return ok({ city: raw.city });
+    },
+  },
   styles: `.weather { padding: 1rem; }`,
   render: ({ city, temp }) => (
     <div class="weather">
@@ -522,9 +558,9 @@ provider:
 ```tsx
 import { createCatalog } from "jsr:@srdjan/hsx-widgets";
 import {
+  createConversationStore,
   createGenUIHandler,
   createGenUIRoutes,
-  createConversationStore,
 } from "jsr:@srdjan/hsx-genui";
 import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
 
@@ -560,7 +596,8 @@ framework needed.
 Every catalog includes a built-in `hsx-raw` tool that lets the AI generate
 arbitrary HTML when no pre-registered widget fits. Raw HTML is sanitized via an
 allowlist-based sanitizer (disallowed tags, event handlers, and dangerous URI
-schemes are stripped) and rendered inside a closed Shadow DOM for style isolation.
+schemes are stripped) and rendered inside a closed Shadow DOM for style
+isolation.
 
 ### Design Guidelines
 
@@ -603,7 +640,7 @@ Pairs with HTMX's SSE extension:
 ```tsx
 <div ext="sse" sseConnect="/stream" sseSwap="message">
   {/* widgets appear here as SSE events arrive */}
-</div>
+</div>;
 ```
 
 ## API Reference
@@ -701,7 +738,7 @@ Run examples with `deno task`:
 | **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
 | **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |
 | **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent |
-| **HSX Widget**       | `deno task example:hsx-widget`     | Widget SSR route + iframe embed shell                 |
+| **HSX Widget**        | `deno task example:hsx-widget`      | Widget SSR route + iframe embed shell                 |
 | **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                 |
 
 For the HSX widget example, build client assets first:

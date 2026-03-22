@@ -7,7 +7,7 @@
  */
 import { hsxComponent, hsxPage } from "@srdjan/hsx";
 import { id } from "@srdjan/hsx";
-import { hsxStyles, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { HSX_STYLES_PATH, hsxStyles } from "@srdjan/hsx-styles";
 
 // =============================================================================
 // Types & Data
@@ -49,35 +49,41 @@ const TodoList = hsxComponent("/todos", {
     const remaining = todos.filter((t) => !t.done).length;
     return (
       <>
-        <ul id="todo-list">
+        <ul id="todo-list" data-layout="stack" data-gap="2">
           {todos.map((t) => (
-            <li>
-              <input
-                type="checkbox"
-                class="toggle"
-                checked={t.done}
-                post={TodoToggle}
-                params={{ id: t.id }}
-                target={ids.list}
-                swap="outerHTML"
-              />
-              <span class={t.done ? "done" : ""}>{t.text}</span>
+            <li
+              data-layout="row"
+              data-align="center"
+              data-justify="between"
+              data-gap="3"
+            >
+              <label data-layout="row" data-align="center" data-gap="3">
+                <input
+                  type="checkbox"
+                  checked={t.done}
+                  post={TodoToggle}
+                  params={{ id: t.id }}
+                  target={ids.list}
+                  swap="outerHTML"
+                />
+                {t.done ? <s>{t.text}</s> : <span>{t.text}</span>}
+              </label>
               <button
                 type="button"
-                class="delete"
+                data-variant="ghost"
                 delete={TodoDelete}
                 params={{ id: t.id }}
                 target={ids.list}
                 swap="outerHTML"
               >
-                ×
+                Delete
               </button>
             </li>
           ))}
         </ul>
-        <div class="count">
+        <p>
           {remaining} item{remaining !== 1 ? "s" : ""} left
-        </div>
+        </p>
       </>
     );
   },
@@ -116,9 +122,9 @@ const Page = hsxPage(() => (
       <link rel="stylesheet" href={HSX_STYLES_PATH} />
     </head>
     <body>
-      <main>
+      <main data-layout="container stack" data-gap="6">
         <h1>HSX Components Demo</h1>
-        <div class="card">
+        <div data-surface="card" data-layout="stack" data-gap="4">
           <form post={TodoList} target={ids.list} swap="outerHTML">
             <input
               type="text"

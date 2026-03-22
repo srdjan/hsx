@@ -1,8 +1,8 @@
 /**
  * HSX Default Styles - Optional stylesheet for HSX applications.
  *
- * Provides a default light theme and a dark theme variant. CSS lives in
- * separate .css files for proper syntax highlighting and linting support.
+ * Provides a single bundled stylesheet built from a vendored Auras foundation
+ * plus an HSX brand layer.
  *
  * @example
  * ```tsx
@@ -18,8 +18,11 @@
  * // In JSX <head>
  * <link rel="stylesheet" href={HSX_STYLES_PATH} />
  *
- * // Optional: override theme colors
- * <style>{`:root { --hsx-accent: #10b981; }`}</style>
+ * // Optional: override Auras tokens
+ * <style>{`:root { --primary: #10b981; --bg: #f0fdf4; }`}</style>
+ *
+ * // Optional: force dark mode for a page
+ * <html data-theme="dark">
  * ```
  *
  * @module
@@ -28,12 +31,12 @@
 /** Default path for serving HSX styles */
 export const HSX_STYLES_PATH: string = "/static/hsx.css";
 
-/** Default theme (light, indigo accent) */
-export const hsxStyles: string = Deno.readTextFileSync(
-  new URL("./hsx.css", import.meta.url),
-);
+function readStylesheet(path: string): string {
+  return Deno.readTextFileSync(new URL(path, import.meta.url)).trimEnd();
+}
 
-/** Dark theme variant */
-export const hsxStylesDark: string = Deno.readTextFileSync(
-  new URL("./hsx-dark.css", import.meta.url),
-);
+/** Bundled default stylesheet: vendored Auras Elements + HSX brand layer */
+export const hsxStyles: string = [
+  readStylesheet("./vendor/auras-elements.css"),
+  readStylesheet("./hsx-brand.css"),
+].join("\n\n");
