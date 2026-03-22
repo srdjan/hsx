@@ -117,13 +117,11 @@ function convertMessages(
       continue;
     }
 
-    // At this point, role is "user" or "assistant" (system and tool_result handled above)
-    if (msg.role === "user" || msg.role === "assistant") {
-      anthropicMessages.push({
-        role: msg.role,
-        content: msg.content,
-      });
-    }
+    // Only "user" or "assistant" remain (system and tool_result handled above)
+    anthropicMessages.push({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    });
   }
 
   return { system, messages: anthropicMessages };
@@ -250,9 +248,7 @@ export function claudeProvider(options: ClaudeProviderOptions = {}): AIProvider 
 
       const reader = response.body.getReader();
 
-      let currentToolId = "";
-      let currentToolName = "";
-      let toolJsonChunks: string[] = [];
+      const tool = { id: "", name: "", jsonChunks: [] as string[] };
       let emittedDone = false;
 
       for await (const event of parseSSEStream(reader)) {
@@ -260,9 +256,9 @@ export function claudeProvider(options: ClaudeProviderOptions = {}): AIProvider 
           case "content_block_start": {
             const block = event.content_block;
             if (block.type === "tool_use") {
-              currentToolId = block.id;
-              currentToolName = block.name;
-              toolJsonChunks = [];
+              tool.id = block.id;
+              tool.name = block.name;
+              tool.jsonChunks = [];
             }
             break;
           }
@@ -271,31 +267,26 @@ export function claudeProvider(options: ClaudeProviderOptions = {}): AIProvider 
             if (event.delta.type === "text_delta") {
               yield { tag: "text", content: event.delta.text };
             } else if (event.delta.type === "input_json_delta") {
-              toolJsonChunks.push(event.delta.partial_json);
+              tool.jsonChunks.push(event.delta.partial_json);
             }
             break;
           }
 
           case "content_block_stop": {
-            if (currentToolId && currentToolName) {
-              const jsonStr = toolJsonChunks.join("") || "{}";
+            if (tool.id && tool.name) {
               let args: Record<string, unknown> = {};
               try {
-                args = JSON.parse(jsonStr);
+                args = JSON.parse(tool.jsonChunks.join("") || "{}");
               } catch {
                 // Malformed JSON - use empty args
               }
               yield {
                 tag: "tool_call",
-                call: {
-                  id: currentToolId,
-                  name: currentToolName,
-                  arguments: args,
-                },
+                call: { id: tool.id, name: tool.name, arguments: args },
               };
-              currentToolId = "";
-              currentToolName = "";
-              toolJsonChunks = [];
+              tool.id = "";
+              tool.name = "";
+              tool.jsonChunks = [];
             }
             break;
           }

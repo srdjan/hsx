@@ -51,10 +51,9 @@ const LOADING_STYLES = `@keyframes hsx-loading-pulse {
  * <Loading id="widget-loading" message="Preparing chart..." />
  * ```
  */
-export function Loading(props: LoadingProps): Renderable {
-  const displayMessage = props.message ?? "Loading...";
-
-  const containerProps: Record<string, unknown> = {
+export function Loading({ message, id }: LoadingProps): Renderable {
+  return jsx("div", {
+    ...(id ? { id } : {}),
     "data-loading": "true",
     children: [
       jsx("style", { children: LOADING_STYLES }),
@@ -64,15 +63,9 @@ export function Loading(props: LoadingProps): Renderable {
           jsx("span", { class: "hsx-loading-dot" }),
           jsx("span", { class: "hsx-loading-dot" }),
           jsx("span", { class: "hsx-loading-dot" }),
-          jsx("span", { children: displayMessage }),
+          jsx("span", { children: message ?? "Loading..." }),
         ],
       }),
     ],
-  };
-
-  if (props.id) {
-    containerProps.id = props.id;
-  }
-
-  return jsx("div", containerProps);
+  });
 }

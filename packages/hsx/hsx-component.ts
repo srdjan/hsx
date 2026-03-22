@@ -107,23 +107,17 @@ export interface HsxComponent<
 // Path Matching
 // =============================================================================
 
-/**
- * Convert a path pattern to a regex for matching.
- * Handles :param patterns.
- */
+const PARAM_RE = /:([a-zA-Z_][a-zA-Z0-9_]*)/g;
+
 function pathToRegex(path: string): RegExp {
   const pattern = path
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape special chars
-    .replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, "([^/]+)"); // :param → capture group
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(PARAM_RE, "([^/]+)");
   return new RegExp(`^${pattern}$`);
 }
 
-/**
- * Extract parameter names from a path pattern.
- */
 function extractParamNames(path: string): string[] {
-  const matches = path.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g);
-  return Array.from(matches, (m) => m[1]);
+  return Array.from(path.matchAll(PARAM_RE), (m) => m[1]);
 }
 
 // =============================================================================
@@ -195,12 +189,10 @@ export function hsxComponent<
     seen.add(name);
   }
 
-  // Build function for Route compatibility
-  const paramReplaceRe = /:([a-zA-Z_][a-zA-Z0-9_]*)/g;
   const build = (params: Params): string => {
     const missing: string[] = [];
     const result = (path as string).replace(
-      paramReplaceRe,
+      PARAM_RE,
       (_, name) => {
         if (params && typeof params === "object" && name in params) {
           const value = (params as Record<string, unknown>)[name];

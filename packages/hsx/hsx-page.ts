@@ -251,8 +251,14 @@ export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}
   return {
     Component,
     render(): Response {
-      const tree = Component({});
       const shouldValidate = !validateOnce || !validated;
+      const tree = renderFn();
+      if (!isVNode(tree)) {
+        throw new Error("hsxPage render function must return a single <html> VNode");
+      }
+      if (shouldValidate) {
+        assertHtmlSkeleton(tree);
+      }
 
       const html = renderHtml(tree, {
         onElement: shouldValidate ? validateElement : undefined,
