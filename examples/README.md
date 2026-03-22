@@ -8,8 +8,8 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 - `tabs-modal` - tabs and modal overlays with fragment endpoints
 - `form-validation` - inline validation and submit validation endpoints
 - `polling` - live stats/feed/status polling
-- `auras-showcase` - interactive Auras preview with layouts, surfaces, and theme
-  axes
+- `auras-showcase` - first-impression Auras demo with a live HSX scene
+  playground and compact semantic reference
 - `hsx-components` - minimal co-located route/handler/render demo
 - `hsx-page` - semantic full-page guardrails showcase
 - `low-level-api` - direct `render` / `renderHtml` with `route()`
@@ -22,7 +22,8 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
   `form-validation`.
 - Looking for progressive loading? Check `lazy-loading`, `active-search`, or
   `polling`.
-- Want to understand the Auras styling model? Start with `auras-showcase`.
+- Want a first-pass feel for both the Auras styling model and HSX fragment
+  swaps? Start with `auras-showcase`.
 - Want full control routing? Use `low-level-api`.
 - Need embeddable widgets? Use `hsx-widget` and read `docs/WIDGETS.md`.
 

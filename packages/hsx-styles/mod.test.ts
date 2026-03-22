@@ -14,6 +14,8 @@ Deno.test("hsxStyles bundles the vendored Auras core and HSX brand layer", () =>
   assertStringIncludes(styles.hsxStyles, ':where([data-layout~="container"])');
   assertStringIncludes(styles.hsxStyles, "@layer brands");
   assertStringIncludes(styles.hsxStyles, "--hue-primary: 266;");
+  assertStringIncludes(styles.hsxStyles, "--font-display:");
+  assertStringIncludes(styles.hsxStyles, "--text-5xl:");
 });
 
 Deno.test("mod exports the default path and removes the legacy dark export", () => {

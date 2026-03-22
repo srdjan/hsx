@@ -443,7 +443,8 @@ if (url.pathname === HSX_STYLES_PATH) {
 
 Core tokens include `--primary`, `--primary-hover`, `--primary-subtle`, `--bg`,
 `--surface`, `--surface-raised`, `--border`, `--text`, `--text-muted`, spacing
-(`--space-*`), radius (`--radius-*`), typography (`--text-*`, `--leading-*`),
+(`--space-*`), radius (`--radius-*`), typography (`--font-display`,
+`--text-*`, `--leading-*`),
 shadows (`--shadow-*`), and layout tokens such as `--container-max`.
 
 To force dark mode for a specific page, add `data-theme="dark"` to `<html>`.
@@ -734,7 +735,7 @@ Run examples with `deno task`:
 | **Lazy Loading**      | `deno task example:lazy-loading`    | Deferred content loading                              |
 | **Form Validation**   | `deno task example:form-validation` | Server-side validation                                |
 | **Polling**           | `deno task example:polling`         | Live dashboard with intervals                         |
-| **Auras Showcase**    | `deno task example:auras-showcase`  | Interactive Auras layouts, surfaces, and theme axes   |
+| **Auras Showcase**    | `deno task example:auras-showcase`  | First-impression demo, live scene playground, compact reference |
 | **Tabs & Modal**      | `deno task example:tabs-modal`      | Tab navigation and modals                             |
 | **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
 | **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |

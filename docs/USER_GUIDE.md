@@ -861,7 +861,7 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 - Use `data-surface="card"` for ready-made panels and
   `data-variant="solid|soft|ghost"` for buttons.
 - Customize via Auras tokens like `--primary`, `--bg`, `--surface`, `--border`,
-  `--text`, and `--text-muted`.
+  `--text`, `--text-muted`, `--font-display`, and the `--text-*` scale.
 - Force dark mode with `data-theme="dark"` on `<html>` when needed.
 
 ---
