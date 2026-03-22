@@ -8,6 +8,8 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 - `tabs-modal` - tabs and modal overlays with fragment endpoints
 - `form-validation` - inline validation and submit validation endpoints
 - `polling` - live stats/feed/status polling
+- `auras-showcase` - interactive Auras preview with layouts, surfaces, and theme
+  axes
 - `hsx-components` - minimal co-located route/handler/render demo
 - `hsx-page` - semantic full-page guardrails showcase
 - `low-level-api` - direct `render` / `renderHtml` with `route()`
@@ -16,14 +18,18 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 ## Pick The Right Example
 
 - Building a full page? Start with `hsx-page` or `todos`.
-- Need componentized endpoints? See `hsx-components`, `tabs-modal`, or `form-validation`.
-- Looking for progressive loading? Check `lazy-loading`, `active-search`, or `polling`.
+- Need componentized endpoints? See `hsx-components`, `tabs-modal`, or
+  `form-validation`.
+- Looking for progressive loading? Check `lazy-loading`, `active-search`, or
+  `polling`.
+- Want to understand the Auras styling model? Start with `auras-showcase`.
 - Want full control routing? Use `low-level-api`.
 - Need embeddable widgets? Use `hsx-widget` and read `docs/WIDGETS.md`.
 
 ## Widget Example Setup
 
-The HSX Widgets demo also serves built client bundles from `dist/hsx`. Build them once before running:
+The HSX Widgets demo also serves built client bundles from `dist/hsx`. Build
+them once before running:
 
 ```bash
 deno task build:hsx-widgets

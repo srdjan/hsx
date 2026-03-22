@@ -734,6 +734,7 @@ Run examples with `deno task`:
 | **Lazy Loading**      | `deno task example:lazy-loading`    | Deferred content loading                              |
 | **Form Validation**   | `deno task example:form-validation` | Server-side validation                                |
 | **Polling**           | `deno task example:polling`         | Live dashboard with intervals                         |
+| **Auras Showcase**    | `deno task example:auras-showcase`  | Interactive Auras layouts, surfaces, and theme axes   |
 | **Tabs & Modal**      | `deno task example:tabs-modal`      | Tab navigation and modals                             |
 | **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
 | **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |

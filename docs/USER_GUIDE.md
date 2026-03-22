@@ -875,6 +875,7 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 | Lazy Loading    | `deno task example:lazy-loading`    | `examples/lazy-loading/server.tsx`    |
 | Form Validation | `deno task example:form-validation` | `examples/form-validation/server.tsx` |
 | Polling         | `deno task example:polling`         | `examples/polling/server.tsx`         |
+| Auras Showcase  | `deno task example:auras-showcase`  | `examples/auras-showcase/server.tsx`  |
 | Tabs & Modal    | `deno task example:tabs-modal`      | `examples/tabs-modal/server.tsx`      |
 | HSX Components  | `deno task example:hsx-components`  | `examples/hsx-components/server.tsx`  |
 | HSX Page        | `deno task example:hsx-page`        | `examples/hsx-page/server.tsx`        |
