@@ -111,7 +111,7 @@ const CHAT_STYLES = `
   width: 100%;
 }
 .genui-error {
-  color: #dc2626;
+  color: var(--color-error, #dc2626);
   font-size: 0.875rem;
   padding: 0.5rem;
 }

@@ -602,16 +602,22 @@ function SiteFooter() {
 }
 
 // =============================================================================
-// Page
+// Page (cached per config key to avoid per-request hsxPage() creation)
 // =============================================================================
 
-function buildPage(config: PageConfig) {
+const pageCache = new Map<string, ReturnType<typeof hsxPage>>();
+
+function getPage(config: PageConfig) {
+  const key = `${config.theme}:${config.accent}:${config.contrast}:${config.motion}`;
+  let page = pageCache.get(key);
+  if (page) return page;
+
   const htmlAttrs: Record<string, unknown> = { lang: "en", id: "top" };
   if (config.theme === "dark") htmlAttrs["data-theme"] = "dark";
   if (config.contrast) htmlAttrs["data-contrast"] = "more";
   if (config.motion) htmlAttrs["data-motion"] = "reduce";
 
-  return hsxPage(() => (
+  page = hsxPage(() => (
     <html {...htmlAttrs}>
       <head>
         <meta charSet="utf-8" />
@@ -644,7 +650,10 @@ function buildPage(config: PageConfig) {
         <SiteFooter />
       </body>
     </html>
-  ));
+  ), { validateOnce: true });
+
+  pageCache.set(key, page);
+  return page;
 }
 
 // =============================================================================
@@ -685,8 +694,7 @@ Deno.serve(async (req) => {
   }
 
   if (pathname === "/") {
-    const config = parseConfig(url);
-    return buildPage(config).render();
+    return getPage(parseConfig(url)).render();
   }
 
   return new Response("Not found", { status: 404 });

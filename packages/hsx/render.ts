@@ -71,9 +71,7 @@ function isValidStyleValue(v: unknown): v is string | number {
  */
 const CAMEL_TO_KEBAB_RE = /[A-Z]/g;
 const CSS_BREAK_CHARS_RE = /[;{}]/g;
-const CSS_URL_RE = /url\s*\(/gi;
-const CSS_EXPRESSION_RE = /expression\s*\(/gi;
-const CSS_IMPORT_RE = /@import/gi;
+const CSS_DANGEROUS_FN_RE = /url\s*\(|expression\s*\(|@import/gi;
 
 function camelToKebab(m: string): string {
   return "-" + m.toLowerCase();
@@ -88,9 +86,7 @@ function styleObjectToCss(style: Record<string, string | number>): string {
     const prop = k.replace(CAMEL_TO_KEBAB_RE, camelToKebab);
     const safeValue = String(v)
       .replace(CSS_BREAK_CHARS_RE, "")
-      .replace(CSS_URL_RE, "/* blocked */")
-      .replace(CSS_EXPRESSION_RE, "/* blocked */")
-      .replace(CSS_IMPORT_RE, "/* blocked */");
+      .replace(CSS_DANGEROUS_FN_RE, "/* blocked */");
     result += `${prop}:${safeValue};`;
   }
   return result;
@@ -219,7 +215,9 @@ function renderRawText(node: Renderable): string {
     return "";
   }
   if (Array.isArray(node)) {
-    return node.map(renderRawText).join("");
+    let result = "";
+    for (let i = 0; i < node.length; i++) result += renderRawText(node[i]);
+    return result;
   }
   if (typeof node === "string" || typeof node === "number") {
     return String(node);
@@ -293,7 +291,9 @@ function renderNode(node: Renderable, ctx: RenderContext): string {
 
   // Arrays: render each child and concatenate
   if (Array.isArray(node)) {
-    return node.map((n) => renderNode(n, ctx)).join("");
+    let result = "";
+    for (let i = 0; i < node.length; i++) result += renderNode(node[i], ctx);
+    return result;
   }
 
   // Text: escape and return

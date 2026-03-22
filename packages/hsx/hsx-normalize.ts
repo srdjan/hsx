@@ -217,8 +217,7 @@ export function normalizeAnchorProps(
 }
 
 /**
- * Generic HSX normalization for non-form/button/a tags, e.g. <div>
- * that use get/post/target/swap/trigger/vals/headers.
+ * Generic HSX normalization for tags without special handling (button, div, etc.).
  */
 export function normalizeGenericHsxProps(
   props: Props,

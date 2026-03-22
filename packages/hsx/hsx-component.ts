@@ -196,11 +196,11 @@ export function hsxComponent<
   }
 
   // Build function for Route compatibility
-  // Validates all required params are provided and URL-encodes values
+  const paramReplaceRe = /:([a-zA-Z_][a-zA-Z0-9_]*)/g;
   const build = (params: Params): string => {
     const missing: string[] = [];
-    let result = (path as string).replace(
-      /:([a-zA-Z_][a-zA-Z0-9_]*)/g,
+    const result = (path as string).replace(
+      paramReplaceRe,
       (_, name) => {
         if (params && typeof params === "object" && name in params) {
           const value = (params as Record<string, unknown>)[name];
