@@ -310,6 +310,12 @@
   },
   "workspace": {
     "members": {
+      "packages/hsx-genui": {
+        "dependencies": [
+          "jsr:@srdjan/hsx-widgets@0.1",
+          "jsr:@srdjan/hsx@^1.2.0"
+        ]
+      },
       "packages/hsx-widgets": {
         "dependencies": [
           "jsr:@srdjan/hsx@^1.2.0"

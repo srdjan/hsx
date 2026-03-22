@@ -6,6 +6,8 @@ export interface RenderContext {
   maxDepth?: number;
   maxNodes?: number;
   usesHtmx: boolean;
+  ancestors: string[];
+  onElement?: (tag: string, props: Record<string, unknown>, ancestors: ReadonlyArray<string>) => void;
   /** override for HTMX script injection (true = force, false = disable) */
   injectHtmxOverride?: boolean;
 }
@@ -165,13 +167,6 @@ export function normalizeFormProps(
   }
 
   return next;
-}
-
-export function normalizeButtonProps(
-  props: Props,
-  ctx: RenderContext,
-): Props {
-  return baseNormalize(props, ctx);
 }
 
 export function normalizeAnchorProps(

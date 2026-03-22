@@ -8,6 +8,7 @@
  * @module embed-handler
  */
 
+import { escapeHtml } from "@srdjan/hsx/core";
 import type { Widget } from "../widget.ts";
 
 // =============================================================================
@@ -38,11 +39,7 @@ function embedShell(
   styles: string,
   bundleUrl: string,
 ): string {
-  const propsJson = JSON.stringify(params)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  const propsJson = escapeHtml(JSON.stringify(params));
 
   return `<!DOCTYPE html>
 <html>
@@ -62,7 +59,7 @@ function embedShell(
 // Height negotiation: inform parent iframe of content height
 const ro = new ResizeObserver(() => {
   const h = document.documentElement.scrollHeight;
-  window.parent.postMessage({ type: "hsx-resize", tag: "${tag}", height: h }, "*");
+  window.parent.postMessage({ type: "hsx-resize", tag: ${JSON.stringify(tag)}, height: h }, "*");
 });
 ro.observe(document.body);
 </script>

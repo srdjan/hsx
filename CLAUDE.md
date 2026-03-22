@@ -25,12 +25,13 @@ deno run --allow-net --allow-read examples/todos/server.tsx
 
 ## Architecture
 
-HSX is a monorepo with three packages:
+HSX is a monorepo with four packages:
 
 **Packages:**
-- `@srdjan/hsx` (packages/hsx/) - Core JSX renderer, `render()`, `renderHtml()`, `route()`, `id()`, `Fragment`, `hsxComponent()`, `hsxPage()`
+- `@srdjan/hsx` (packages/hsx/) - Core JSX renderer, `render()`, `renderHtml()`, `renderSSE()`, `route()`, `id()`, `Fragment`, `hsxComponent()`, `hsxPage()`, `Loading`
 - `@srdjan/hsx-styles` (packages/hsx-styles/) - `hsxStyles`, `hsxStylesDark`, `HSX_STYLES_PATH`
-- `@srdjan/hsx-widgets` (packages/hsx-widgets/) - Widget protocol, `widgetToHsxComponent()`, `collectWidgetStyles()`, Declarative Shadow DOM SSR
+- `@srdjan/hsx-widgets` (packages/hsx-widgets/) - Widget protocol, `widgetToHsxComponent()`, `collectWidgetStyles()`, Declarative Shadow DOM SSR, `GenUIWidget`, `createCatalog()`, `formatForAI()`
+- `@srdjan/hsx-genui` (packages/hsx-genui/) - Generative UI server: `createGenUIHandler()`, `createGenUIRoutes()`, `AIProvider` port, Claude adapter
 
 **JSX Transform Pipeline (packages/hsx/):**
 1. `jsx-runtime.ts` - Minimal JSX runtime producing VNode tree
@@ -43,7 +44,7 @@ HSX is a monorepo with three packages:
 
 **Rule:** Manual `hx-*` attributes are not allowed; render throws if they are present. Always use HSX aliases (`get/post/put/patch/delete`, `target`, `swap`, `trigger`, `vals`, `headers`, `behavior="boost"`).
 
-**Render options:** `render` / `renderHtml` accept `injectHtmx?: boolean` to force or suppress the injected HTMX script; default is auto based on HSX usage.
+**Render options:** `render` / `renderHtml` accept `injectHtmx?: boolean` to force or suppress the injected HTMX script; default is auto based on HSX usage. Also accepts `onElement?: (tag, props, ancestors) => void` callback for per-element validation during rendering (used by `hsxPage` to validate without double-rendering components).
 
 **Styling:** Style objects are supported; they render to inline CSS (`backgroundColor` → `background-color`).
 
@@ -53,13 +54,35 @@ HSX is a monorepo with three packages:
 
 **Imports (Workspace-aware):**
 ```ts
-import { render, id, route, Fragment, hsxComponent, hsxPage } from "@srdjan/hsx";
+import { render, renderSSE, id, route, Fragment, hsxComponent, hsxPage } from "@srdjan/hsx";
 import { hsxStyles, hsxStylesDark, HSX_STYLES_PATH } from "@srdjan/hsx-styles";
+import { createCatalog, type GenUIWidget } from "@srdjan/hsx-widgets";
+import { createGenUIHandler, createGenUIRoutes, createConversationStore } from "@srdjan/hsx-genui";
+import { claudeProvider } from "@srdjan/hsx-genui/claude";
 ```
 
 **Tree-shaking entry points:**
-- `@srdjan/hsx/core` - render, route, id, Fragment (smaller bundle)
+- `@srdjan/hsx/core` - render, renderSSE, escapeHtml, route, id, Fragment (smaller bundle)
 - `@srdjan/hsx/components` - hsxComponent, hsxPage only
+
+**GenUI (packages/hsx-genui/):**
+
+Generative UI support - AI models select pre-registered widgets to render via tool calling, streamed to the browser via SSE + HTMX.
+
+- `provider.ts` - `AIProvider` port interface with `Message`, `ToolCall`, `StreamEvent` types
+- `providers/claude.ts` - Concrete Claude adapter using raw fetch + SSE (no SDK dependency)
+- `handler.ts` - `createGenUIHandler()` orchestrates the AI conversation loop with multi-turn tool calls
+- `conversation.ts` - Append-only `Conversation` type and in-memory `ConversationStore` with LRU eviction (maxSize, TTL)
+- `components.tsx` - `createGenUIRoutes()` provides pre-built chat page, send, and stream routes
+
+**GenUI Widget Catalog (packages/hsx-widgets/):**
+
+- `genui-widget.ts` - `GenUIWidget<P>` extends `Widget<P>` with AI metadata (description, JSON schema, examples, category)
+- `catalog.ts` - `createCatalog()` registers widgets, generates AI tool definitions, renders widgets from tool calls
+- `raw-widget.ts` - Raw HTML escape hatch: validates, sanitizes via allowlist, renders in closed Shadow DOM
+- `sanitize.ts` - Allowlist-based HTML sanitizer (strips disallowed tags, event handlers, dangerous URI schemes)
+- `design-guidelines.ts` - `createDesignGuidelines()` and `formatForAI()` for AI system prompts
+- `widget-wrapper.ts` - Shared wrapping logic for SSR and catalog rendering (Light DOM or Shadow DOM)
 
 ## Key Patterns
 

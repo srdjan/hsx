@@ -4,7 +4,6 @@ import {
   type RenderContext,
   type Props,
   normalizeFormProps,
-  normalizeButtonProps,
   normalizeAnchorProps,
   normalizeGenericHsxProps,
 } from "./hsx-normalize.ts";
@@ -35,8 +34,12 @@ const HTML_ESCAPE_RE = /[&<>"']/g;
  * Escape HTML special characters in text content.
  * Uses single-pass regex for performance.
  */
-function escapeHtml(text: string): string {
-  return text.replace(HTML_ESCAPE_RE, (char) => HTML_ESCAPE_MAP[char]);
+function escapeChar(char: string): string {
+  return HTML_ESCAPE_MAP[char];
+}
+
+export function escapeHtml(text: string): string {
+  return text.replace(HTML_ESCAPE_RE, escapeChar);
 }
 
 /**
@@ -66,33 +69,37 @@ function isValidStyleValue(v: unknown): v is string | number {
  * - Values must be strings or finite numbers (no NaN, Infinity)
  * - Value strings have ;{} removed to prevent breaking out of CSS context
  */
+const CAMEL_TO_KEBAB_RE = /[A-Z]/g;
+const CSS_BREAK_CHARS_RE = /[;{}]/g;
+const CSS_URL_RE = /url\s*\(/gi;
+const CSS_EXPRESSION_RE = /expression\s*\(/gi;
+const CSS_IMPORT_RE = /@import/gi;
+
+function camelToKebab(m: string): string {
+  return "-" + m.toLowerCase();
+}
+
 function styleObjectToCss(style: Record<string, string | number>): string {
-  return Object.entries(style)
-    .filter(([k, v]) => {
-      // Validate property name (prevent injection via keys like "color;background:url(...)")
-      if (!CSS_PROPERTY_RE.test(k)) return false;
-      // Validate value (prevent NaN, Infinity, non-primitives)
-      if (!isValidStyleValue(v)) return false;
-      return true;
-    })
-    .map(([k, v]) => {
-      // convert camelCase to kebab-case
-      const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-      // Sanitize value: remove characters that could break out of CSS context,
-      // then neutralize dangerous CSS functions (url, expression, @import)
-      const safeValue = String(v)
-        .replace(/[;{}]/g, "")
-        .replace(/url\s*\(/gi, "/* blocked */")
-        .replace(/expression\s*\(/gi, "/* blocked */")
-        .replace(/@import/gi, "/* blocked */");
-      return `${prop}:${safeValue};`;
-    })
-    .join("");
+  let result = "";
+  for (const k in style) {
+    const v = style[k];
+    if (!CSS_PROPERTY_RE.test(k)) continue;
+    if (!isValidStyleValue(v)) continue;
+    const prop = k.replace(CAMEL_TO_KEBAB_RE, camelToKebab);
+    const safeValue = String(v)
+      .replace(CSS_BREAK_CHARS_RE, "")
+      .replace(CSS_URL_RE, "/* blocked */")
+      .replace(CSS_EXPRESSION_RE, "/* blocked */")
+      .replace(CSS_IMPORT_RE, "/* blocked */");
+    result += `${prop}:${safeValue};`;
+  }
+  return result;
 }
 
 function propsToAttrs(props: Props): string {
-  const parts: string[] = [];
-  for (const [key, value] of Object.entries(props)) {
+  let result = "";
+  for (const key in props) {
+    const value = props[key];
     if (
       key === "children" ||
       value === undefined ||
@@ -103,25 +110,23 @@ function propsToAttrs(props: Props): string {
     const attrName = key === "className" ? "class" : key;
 
     if (typeof value === "boolean") {
-      if (value) parts.push(` ${attrName}`);
+      if (value) result += ` ${attrName}`;
       continue;
     }
 
     if (key === "style" && value && typeof value === "object" && !Array.isArray(value)) {
-      parts.push(` style="${escapeHtml(styleObjectToCss(value as Record<string, string | number>))}"`);
+      result += ` style="${escapeHtml(styleObjectToCss(value as Record<string, string | number>))}"`;
       continue;
     }
 
     if (typeof value === "string" || typeof value === "number") {
-      parts.push(` ${attrName}="${escapeHtml(String(value))}"`);
+      result += ` ${attrName}="${escapeHtml(String(value))}"`;
       continue;
     }
 
     // Fallback: JSON stringify for objects (hx-vals, hx-headers, etc.)
     try {
-      parts.push(
-        ` ${attrName}="${escapeHtml(JSON.stringify(value))}"`,
-      );
+      result += ` ${attrName}="${escapeHtml(JSON.stringify(value))}"`;
     } catch (e) {
       if (e instanceof TypeError && String(e.message).includes("circular")) {
         throw new Error(
@@ -132,11 +137,11 @@ function propsToAttrs(props: Props): string {
       throw e;
     }
   }
-  return parts.join("");
+  return result;
 }
 
 function assertNoManualHxProps(tag: string, props: Props): void {
-  for (const key of Object.keys(props)) {
+  for (const key in props) {
     if (key.startsWith("hx-")) {
       throw new Error(
         `Manual hx-* props are disallowed; use HSX aliases (get/post/target/...) instead. Found ${key} on <${tag}>.`,
@@ -171,8 +176,6 @@ function normalizeProps(tag: string, props: Props, ctx: RenderContext): Props {
   switch (tag) {
     case "form":
       return normalizeFormProps(props, ctx);
-    case "button":
-      return normalizeButtonProps(props, ctx);
     case "a":
       return normalizeAnchorProps(props, ctx);
     default:
@@ -191,6 +194,16 @@ function renderComponent(node: VNode, ctx: RenderContext): string {
     }
     const component = node.type as (props: unknown) => Renderable;
     const rendered = component(node.props);
+
+    if (rendered instanceof Promise) {
+      const name = (component as { name?: string }).name || "(anonymous component)";
+      throw new Error(
+        `Async components are not supported in SSR rendering. ` +
+        `Component "${name}" returned a Promise. ` +
+        `Use synchronous components or fetch data before rendering.`,
+      );
+    }
+
     return renderNode(rendered, ctx);
   } finally {
     ctx.depth--;
@@ -225,6 +238,11 @@ function renderElement(node: VNode, ctx: RenderContext): string {
   // Reject manual hx-* usage; HSX normalization is the only allowed path.
   assertNoManualHxProps(tag, rawProps);
 
+  // Validation callback (used by hsxPage to validate during render)
+  if (ctx.onElement) {
+    ctx.onElement(tag, rawProps as Record<string, unknown>, ctx.ancestors);
+  }
+
   const props = normalizeProps(tag, rawProps, ctx);
   const attrs = propsToAttrs(props);
   const children = props.children as Renderable;
@@ -240,8 +258,9 @@ function renderElement(node: VNode, ctx: RenderContext): string {
     return `<${tag}${attrs}>${inner}</${tag}>`;
   }
 
-  // Render children with incremented depth
+  // Render children with incremented depth, tracking ancestors
   ctx.depth++;
+  ctx.ancestors.push(tag);
   try {
     const inner = renderNode(children, ctx);
 
@@ -256,6 +275,7 @@ function renderElement(node: VNode, ctx: RenderContext): string {
 
     return `<${tag}${attrs}>${inner}</${tag}>`;
   } finally {
+    ctx.ancestors.pop();
     ctx.depth--;
   }
 }
@@ -320,6 +340,12 @@ export interface RenderHtmlOptions {
    * - undefined: auto (inject when HSX is used)
    */
   injectHtmx?: boolean;
+
+  /**
+   * Called for each HTML element during rendering, before its children are rendered.
+   * Throw an Error to reject the element. Used by hsxPage for structural validation.
+   */
+  onElement?: (tag: string, props: Record<string, unknown>, ancestors: ReadonlyArray<string>) => void;
 }
 
 /**
@@ -366,6 +392,8 @@ export function renderHtml(
     maxNodes: options.maxNodes,
     usesHtmx: false,
     injectHtmxOverride: options.injectHtmx,
+    ancestors: [],
+    onElement: options.onElement,
   };
   return renderNode(node, ctx);
 }

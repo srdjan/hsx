@@ -18,6 +18,7 @@ import { jsx } from "hsx/jsx-runtime";
 
 import type { Widget, WidgetError } from "./widget.ts";
 import type { Result } from "./result.ts";
+import { wrapWidgetContent } from "./widget-wrapper.ts";
 
 // =============================================================================
 // Types
@@ -73,53 +74,15 @@ async function resolveProps<P>(
 // Internal: Widget Wrapper Component
 // =============================================================================
 
-/**
- * Creates a wrapper component that renders the widget output inside a
- * `<div data-widget="...">` with scoped `<style>`.
- *
- * When `hoistStyles` is true, the inline `<style>` is omitted - the caller
- * is responsible for placing styles in `<head>` via `WidgetStyles`.
- *
- * When the widget has `shadow: "open"` or `shadow: "closed"`, renders using
- * Declarative Shadow DOM (`<template shadowrootmode="...">`) with the widget's
- * custom element tag as the host element. Styles always go inside the shadow
- * root (hoistStyles is ignored for shadow DOM widgets).
- */
 function createWidgetWrapper<P>(
   widget: Widget<P>,
   hoistStyles: boolean,
 ): (props: P) => Renderable {
-  const shadowMode = widget.shadow ?? "none";
-
-  return (props: P): Renderable => {
-    const content: Renderable[] = [];
-
-    // Include styles when: non-empty AND (shadow DOM mode OR not hoisted)
-    const includeStyles = widget.styles.length > 0 && (shadowMode !== "none" || !hoistStyles);
-
-    if (includeStyles) {
-      content.push(jsx("style", { children: widget.styles }));
-    }
-
-    content.push(widget.render(props));
-
-    // Declarative Shadow DOM: wrap content in <template shadowrootmode="...">
-    if (shadowMode !== "none") {
-      return jsx(widget.tag, {
-        "data-widget": widget.tag,
-        children: jsx("template", {
-          shadowrootmode: shadowMode,
-          children: content,
-        }),
-      });
-    }
-
-    // Light DOM (default)
-    return jsx("div", {
-      "data-widget": widget.tag,
-      children: content,
+  return (props: P): Renderable =>
+    wrapWidgetContent(widget.tag, widget.render(props), widget.styles, {
+      shadow: widget.shadow,
+      hoistStyles,
     });
-  };
 }
 
 // =============================================================================

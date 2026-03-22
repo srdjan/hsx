@@ -29,7 +29,7 @@
  */
 
 // Core rendering
-export { render, renderHtml, type RenderHtmlOptions } from "./render.ts";
+export { render, renderHtml, escapeHtml, type RenderHtmlOptions } from "./render.ts";
 
 // JSX utilities
 export { Fragment } from "./jsx-runtime.ts";
@@ -42,3 +42,9 @@ export type {
 
 // Type-safe routing and IDs
 export * from "./hsx-types.ts";
+
+// SSE streaming
+export { renderSSE, encodeSSEFrame, createSSEResponse, type SSEOptions } from "./sse.ts";
+
+// Loading state
+export { Loading, type LoadingProps } from "./loading.ts";

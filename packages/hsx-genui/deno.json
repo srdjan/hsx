@@ -1,0 +1,23 @@
+{
+  "name": "@srdjan/hsx-genui",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./claude": "./providers/claude.ts"
+  },
+  "imports": {
+    "@srdjan/hsx": "jsr:@srdjan/hsx@^1.2.0",
+    "@srdjan/hsx/core": "jsr:@srdjan/hsx@^1.2.0/core",
+    "@srdjan/hsx/components": "jsr:@srdjan/hsx@^1.2.0/components",
+    "@srdjan/hsx-widgets": "jsr:@srdjan/hsx-widgets@^0.1.0",
+    "hsx/jsx-runtime": "jsr:@srdjan/hsx@^1.2.0/jsx-runtime"
+  },
+  "publish": {
+    "exclude": ["*.test.ts"]
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@srdjan/hsx",
+    "strict": true
+  }
+}

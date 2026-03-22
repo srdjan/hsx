@@ -26,6 +26,8 @@ SSR-only JSX/TSX renderer for Deno that hides HTMX-style attributes away during 
 - **No manual hx-\*** - Throws at render time if you write `hx-get` directly
 - **Widgets** - Define once, serve via SSR or embed as iframes with
   Declarative Shadow DOM
+- **Generative UI** - AI models select and render widgets via tool calling,
+  streamed to the browser via SSE + HTMX
 
 ## Installation
 
@@ -43,17 +45,22 @@ import { id, render, route } from "jsr:@srdjan/hsx";
 
 ### Separate Packages
 
-HSX is a monorepo with three packages:
+HSX is a monorepo with four packages:
 
 ```ts
-// Core - JSX rendering, type-safe routes, hsxComponent, hsxPage
-import { Fragment, hsxComponent, hsxPage, id, render, route } from "jsr:@srdjan/hsx";
+// Core - JSX rendering, type-safe routes, hsxComponent, hsxPage, SSE
+import { Fragment, hsxComponent, hsxPage, id, render, renderSSE, route } from "jsr:@srdjan/hsx";
 
 // Styles - ready-to-use CSS with theming support
 import { HSX_STYLES_PATH, hsxStyles } from "jsr:@srdjan/hsx-styles";
 
-// Widgets - embeddable widget protocol + SSR/embed adapters
+// Widgets - embeddable widget protocol + SSR/embed adapters + GenUI catalog
 import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
+import { createCatalog, type GenUIWidget } from "jsr:@srdjan/hsx-widgets";
+
+// GenUI - AI-powered generative UI with tool calling
+import { createGenUIHandler, createGenUIRoutes, createConversationStore } from "jsr:@srdjan/hsx-genui";
+import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
 ```
 
 Install individually:
@@ -62,6 +69,7 @@ Install individually:
 deno add jsr:@srdjan/hsx
 deno add jsr:@srdjan/hsx-styles
 deno add jsr:@srdjan/hsx-widgets
+deno add jsr:@srdjan/hsx-genui
 ```
 
 ### Selective Imports (Tree-Shaking)
@@ -465,6 +473,139 @@ Serve iframe shells with `createEmbedHandler()`, then embed with a snippet:
 See [docs/WIDGETS.md](docs/WIDGETS.md) for the full widget guide including
 Declarative Shadow DOM, style hoisting, and the build pipeline.
 
+## Generative UI
+
+The `@srdjan/hsx-genui` package lets AI models render interactive widgets
+directly in a chat interface. The AI selects from a catalog of pre-registered
+widgets via tool calling, and rendered HTML streams to the browser via SSE + HTMX.
+
+### Define GenUI Widgets
+
+A GenUI widget extends the regular Widget protocol with AI metadata - a
+description, JSON Schema for props, and optional few-shot examples:
+
+```tsx
+import type { GenUIWidget } from "jsr:@srdjan/hsx-widgets";
+import { ok } from "jsr:@srdjan/hsx-widgets";
+
+const weatherWidget: GenUIWidget<WeatherProps> = {
+  tag: "hsx-weather",
+  description: "Shows current weather for a city with temperature and conditions",
+  schema: {
+    type: "object",
+    properties: {
+      city: { type: "string", description: "City name" },
+    },
+    required: ["city"],
+  },
+  category: "display",
+  props: { validate(raw) { /* ... */ return ok({ city: raw.city }); } },
+  styles: `.weather { padding: 1rem; }`,
+  render: ({ city, temp }) => (
+    <div class="weather">
+      <h3>{city}</h3>
+      <p>{temp}</p>
+    </div>
+  ),
+  load: async (params) => {
+    const data = await fetchWeather(params.city);
+    return ok(data);
+  },
+};
+```
+
+### Create a Catalog and Handler
+
+Register widgets in a catalog, then wire up the GenUI handler with an AI
+provider:
+
+```tsx
+import { createCatalog } from "jsr:@srdjan/hsx-widgets";
+import {
+  createGenUIHandler,
+  createGenUIRoutes,
+  createConversationStore,
+} from "jsr:@srdjan/hsx-genui";
+import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
+
+// 1. Register widgets
+const catalog = createCatalog([weatherWidget, chartWidget]);
+
+// 2. Create handler with Claude provider
+const handler = createGenUIHandler({
+  catalog,
+  provider: claudeProvider({ model: "claude-sonnet-4-6" }),
+});
+
+// 3. Create routes (page shell + POST endpoint + SSE stream)
+const store = createConversationStore();
+const { page, send, stream } = createGenUIRoutes({ handler, store });
+
+// 4. Serve
+Deno.serve((req) => {
+  const { pathname } = new URL(req.url);
+  if (page.match(pathname)) return page.handle(req);
+  if (send.match(pathname)) return send.handle(req);
+  if (stream.match(pathname)) return stream.handle(req);
+  return new Response("Not Found", { status: 404 });
+});
+```
+
+The user types a message, the AI selects a widget tool, HSX renders it
+server-side, and the result streams into the page via SSE. No client-side
+framework needed.
+
+### Raw HTML Escape Hatch
+
+Every catalog includes a built-in `hsx-raw` tool that lets the AI generate
+arbitrary HTML when no pre-registered widget fits. Raw HTML is sanitized via an
+allowlist-based sanitizer (disallowed tags, event handlers, and dangerous URI
+schemes are stripped) and rendered inside a closed Shadow DOM for style isolation.
+
+### Design Guidelines
+
+Include AI-readable design constraints in the system prompt:
+
+```ts
+import { createDesignGuidelines, formatForAI } from "jsr:@srdjan/hsx-widgets";
+
+const guidelines = createDesignGuidelines({
+  colors: "Use indigo accent. All colors via CSS custom properties.",
+});
+
+const handler = createGenUIHandler({
+  catalog,
+  provider,
+  systemPrompt: formatForAI(guidelines),
+  includeGuidelines: false, // we provided our own
+});
+```
+
+### SSE Streaming
+
+The core `@srdjan/hsx` package also exports `renderSSE()` for building custom
+SSE endpoints from any async iterable of JSX:
+
+```tsx
+import { renderSSE } from "jsr:@srdjan/hsx/core";
+
+async function* generateWidgets() {
+  yield <div>Loading...</div>;
+  const data = await fetchData();
+  yield <Chart data={data} />;
+}
+
+Deno.serve(() => renderSSE(generateWidgets()));
+```
+
+Pairs with HTMX's SSE extension:
+
+```tsx
+<div ext="sse" sseConnect="/stream" sseSwap="message">
+  {/* widgets appear here as SSE events arrive */}
+</div>
+```
+
 ## API Reference
 
 ### `render(node, options?)`
@@ -587,21 +728,38 @@ packages/
     mod.ts               # Main entry point
     jsx-runtime.ts       # Minimal JSX runtime (compiler requirement)
     render.ts            # SSR renderer with HTMX injection
+    sse.ts               # SSE response helper (renderSSE, encodeSSEFrame)
+    loading.ts           # Loading placeholder component
     hsx-normalize.ts     # HSX to hx-* attribute mapping
     hsx-types.ts         # Route, Id, HsxSwap, HsxTrigger types
-    hsx-jsx.d.ts         # JSX type declarations
     hsx-component.ts     # hsxComponent factory (route + handler + render)
     hsx-page.ts          # hsxPage guardrail for full-page layouts
   hsx-styles/            # Styles package (@srdjan/hsx-styles)
-    mod.ts               # Main entry point (CSS themes)
-  hsx-widgets/          # HSX widgets package (@srdjan/hsx-widgets)
+    mod.ts               # Entry point (reads .css files)
+    hsx.css              # Default light theme
+    hsx-dark.css         # Dark theme variant
+  hsx-widgets/           # HSX widgets package (@srdjan/hsx-widgets)
     mod.ts               # Main entry point
     widget.ts            # Widget protocol
-    ssr-adapter.ts       # Widget -> hsxComponent bridge (with Declarative Shadow DOM)
+    widget-wrapper.ts    # Shared Light DOM / Shadow DOM wrapping
+    ssr-adapter.ts       # Widget -> hsxComponent bridge
     styles.ts            # Style collection for hsxPage
     result.ts            # Result<T,E> type utilities
+    genui-widget.ts      # GenUIWidget<P> type (Widget + AI metadata)
+    catalog.ts           # Widget catalog and tool definition generation
+    raw-widget.ts        # Raw HTML escape hatch (Shadow DOM sandbox)
+    sanitize.ts          # Allowlist-based HTML sanitizer
+    design-guidelines.ts # AI-readable design system constraints
     embed/               # Embed helpers (iframe shell + snippet)
     build/               # Dual-compile build pipeline (esbuild + Preact)
+  hsx-genui/             # Generative UI package (@srdjan/hsx-genui)
+    mod.ts               # Main entry point
+    provider.ts          # AIProvider port (Message, ToolCall, StreamEvent)
+    handler.ts           # GenUI handler (AI conversation loop)
+    conversation.ts      # Immutable Conversation + in-memory store
+    components.tsx       # Pre-built chat page + send routes
+    providers/
+      claude.ts          # Claude/Anthropic adapter (raw fetch + SSE)
 examples/
   todos/                 # Full todo app example
   active-search/         # Search example
@@ -612,7 +770,7 @@ examples/
   hsx-components/        # HSX Component pattern example
   hsx-page/              # hsxPage full-page guardrail example
   low-level-api/         # Manual render/renderHtml without hsxPage/hsxComponent
-  hsx-widget/           # HSX widget SSR + embed shell example
+  hsx-widget/            # HSX widget SSR + embed shell example
 vendor/htmx/
   htmx.js                # Vendored HTMX v4 (alpha)
 docs/

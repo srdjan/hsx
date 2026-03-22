@@ -1,4 +1,4 @@
-import { render as renderResponse } from "./render.ts";
+import { renderHtml } from "./render.ts";
 import { isVNode } from "./jsx-runtime.ts";
 import type { ComponentType, Renderable, VNode } from "./jsx-runtime.ts";
 
@@ -128,19 +128,13 @@ const ALLOWED_TAGS = new Set<string>([
   ...NON_SEMANTIC_TAGS,
 ]);
 
-type Ancestors = string[];
-
 function childrenOf(node: VNode): Renderable[] {
   const c = (node.props as Record<string, unknown>).children as Renderable;
   if (c === null || c === undefined || c === false || c === true) return [];
   return Array.isArray(c) ? c : [c];
 }
 
-function componentName(fn: ComponentType): string {
-  return fn.name || "(anonymous component)";
-}
-
-function pathString(ancestors: Ancestors, current?: string): string {
+function pathString(ancestors: ReadonlyArray<string>, current?: string): string {
   const parts = [...ancestors];
   if (current) parts.push(current);
   return parts.length ? parts.join(" > ") : "<root>";
@@ -166,94 +160,48 @@ function assertHtmlSkeleton(root: VNode): void {
   }
 }
 
-function validateSemanticAttrs(tag: string, props: Record<string, unknown>, ancestors: Ancestors): void {
-  if (!SEMANTIC_TAGS.has(tag)) return;
-  if (props.class !== undefined || props.className !== undefined) {
+/**
+ * onElement callback for renderHtml that enforces hsxPage structural rules.
+ * Called once per element during the single render pass - no double execution.
+ */
+function validateElement(
+  tag: string,
+  props: Record<string, unknown>,
+  ancestors: ReadonlyArray<string>,
+): void {
+  // Tag whitelist
+  if (!ALLOWED_TAGS.has(tag)) {
     throw new Error(
-      `Semantic element <${tag}> cannot have a class. Offending path: ${pathString(ancestors, tag)}`,
+      `Element <${tag}> is not allowed in hsxPage. Use semantic HTML, standard head/body tags, or HSX components. Path: ${pathString(ancestors, tag)}`,
     );
   }
-  if (props.style !== undefined) {
-    throw new Error(
-      `Semantic element <${tag}> cannot have inline style. Offending path: ${pathString(ancestors, tag)}`,
-    );
-  }
-}
 
-function validateStylePlacement(tag: string, ancestors: Ancestors): void {
-  if (tag !== "style") return;
-  const parent = ancestors[ancestors.length - 1];
-  if (parent !== "head") {
-    throw new Error("<style> tags must live inside <head> when using hsxPage");
-  }
-}
-
-function validateTagAllowed(tag: string, ancestors: Ancestors): void {
-  if (ALLOWED_TAGS.has(tag)) return;
-  throw new Error(
-    `Element <${tag}> is not allowed in hsxPage. Use semantic HTML, standard head/body tags, or HSX components. Path: ${pathString(ancestors, tag)}`,
-  );
-}
-
-function validateNode(node: Renderable, ancestors: Ancestors = [], depth = 0): void {
-  if (depth > 2000) {
-    throw new Error("hsxPage validation exceeded depth limit (possible infinite recursion)");
-  }
-
-  if (node === null || node === undefined || typeof node === "boolean") return;
-  if (typeof node === "string" || typeof node === "number") return;
-
-  if (Array.isArray(node)) {
-    for (const child of node) validateNode(child, ancestors, depth + 1);
-    return;
-  }
-
-  if (!isVNode(node)) {
-    // Unknown renderable - ignore silently
-    return;
-  }
-
-  if (typeof node.type === "function") {
-    const name = componentName(node.type as ComponentType);
-    const rendered = (node.type as ComponentType)(node.props);
-
-    // Detect async components which are not supported in hsxPage
-    if (rendered instanceof Promise) {
+  // Semantic tags cannot have class or style
+  if (SEMANTIC_TAGS.has(tag)) {
+    if (props.class !== undefined || props.className !== undefined) {
       throw new Error(
-        `Async components are not supported in hsxPage. ` +
-        `Component "${name}" returned a Promise. ` +
-        `Use synchronous components or fetch data before rendering.`
+        `Semantic element <${tag}> cannot have a class. Offending path: ${pathString(ancestors, tag)}`,
       );
     }
-
-    validateNode(rendered, ancestors.concat([name]), depth + 1);
-    return;
-  }
-
-  const tag = node.type as string;
-
-  // Root-specific enforcement
-  if (ancestors.length === 0) {
-    if (tag !== "html") {
-      throw new Error("hsxPage must return a root <html> element");
+    if (props.style !== undefined) {
+      throw new Error(
+        `Semantic element <${tag}> cannot have inline style. Offending path: ${pathString(ancestors, tag)}`,
+      );
     }
-    assertHtmlSkeleton(node);
   }
 
-  validateTagAllowed(tag, ancestors);
-  validateSemanticAttrs(tag, node.props as Record<string, unknown>, ancestors);
-  validateStylePlacement(tag, ancestors);
-
-  const children = childrenOf(node);
-  for (const child of children) {
-    validateNode(child, ancestors.concat([tag]), depth + 1);
+  // <style> must be inside <head>
+  if (tag === "style") {
+    const parent = ancestors[ancestors.length - 1];
+    if (parent !== "head") {
+      throw new Error("<style> tags must live inside <head> when using hsxPage");
+    }
   }
 }
 
 export interface HsxPageOptions {
   /**
-   * When true, validates the tree only on the first render and caches the result.
-   * Useful for pages with static structure where validation on every render is unnecessary.
+   * When true, skips validation on subsequent renders after the first.
    * @default false
    */
   validateOnce?: boolean;
@@ -267,7 +215,10 @@ export interface HsxPage {
 }
 
 /**
- * Create a full-page HSX component with strict structural & styling rules.
+ * Create a full-page HSX component with strict structural and styling rules.
+ *
+ * Validation happens during the render pass itself via an onElement callback,
+ * so components execute exactly once - no double-rendering.
  */
 export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}): HsxPage {
   const { validateOnce = false } = options;
@@ -278,15 +229,31 @@ export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}
     if (!isVNode(tree)) {
       throw new Error("hsxPage render function must return a single <html> VNode");
     }
+
+    // Skeleton check (head/body order) runs on the VNode tree directly -
+    // no component invocation needed, just inspects VNode.type strings
     if (!validateOnce || !validated) {
-      validateNode(tree);
-      validated = true;
+      assertHtmlSkeleton(tree);
     }
+
     return tree;
   };
 
   return {
     Component,
-    render: () => renderResponse(Component({})),
+    render(): Response {
+      const tree = Component({});
+      const shouldValidate = !validateOnce || !validated;
+
+      const html = renderHtml(tree, {
+        onElement: shouldValidate ? validateElement : undefined,
+      });
+
+      validated = true;
+      return new Response(html, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    },
   };
 }
