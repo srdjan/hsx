@@ -1,4 +1,3 @@
-// noinspection ES6ConvertVarToLetConst
 var htmx = (() => {
 
     class ReqQ {
@@ -6,17 +5,17 @@ var htmx = (() => {
         #q = []
 
         issue(ctx, queueStrategy) {
+            ctx.queueStrategy = queueStrategy
             if (!this.#c) {
                 this.#c = ctx
                 return true
             } else {
-                // Update ctx.status properly for replaced request contexts
-                if (queueStrategy === "replace") {
-                    this.#q.map(value => value.status = "dropped");
+                // Replace strategy OR current is abortable: abort current and issue new
+                if (queueStrategy === "replace" || (queueStrategy !== "abort" && this.#c.queueStrategy === "abort")) {
+                    this.#q.forEach(value => value.status = "dropped");
                     this.#q = []
-                    if (this.#c) {
-                        this.#c.abort();
-                    }
+                    this.#c.request?.abort?.();
+                    this.#c = ctx
                     return true
                 } else if (queueStrategy === "queue all") {
                     this.#q.push(ctx)
@@ -25,10 +24,10 @@ var htmx = (() => {
                     // ignore the request
                     ctx.status = "dropped";
                 } else if (queueStrategy === "queue last") {
-                    this.#q.map(value => value.status = "dropped");
+                    this.#q.forEach(value => value.status = "dropped");
                     this.#q = [ctx]
                     ctx.status = "queued";
-                } else if (this.#q.length === 0) {
+                } else if (this.#q.length === 0 && queueStrategy !== "abort") {
                     // default queue first
                     this.#q.push(ctx)
                     ctx.status = "queued";
@@ -48,7 +47,7 @@ var htmx = (() => {
         }
 
         abort() {
-            this.#c?.abort?.()
+            this.#c?.request?.abort?.()
         }
 
         more() {
@@ -62,89 +61,92 @@ var htmx = (() => {
         #approvedExt = '';
         #registeredExt = new Set();
         #internalAPI;
+        #Function = Function;
+        #AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+        #ttPolicy = { createHTML: s => s, createScript: s => s };
         #actionSelector
         #boostSelector = "a,form";
         #verbs = ["get", "post", "put", "patch", "delete"];
         #hxOnQuery
         #transitionQueue
+        #historyAbort
         #processingTransition
 
         constructor() {
             this.#initHtmxConfig();
             this.#initRequestIndicatorCss();
-            this.#actionSelector = `[${this.#prefix("hx-action")}],[${this.#prefix("hx-get")}],[${this.#prefix("hx-post")}],[${this.#prefix("hx-put")}],[${this.#prefix("hx-patch")}],[${this.#prefix("hx-delete")}]`;
-            this.#hxOnQuery = new XPathEvaluator().createExpression(`.//*[@*[ starts-with(name(), "${this.#prefix("hx-on")}")]]`);
+            this.#actionSelector = this.#prefixSelector('[hx-action],[hx-get],[hx-post],[hx-put],[hx-patch],[hx-delete]');
+            this.#hxOnQuery = new XPathEvaluator().createExpression(`.//*[@*[${this.#prefixes("hx-on").map(p => `starts-with(name(), "${p}")`).join(' or ')}]]`);
             this.#internalAPI = {
                 attributeValue: this.#attributeValue.bind(this),
                 parseTriggerSpecs: this.#parseTriggerSpecs.bind(this),
                 determineMethodAndAction: this.#determineMethodAndAction.bind(this),
                 createRequestContext: this.#createRequestContext.bind(this),
                 collectFormData: this.#collectFormData.bind(this),
-                handleHxVals: this.#handleHxVals.bind(this)
+                getAttributeObject: this.#getAttributeObject.bind(this),
+                insertContent: this.#insertContent.bind(this),
+                morph: this.#morph.bind(this),
+                isSoftMatch: this.#isSoftMatch.bind(this),
+                initSecurity: (ttPolicy, syncFn, asyncFn) => {
+                    if (ttPolicy) this.#ttPolicy = ttPolicy;
+                    if (syncFn) this.#Function = syncFn;
+                    if (asyncFn) this.#AsyncFunction = asyncFn;
+                },
+                onTrigger: this.#onTrigger.bind(this),
+                htmxProp: this.#htmxProp.bind(this),
+                triggerHtmxEvent: this.#trigger.bind(this),
+                executeJavaScript: this.#executeJavaScript.bind(this)
             };
-            document.addEventListener("DOMContentLoaded", () => {
-                this.#initHistoryHandling();
+            let init = () => {
+                this.#initHistoryHandling()
                 this.process(document.body)
-            })
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener("DOMContentLoaded", init)
+            } else {
+                // wait a tick so extensions can register
+                setTimeout(init)
+            }
         }
 
         #initHtmxConfig() {
+            this.version = '4.0.0-beta4'
             this.config = {
-                version: '4.0.0-alpha3',
                 logAll: false,
-                prefix: "",
-                transitions: true,
+                prefix: "data-hx-",
+                transitions: false,
                 history: true,
-                historyReload: false,
                 mode: 'same-origin',
                 defaultSwap: "innerHTML",
+                defaultFocusScroll: false,
                 indicatorClass: "htmx-indicator",
                 requestClass: "htmx-request",
                 includeIndicatorCSS: true,
                 defaultTimeout: 60000, /* 60 second default timeout */
                 extensions: '',
-                sse: {
-                    reconnect: false,
-                    reconnectDelay: 500,
-                    reconnectMaxDelay: 60000,
-                    reconnectMaxAttempts: 10,
-                    reconnectJitter: 0.3,
-                    pauseInBackground: false
-                },
                 morphIgnore: ["data-htmx-powered"],
+                morphScanLimit: 10,
                 noSwap: [204, 304],
-                implicitInheritance: false
+                implicitInheritance: false,
+                defaultSettleDelay: 1
             }
-            let metaConfig = document.querySelector('meta[name="htmx:config"]');
+            let metaConfig = document.querySelector('meta[name="htmx-config"]');
             if (metaConfig) {
-                let content = metaConfig.content;
-                let overrides = this.#parseConfig(content);
-                // Deep merge nested config objects
-                for (let key in overrides) {
-                    let val = overrides[key];
-                    if (val && typeof val === 'object' && !Array.isArray(val) && this.config[key]) {
-                        Object.assign(this.config[key], val);
-                    } else {
-                        this.config[key] = val;
-                    }
-                }
+                this.#mergeConfig(metaConfig.content, this.config);
             }
             this.#approvedExt = this.config.extensions;
         }
 
         #initRequestIndicatorCss() {
             if (this.config.includeIndicatorCSS !== false) {
-                let nonceAttribute = "";
-                if (this.config.inlineStyleNonce) {
-                    nonceAttribute = ` nonce="${this.config.inlineStyleNonce}"`;
-                }
-                let indicator = this.config.indicatorClass
-                let request = this.config.requestClass
-                document.head.insertAdjacentHTML('beforeend', `<style${nonceAttribute}>` +
+                let indicator = this.config.indicatorClass;
+                let request = this.config.requestClass;
+                let sheet = new CSSStyleSheet();
+                sheet.replaceSync(
                     `.${indicator}{opacity:0;visibility: hidden} ` +
-                    `.${request} .${indicator}, .${request}.${indicator}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}` +
-                    '</style>'
-                )
+                    `.${request} .${indicator}, .${request}.${indicator}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}`
+                );
+                document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
             }
         }
 
@@ -159,15 +161,32 @@ var htmx = (() => {
         }
 
         #ignore(elt) {
-            return !elt.closest || elt.closest(`[${this.#prefix("hx-ignore")}]`) != null
+            let p = this.config.prefix;
+            return !elt.closest || elt.closest('[hx-ignore]') != null || (p && elt.closest(`[${p}ignore]`) != null);
         }
 
-        #prefix(s) {
-            return this.config.prefix ? s.replace('hx-', this.config.prefix) : s;
+        #attr(elt, name) {
+            let p = this.config.prefix;
+            return elt.getAttribute(name) ?? (p ? elt.getAttribute(name.replace('hx-', p)) : null);
+        }
+
+        #attrName(elt, name) {
+            let p = this.config.prefix && name.replace('hx-', this.config.prefix);
+            return elt.hasAttribute(name) ? name : (p && elt.hasAttribute(p) ? p : null);
+        }
+
+        #prefixSelector(s) {
+            return this.#prefixes(s).join(',');
+        }
+
+        #prefixes(s) {
+            let result = [s];
+            if (this.config.prefix) result.push(s.replaceAll('hx-', this.config.prefix));
+            return result;
         }
 
         #queryEltAndDescendants(elt, selector) {
-            let results = [...elt.querySelectorAll(selector)];
+            let results = [...(elt.querySelectorAll?.(selector) ?? [])];
             if (elt.matches?.(selector)) {
                 results.unshift(elt);
             }
@@ -181,65 +200,90 @@ var htmx = (() => {
                    style === 'append' ? 'beforeend' : style;
         }
 
-        #attributeValue(elt, name, defaultVal, returnElt) {
-            name = this.#prefix(name);
-            let appendName = name + this.#maybeAdjustMetaCharacter(":append");
-            let inheritName = name + (this.config.implicitInheritance ? "" : this.#maybeAdjustMetaCharacter(":inherited"));
-            let inheritAppendName = name + this.#maybeAdjustMetaCharacter(":inherited:append");
+        #findThisElements(elt, attrName) {
+            let result = [];
+            this.#attributeValue(elt, attrName, undefined, (val, elt) => {
+                if (val?.split(/\s*[,:]\s*/).includes('this')) result.push(elt);
+            });
+            return result;
+        }
 
-            if (elt.hasAttribute(name)) {
-                return returnElt ? elt : elt.getAttribute(name);
-            }
+        #attributeValue(elt, name, defaultVal, eltCollector) {
+            name = this.#maybeAdjustMetaCharacter(name);
+            let inherited = this.#maybeAdjustMetaCharacter(":inherited");
+            let append = this.#maybeAdjustMetaCharacter(":append");
 
-            if (elt.hasAttribute(inheritName)) {
-                return returnElt ? elt : elt.getAttribute(inheritName);
-            }
+            let val = this.#attr(elt, name) ?? this.#attr(elt, name + inherited);
+            if (val != null) return eltCollector ? eltCollector(val, elt) : val;
 
-            if (elt.hasAttribute(appendName) || elt.hasAttribute(inheritAppendName)) {
-                let appendValue = elt.getAttribute(appendName) || elt.getAttribute(inheritAppendName);
-                let parent = elt.parentNode?.closest?.(`[${CSS.escape(inheritName)}],[${CSS.escape(inheritAppendName)}]`);
+            let n1 = CSS.escape(this.config.implicitInheritance ? name : name + inherited);
+            let n2 = CSS.escape(name + inherited + append);
+            let inheritSelector = this.#prefixSelector(`[${n1}],[${n2}]`);
+            let appendName = this.#attrName(elt, name + append) ?? this.#attrName(elt, name + inherited + append);
+            if (appendName) {
+                let appendValue = elt.getAttribute(appendName);
+                let parent = elt.parentNode?.closest?.(inheritSelector);
+                if (eltCollector) eltCollector(appendValue, elt);
                 if (parent) {
-                    let inherited = this.#attributeValue(parent, name, undefined, returnElt);
-                    return returnElt ? inherited : (inherited ? inherited + "," + appendValue : appendValue);
-                } else {
-                    return returnElt ? elt : appendValue;
+                    let parentVal = this.#attributeValue(parent, name, undefined, eltCollector);
+                    return parentVal ? (parentVal + "," + appendValue).replace(/[{}]/g, '') : appendValue;
                 }
+                return appendValue;
             }
 
-            let parent = elt.parentNode?.closest?.(`[${CSS.escape(inheritName)}],[${CSS.escape(inheritAppendName)}]`);
+            let parent = elt.parentNode?.closest?.(inheritSelector);
             if (parent) {
-                let val = this.#attributeValue(parent, name, undefined, returnElt);
-                if (!returnElt && val && this.config.implicitInheritance) {
-                    this.#triggerExtensions(elt, "htmx:after:implicitInheritance", {elt, parent})
+                val = this.#attributeValue(parent, name, undefined, eltCollector);
+                if (!eltCollector && val && this.config.implicitInheritance) {
+                    this.#triggerExtensions(elt, "htmx:after:implicitInheritance", {elt, name, parent})
                 }
                 return val;
             }
-            return returnElt ? elt : defaultVal;
+            return defaultVal;
         }
 
         #parseConfig(configString) {
+            if (!configString) return {};
             if (configString[0] === '{') return JSON.parse(configString);
-            let configPattern = /([^\s,]+?)(?:\s*:\s*(?:"([^"]*)"|'([^']*)'|<([^>]+)\/>|([^\s,]+)))?(?=\s|,|$)/g;
+            let configPattern = /(?:"([^"]+)"|([^\s,:]+))(?:\s*:\s*(?:"([^"]*)"|'([^']*)'|<([^>]+)\/>|([^\s,]+)))?(?=\s|,|$)/g;
             return [...configString.matchAll(configPattern)].reduce((result, match) => {
-                let keyPath = match[1].split('.');
-                let value = (match[2] ?? match[3] ?? match[4] ?? match[5] ?? 'true').trim();
+                let keyPath = (match[1] ?? match[2]).split('.');
+                let value = (match[3] ?? match[4] ?? match[5] ?? match[6] ?? 'true').trim();
                 if (value === 'true') value = true;
                 else if (value === 'false') value = false;
                 else if (/^\d+$/.test(value)) value = parseInt(value);
+                if (keyPath.some(k => this.#internalField(k))) return result;
                 keyPath.slice(0, -1).reduce((obj, key) => obj[key] ??= {}, result)[keyPath.at(-1)] = value;
                 return result;
             }, {});
         }
 
+        #internalField(k) {
+            return k === '#proto#' || k === 'constructor' || k === 'prototype';
+        }
+
+        #mergeConfig(configString, target) {
+            let parsed = this.#parseConfig(configString);
+            for (let key in parsed) {
+                if (this.#internalField(key)) continue;
+                let val = parsed[key];
+                if (val && typeof val === 'object' && !Array.isArray(val) && target[key]) {
+                    Object.assign(target[key], val);
+                } else {
+                    target[key] = val;
+                }
+            }
+            return target;
+        }
+
         #parseTriggerSpecs(spec) {
-            return spec.split(',').map(s => {
-                let m = s.match(/^\s*(\S+\[[^\]]*\]|\S+)\s*(.*?)\s*$/);
-                if (!m || !m[1]) return null;
-                if (m[1].includes('[') && !m[1].includes(']')) throw "unterminated:" + m[1];
-                let result = m[2] ? this.#parseConfig(m[2]) : {};
-                result.name = m[1];
-                return result;
-            }).filter(s => s);
+            // Split on commas that are NOT inside [...] — handles filters like click[myFunc(a,b)]
+            return spec.split(/,(?![^\[]*\])/).flatMap(s => {
+                let [,name,rest] = s.match(/^\s*(\S+\[[^\]]*\]|\S+)\s*(.*?)\s*$/) ?? [];
+                if (!name) return [];  // skip empty/whitespace-only tokens
+                if (/\[[^\]]*$/.test(name)) throw "unterminated:" + name;  // e.g. click[ctrlKey
+                return [{name, ...this.#parseConfig(rest)}];  // spread modifiers (delay, throttle, etc.) onto result
+            });
         }
 
         #determineMethodAndAction(elt, evt) {
@@ -251,7 +295,7 @@ var htmx = (() => {
                 if (!action) {
                     for (let verb of this.#verbs) {
                         let verbAction = this.#attributeValue(elt, "hx-" + verb);
-                        if (verbAction) {
+                        if (verbAction != null) {
                             action = verbAction;
                             method = verb;
                             break;
@@ -269,18 +313,26 @@ var htmx = (() => {
             } else {
                 let action = evt.submitter?.getAttribute?.("formAction") || elt.getAttribute("action");
                 let method = evt.submitter?.getAttribute?.("formMethod") || elt.getAttribute("method") || "GET";
-                return {action, method}
+                return {action, method: method.toUpperCase()}
             }
+        }
+
+        #htmxProp(elt) {
+            if (!elt._htmx) {
+                elt._htmx = { listeners: [], triggerSpecs: [] };
+                elt.setAttribute('data-htmx-powered', 'true');
+            }
+            return elt._htmx;
         }
 
         #initializeElement(elt) {
             if (this.#shouldInitialize(elt) && this.#trigger(elt, "htmx:before:init", {}, true)) {
-                elt._htmx = {eventHandler: this.#createHtmxEventHandler(elt)}
-                elt.setAttribute('data-htmx-powered', 'true');
+                let htmxProp = this.#htmxProp(elt);
+                htmxProp.initialized = true;
+                htmxProp.eventHandler = this.#createHtmxEventHandler(elt);
                 this.#initializeTriggers(elt);
                 this.#initializeAbortListener(elt)
                 this.#trigger(elt, "htmx:after:init", {}, true)
-                this.#trigger(elt, "load", {}, false)
             }
         }
 
@@ -290,7 +342,7 @@ var htmx = (() => {
                     let ctx = this.#createRequestContext(elt, evt);
                     await this.#handleTriggerEvent(ctx);
                 } catch (e) {
-                    console.error(e)
+                    this.#trigger(elt, 'htmx:error', { error: e });
                 }
             };
         }
@@ -305,76 +357,71 @@ var htmx = (() => {
                 status: "created",
                 select: this.#attributeValue(sourceElement, "hx-select"),
                 selectOOB: this.#attributeValue(sourceElement, "hx-select-oob"),
-                target: this.#resolveTarget(sourceElement, this.#attributeValue(sourceElement, "hx-target")),
-                swap: this.#attributeValue(sourceElement, "hx-swap", this.config.defaultSwap),
+                target: this.#attributeValue(sourceElement, "hx-target"),
+                swap: this.#attributeValue(sourceElement, "hx-swap") ?? this.config.defaultSwap,
                 push: this.#attributeValue(sourceElement, "hx-push-url"),
                 replace: this.#attributeValue(sourceElement, "hx-replace-url"),
                 transition: this.config.transitions,
                 confirm: this.#attributeValue(sourceElement, "hx-confirm"),
                 request: {
-                    validate: "true" === this.#attributeValue(sourceElement, "hx-validate", sourceElement.matches('form') ? "true" : "false"),
+                    validate: "true" === this.#attributeValue(sourceElement, "hx-validate", sourceElement.matches('form') && !sourceElement.noValidate && !sourceEvent.submitter?.formNoValidate ? "true" : "false"),
                     action: fullAction,
                     anchor,
                     method,
-                    headers: this.#determineHeaders(sourceElement),
+                    headers: this.#createCoreHeaders(sourceElement),
                     abort: ac.abort.bind(ac),
                     credentials: "same-origin",
                     signal: ac.signal,
                     mode: this.config.mode
                 }
             };
+            // Apply boost config overrides
+            if (sourceElement._htmx?.boosted) {
+                this.#mergeConfig(sourceElement._htmx.boosted, ctx);
+            }
+            ctx.target = this.#resolveTarget(sourceElement, ctx.target);
+            ctx.request.headers["HX-Request-Type"] = (ctx.target === document.body || ctx.select) ? "full" : "partial";
+            if (ctx.target) {
+                ctx.request.headers["HX-Target"] = this.#buildIdentifier(ctx.target);
+            }
 
             // Apply hx-config overrides
             let configAttr = this.#attributeValue(sourceElement, "hx-config");
             if (configAttr) {
-                let configOverrides = this.#parseConfig(configAttr);
-                let req = ctx.request;
-                for (let key in configOverrides) {
-                    if (key.startsWith('+')) {
-                        let actualKey = key.substring(1);
-                        if (req[actualKey] && typeof req[actualKey] === 'object') {
-                            Object.assign(req[actualKey], configOverrides[key]);
-                        } else {
-                            req[actualKey] = configOverrides[key];
-                        }
-                    } else {
-                        req[key] = configOverrides[key];
-                    }
-                }
-                if (req.etag) {
-                    (sourceElement._htmx ||= {}).etag ||= req.etag
-                }
-            }
-            if (sourceElement._htmx?.etag) {
-                ctx.request.headers["If-none-match"] = sourceElement._htmx.etag
+                this.#mergeConfig(configAttr, ctx.request);
+                ctx.request.mode = this.config.mode;  // mode is security-sensitive, never allow per-element override
             }
             return ctx;
         }
 
-        #determineHeaders(elt) {
+        #buildIdentifier(elt) {
+            return `${elt.tagName.toLowerCase()}${elt.id ? '#' + encodeURI(elt.id) : ''}`;
+        }
+
+        #createCoreHeaders(elt) {
             let headers = {
                 "HX-Request": "true",
-                "HX-Source": elt.id || elt.name,
+                "HX-Source": this.#buildIdentifier(elt),
                 "HX-Current-URL": location.href,
-                "Accept": "text/html, text/event-stream"
+                "Accept": "text/html"
             };
             if (this.#isBoosted(elt)) {
                 headers["HX-Boosted"] = "true"
             }
-            let headersAttribute = this.#attributeValue(elt, "hx-headers");
-            if (headersAttribute) {
-                Object.assign(headers, this.#parseConfig(headersAttribute));
-            }
             return headers;
+        }
+
+        #handleHxHeaders(elt, headers) {
+            return this.#getAttributeObject(elt, "hx-headers", obj => {
+                for (let key in obj) headers[key] = String(obj[key]);
+            });
         }
 
         #resolveTarget(elt, selector) {
             if (selector instanceof Element) {
                 return selector;
-            } else if (selector === 'this') {
-                return this.#attributeValue(elt, "hx-target", undefined, true);
             } else if (selector != null) {
-                return this.find(elt, selector);
+                return this.#findOrWarn(elt, selector, "hx-target");
             } else if (this.#isBoosted(elt)) {
                 return document.body
             } else {
@@ -395,17 +442,33 @@ var htmx = (() => {
 
             if (this.#shouldCancel(evt)) evt.preventDefault()
 
+            // determine if request uses query params
+            let usesQueryParams = /GET|DELETE/.test(ctx.request.method);
+
+            // Only include *enclosing* form info for request types that do not use
+            // query parameters (can still be included explicitly with hx-include)
+            let form = usesQueryParams
+                ? (elt.matches('form') ? elt : null)
+                : (elt.form || elt.closest("form"))
+
             // Build request body
-            let form = elt.form || elt.closest("form")
-            let body = this.#collectFormData(elt, form, evt.submitter)
-            let valsResult = this.#handleHxVals(elt, body)
-            if (valsResult) await valsResult  // Only await if it returned a promise
+            let body = this.#collectFormData(elt, form, evt.submitter, ctx.request.validate, usesQueryParams)
+            if (!body) return  // Validation failed
+            let valsResult = this.#getAttributeObject(elt, "hx-vals", obj => {
+                ctx.vals = obj; // make available for json extensions
+                for (let key in obj) body.set(key, obj[key]);
+            });
+            if (valsResult) await valsResult; // Only await if it returned a promise
             if (ctx.values) {
                 for (let k in ctx.values) {
                     body.delete(k);
                     body.append(k, ctx.values[k]);
                 }
             }
+
+            // Handle dynamic headers
+            let headersResult = this.#handleHxHeaders(elt, ctx.request.headers)
+            if (headersResult) await headersResult  // Only await if it returned a promise
 
             // Setup event-dependent request details
             Object.assign(ctx.request, {
@@ -416,24 +479,28 @@ var htmx = (() => {
 
             if (!this.#trigger(elt, "htmx:config:request", {ctx: ctx})) return
             if (!this.#verbs.includes(ctx.request.method.toLowerCase())) return
-            if (ctx.request.validate && ctx.request.form && !ctx.request.form.reportValidity()) return
 
             let javascriptContent = this.#extractJavascriptContent(ctx.request.action);
             if (javascriptContent != null) {
                 let data = Object.fromEntries(ctx.request.body);
-                await this.#executeJavaScriptAsync(ctx.sourceElement, data, javascriptContent, false);
+                await this.#executeJavaScript(ctx.sourceElement, data, javascriptContent, false);
                 return
-            } else if (/GET|DELETE/.test(ctx.request.method)) {
+            } else if (usesQueryParams) {
                 let url = new URL(ctx.request.action, document.baseURI);
-                
+
                 for (let key of ctx.request.body.keys()) {
                     url.searchParams.delete(key);
                 }
                 for (let [key, value] of ctx.request.body) {
                     url.searchParams.append(key, value);
                 }
-                
-                ctx.request.action = url.pathname + url.search;
+
+                // Keep relative if same origin, otherwise use full URL
+                if (url.origin === location.origin) {
+                    ctx.request.action = url.pathname + url.search;
+                } else {
+                    ctx.request.action = url.href;
+                }
                 ctx.request.body = null;
             } else if (this.#attributeValue(elt, "hx-encoding") !== "multipart/form-data") {
                 ctx.request.body = new URLSearchParams(ctx.request.body);
@@ -450,27 +517,27 @@ var htmx = (() => {
             if (!requestQueue.issue(ctx, syncStrategy)) return
 
             ctx.status = "issuing"
-            this.#initTimeout(ctx);
 
-            let indicatorsSelector = this.#attributeValue(elt, "hx-indicator");
-            let indicators = this.#showIndicators(elt, indicatorsSelector);
-            let disableSelector = this.#attributeValue(elt, "hx-disable");
-            let disableElements = this.#disableElements(elt, disableSelector);
-
+            let indicators = [];
+            let disableElements = [];
             try {
                 // Handle confirmation
                 if (ctx.confirm) {
-                    let issueRequest = null;
                     let confirmed = await new Promise(resolve => {
-                        issueRequest = resolve;
-                        if (this.#trigger(elt, "htmx:confirm", {ctx, issueRequest: (skip) => issueRequest?.(skip !== false)})) {
+                        let detail = {ctx, issueRequest: () => resolve(true), dropRequest: () => resolve(false)};
+                        if (this.#trigger(elt, "htmx:confirm", detail)) {
                             let js = this.#extractJavascriptContent(ctx.confirm);
-                            resolve(js ? this.#executeJavaScriptAsync(elt, {}, js, true) : window.confirm(ctx.confirm));
+                            resolve(js ? this.#executeJavaScript(elt, {}, js, true) : window.confirm(ctx.confirm));
                         }
                     });
                     if (!confirmed) return;
                 }
-                
+
+                // initialize timeout & indicators after confirmation
+                this.#initTimeout(ctx);
+                indicators = this.#showIndicators(elt);
+                disableElements = this.#disableElements(elt);
+
                 ctx.fetch ||= window.fetch.bind(window)
                 if (!this.#trigger(elt, "htmx:before:request", {ctx})) return;
 
@@ -482,50 +549,50 @@ var htmx = (() => {
                     headers: response.headers,
                 }
                 this.#extractHxHeaders(ctx);
-                ctx.isSSE = response.headers.get("Content-Type")?.includes('text/event-stream');
-                if (!ctx.isSSE) {
-                    ctx.text = await response.text();
-                }
+                if (!this.#trigger(elt, "htmx:before:response", {ctx})) return;
+                ctx.text = await response.text();
                 if (!this.#trigger(elt, "htmx:after:request", {ctx})) return;
 
+                if (ctx.response.status >= 400) {
+                    this.#trigger(elt, "htmx:response:error", {ctx})
+                }
+
                 if(this.#handleHeadersAndMaybeReturnEarly(ctx)){
+                    ctx.keepIndicators = true;
                     return
                 }
 
-                let isSSE = response.headers.get("Content-Type")?.includes('text/event-stream');
-                if (isSSE) {
-                    // SSE response
-                    await this.#handleSSE(ctx, elt, response);
-                } else {
-                    // HTTP response
-                    if (ctx.status === "issuing") {
-                        if (ctx.hx.retarget) ctx.target = ctx.hx.retarget;
-                        if (ctx.hx.reswap) ctx.swap = ctx.hx.reswap;
-                        if (ctx.hx.reselect) ctx.select = ctx.hx.reselect;
-                        ctx.status = "response received";
-                        this.#handleStatusCodes(ctx);
-                        await this.swap(ctx);
-                        ctx.status = "swapped";
-                    }
+                if (ctx.status === "issuing") {
+                    if (ctx.hx.retarget) ctx.target = ctx.hx.retarget;   // HX-Retarget
+                    if (ctx.hx.reswap) ctx.swap = ctx.hx.reswap;       // HX-Reswap
+                    if (ctx.hx.reselect) ctx.select = ctx.hx.reselect; // HX-Reselect
+                    ctx.status = "response received";
+                    this.#handleStatusCodes(ctx);
+                    await this.swap(ctx);
+                    ctx.status = "swapped";
                 }
 
             } catch (error) {
                 ctx.status = "error: " + error;
                 this.#trigger(elt, "htmx:error", {ctx, error})
             } finally {
-                this.#hideIndicators(indicators);
-                this.#enableElements(disableElements);
+                clearTimeout(ctx.requestTimeout);
                 this.#trigger(elt, "htmx:finally:request", {ctx})
+                if (!ctx.keepIndicators) {
+                    this.#hideIndicators(indicators);
+                    this.#enableElements(disableElements);
+                }
 
                 requestQueue.finish()
                 if (requestQueue.more()) {
-                    // TODO is it OK to not await here?  try/catch?
+                    // intentionally not awaited — #issueRequest has its own try/catch
                     this.#issueRequest(requestQueue.next())
                 }
             }
         }
 
-        // Extract HX-* headers into ctx.hx
+        // Extract HX-* response headers into ctx.hx
+        // Maps: HX-Trigger → ctx.hx.trigger, HX-Push-Url → ctx.hx.pushurl, etc.
         #extractHxHeaders(ctx) {
             ctx.hx = {}
             for (let [k, v] of ctx.response.raw.headers) {
@@ -535,213 +602,59 @@ var htmx = (() => {
             }
         }
 
-        // returns true if the header aborts the current response handling
+        // Handle response headers that abort normal swap processing.
+        // Returns true if the response was fully handled by a header.
         #handleHeadersAndMaybeReturnEarly(ctx) {
-            if (ctx.hx.trigger) {
+            if (ctx.hx.trigger) { // HX-Trigger
                 this.#handleTriggerHeader(ctx.hx.trigger, ctx.sourceElement);
             }
-            if (ctx.hx.refresh === 'true') {
+            if (ctx.hx.refresh === 'true') { // HX-Refresh
                 location.reload();
-                return true // TODO - necessary?  wouldn't it abort the current js?
+                return true
             }
-            if (ctx.hx.redirect) {
+            if (ctx.hx.redirect) { // HX-Redirect
                 location.href = ctx.hx.redirect;
-                return true // TODO - same, necessary?
+                return true
             }
-            if (ctx.hx.location) {
+            if (ctx.hx.location) { // HX-Location
                 let path = ctx.hx.location, opts = {};
                 if (path[0] === '{' || /[\s,]/.test(path)) {
                     opts = this.#parseConfig(path);
                     path = opts.path;
                     delete opts.path;
                 }
-                opts.push = opts.push || 'true';
+                opts.push ??= 'true';
                 this.ajax('GET', path, opts);
-                return true // TODO this seems legit
-            }
-            if(ctx.response?.headers?.get?.("Etag")) {
-                ctx.sourceElement._htmx ||= {}
-                ctx.sourceElement._htmx.etag = ctx.response.headers.get("Etag");
-            }
-        }
-
-        async #handleSSE(ctx, elt, response) {
-            let config = {...this.config.sse, ...ctx.request.sse}
-
-            let waitForVisible = () => new Promise(r => {
-                let onVisible = () => !document.hidden && (document.removeEventListener('visibilitychange', onVisible), r());
-                document.addEventListener('visibilitychange', onVisible);
-            });
-
-            let lastEventId = null, attempt = 0, currentResponse = response;
-
-            while (elt.isConnected) {
-                // Handle reconnection for subsequent iterations
-                if (attempt > 0) {
-                    if (!config.reconnect || attempt > config.reconnectMaxAttempts) break;
-
-                    if (config.pauseInBackground && document.hidden) {
-                        await waitForVisible();
-                        if (!elt.isConnected) break;
-                    }
-
-                    let delay = Math.min(this.parseInterval(config.reconnectDelay) * Math.pow(2, attempt - 1), this.parseInterval(config.reconnectMaxDelay));
-                    if (config.reconnectJitter > 0) {
-                        let jitterRange = delay * config.reconnectJitter;
-                        let jitter = (Math.random() * 2 - 1) * jitterRange;
-                        delay = Math.max(0, delay + jitter);
-                    }
-                    let reconnect = {attempt, delay, lastEventId, cancelled: false};
-
-                    ctx.status = "reconnecting to stream";
-                    if (!this.#trigger(elt, "htmx:before:sse:reconnect", {
-                        ctx,
-                        reconnect
-                    }) || reconnect.cancelled) break;
-
-                    await new Promise(r => setTimeout(r, reconnect.delay));
-                    if (!elt.isConnected) break;
-
-                    try {
-                        if (lastEventId) (ctx.request.headers = ctx.request.headers || {})['Last-Event-ID'] = lastEventId;
-                        currentResponse = await fetch(ctx.request.action, ctx.request);
-                    } catch (e) {
-                        ctx.status = "stream error";
-                        this.#trigger(elt, "htmx:error", {ctx, error: e});
-                        attempt++;
-                        continue;
-                    }
-                }
-
-                // Core streaming logic
-                if (!this.#trigger(elt, "htmx:before:sse:stream", {ctx})) break;
-                ctx.status = "streaming";
-
-                attempt = 0; // Reset on successful connection
-
-                try {
-                    for await (const sseMessage of this.#parseSSE(currentResponse)) {
-                        if (!elt.isConnected) break;
-
-                        if (config.pauseInBackground && document.hidden) {
-                            await waitForVisible();
-                            if (!elt.isConnected) break;
-                        }
-
-                        let msg = {data: sseMessage.data, event: sseMessage.event, id: sseMessage.id, cancelled: false};
-                        if (!this.#trigger(elt, "htmx:before:sse:message", {
-                            ctx,
-                            message: msg
-                        }) || msg.cancelled) continue;
-
-                        if (sseMessage.id) lastEventId = sseMessage.id;
-
-                        // Trigger custom event if `event:` line is present
-                        if (sseMessage.event) {
-                            this.#trigger(elt, sseMessage.event, {data: sseMessage.data, id: sseMessage.id});
-                            // Skip swap for custom events
-                            this.#trigger(elt, "htmx:after:sse:message", {ctx, message: msg});
-                            continue;
-                        }
-
-                        ctx.text = sseMessage.data;
-                        ctx.status = "stream message received";
-
-                        if (!ctx.response.cancelled) {
-                            await this.swap(ctx);
-                            ctx.status = "swapped";
-                        }
-                        this.#trigger(elt, "htmx:after:sse:message", {ctx, message: msg});
-                    }
-                } catch (e) {
-                    ctx.status = "stream error";
-                    this.#trigger(elt, "htmx:error", {ctx, error: e});
-                }
-
-                if (!elt.isConnected) break;
-                this.#trigger(elt, "htmx:after:sse:stream", {ctx});
-
-                attempt++;
-            }
-        }
-
-        async* #parseSSE(response) {
-            let reader = response.body.getReader();
-            let decoder = new TextDecoder();
-            let buffer = '';
-            let message = {data: '', event: '', id: '', retry: null};
-
-            try {
-                while (true) {
-                    let {done, value} = await reader.read();
-                    if (done) break;
-
-                    // Decode chunk and add to buffer
-                    buffer += decoder.decode(value, {stream: true});
-                    let lines = buffer.split('\n');
-                    // Keep incomplete line in buffer
-                    buffer = lines.pop() || '';
-
-                    for (let line of lines) {
-                        // Empty line or carriage return indicates end of message
-                        if (!line || line === '\r') {
-                            if (message.data) {
-                                yield message;
-                                message = {data: '', event: '', id: '', retry: null};
-                            }
-                            continue;
-                        }
-
-                        // Parse field: value
-                        let colonIndex = line.indexOf(':');
-                        if (colonIndex <= 0) continue;
-
-                        let field = line.slice(0, colonIndex);
-                        let value = line.slice(colonIndex + 1).trimStart();
-
-                        if (field === 'data') {
-                            message.data += (message.data ? '\n' : '') + value;
-                        } else if (field === 'event') {
-                            message.event = value;
-                        } else if (field === 'id') {
-                            message.id = value;
-                        } else if (field === 'retry') {
-                            let retryValue = parseInt(value, 10);
-                            if (!isNaN(retryValue)) {
-                                message.retry = retryValue;
-                            }
-                        }
-                    }
-                }
-            } finally {
-                reader.releaseLock();
+                return true
             }
         }
 
         #initTimeout(ctx) {
-            let timeoutInterval;
-            if (ctx.request.timeout) {
-                timeoutInterval = this.parseInterval(ctx.request.timeout);
-            } else {
-                timeoutInterval = this.config.defaultTimeout;
+            let timeout = ctx.request.timeout != null
+                ? this.parseInterval(ctx.request.timeout)
+                : this.config.defaultTimeout;
+            if (timeout) {
+                ctx.requestTimeout = setTimeout(() => ctx.request?.abort?.(), timeout);
             }
-            ctx.requestTimeout = setTimeout(() => ctx.abort?.(), timeoutInterval);
         }
 
         #determineSyncStrategy(elt) {
             let syncValue = this.#attributeValue(elt, "hx-sync");
-            return syncValue?.split(":")[1] || "queue first";
+            if (!syncValue) return "queue first";
+            let strategy = syncValue.split(":").pop().trim();
+            return /^(drop|abort|replace|queue)/.test(strategy) ? strategy : "queue first";
         }
 
         #getRequestQueue(elt) {
             let syncValue = this.#attributeValue(elt, "hx-sync");
             let syncElt = elt
-            if (syncValue && syncValue.includes(":")) {
-                let strings = syncValue.split(":");
-                let selector = strings[0];
-                syncElt = this.#findExt(selector);
+            if (syncValue) {
+                let selector = syncValue.includes(":")
+                    ? syncValue.slice(0, syncValue.lastIndexOf(":")).trim()
+                    : (/^(drop|abort|replace|queue)/.test(syncValue) ? null : syncValue);
+                if (selector) syncElt = this.#findOrWarn(elt, selector, "hx-sync") || elt;
             }
-            return syncElt._htmxRequestQueue ||= new ReqQ()
+            return this.#htmxProp(syncElt).rq ||= new ReqQ()
         }
 
         #isModifierKeyClick(evt) {
@@ -774,148 +687,129 @@ var htmx = (() => {
             let specString = this.#attributeValue(elt, "hx-trigger");
             if (!specString) {
                 specString = elt.matches("form") ? "submit" :
-                    elt.matches("input:not([type=button]),select,textarea") ? "change" :
+                    elt.matches("input:not([type=button]):not([type=submit]),select,textarea") ? "change" :
                         "click";
             }
-            elt._htmx.triggerSpecs = this.#parseTriggerSpecs(specString)
-            elt._htmx.listeners = []
-            for (let spec of elt._htmx.triggerSpecs) {
-                spec.handler = initialHandler
+            this.#onTrigger(elt, specString, initialHandler)
+        }
+
+        // Wire up event listeners with full modifier support (once, prevent, stop,
+        // delay, throttle, changed, capture, passive, from, filter, etc.)
+        #onTrigger(elt, specString, handler) {
+            let specs = this.#parseTriggerSpecs(specString)
+            this.#htmxProp(elt).triggerSpecs.push(...specs)
+
+            for (let spec of specs) {
                 spec.listeners = []
-                spec.values = {}
 
                 let [eventName, filter] = this.#extractFilter(spec.name);
 
-                // should be first so logic is called only when all other filters pass
-                if (spec.once) {
-                    let original = spec.handler
-                    spec.handler = (evt) => {
-                        original(evt)
-                        for (let listenerInfo of spec.listeners) {
-                            listenerInfo.fromElt.removeEventListener(listenerInfo.eventName, listenerInfo.handler)
-                        }
+                // Resolve from: elements (self listens on elt but filters by event.target in guard)
+                let fromElts = [elt];
+                if (spec.from === 'outside') fromElts = [document];
+                else if (spec.from && spec.from !== 'self') fromElts = this.#findAllExt(elt, spec.from);
+
+                // Inner: runs after delay/throttle resolves
+                let inner = (evt) => {
+                    if (spec.halt || spec.prevent) evt.preventDefault();
+                    if (spec.halt || spec.stop || spec.consume) evt.stopPropagation();
+                    if (spec.once) {
+                        for (let info of spec.listeners) info.fromElt.removeEventListener(info.eventName, info.handler, info);
                     }
+                    handler(evt);
+                };
+
+                // Wrap inner with delay/throttle if needed
+                let timed = inner;
+                if (spec.delay) {
+                    timed = evt => {
+                        clearTimeout(spec.timeout);
+                        spec.timeout = setTimeout(() => inner(evt), this.parseInterval(spec.delay));
+                    };
+                } else if (spec.throttle) {
+                    timed = evt => {
+                        if (spec.throttled) {
+                            spec.throttledEvent = evt;
+                        } else {
+                            spec.throttled = true;
+                            inner(evt);
+                            spec.throttleTimeout = setTimeout(() => {
+                                spec.throttled = false;
+                                if (spec.throttledEvent) {
+                                    let e = spec.throttledEvent;
+                                    spec.throttledEvent = null;
+                                    timed(e);
+                                }
+                            }, this.parseInterval(spec.throttle));
+                        }
+                    };
                 }
 
-                if (eventName === 'intersect' || eventName === "revealed") {
-                    let observerOptions = {}
-                    if (spec.opts?.root) {
-                        observerOptions.root = this.#findExt(elt, spec.opts.root)
+                // Guarded: pre-timing checks that determine if event should proceed
+                spec.handler = (evt) => {
+                    if (spec.from === 'self' && evt.target !== elt) return;
+                    if (spec.from === 'outside' && elt.contains(evt.target)) return;
+                    if (spec.target && !evt.target?.matches?.(spec.target)) return;
+                    if (spec.changed) {
+                        let values = spec.values ??= new WeakMap();
+                        let changed = false;
+                        for (let fromElt of fromElts) {
+                            if (values.get(fromElt) !== fromElt.value) {
+                                changed = true;
+                                values.set(fromElt, fromElt.value);
+                            }
+                        }
+                        if (!changed) return;
                     }
-                    if (spec.opts?.threshold) {
-                        observerOptions.threshold = parseFloat(spec.opts.threshold)
+                    if (filter) {
+                        if (this.#shouldCancel(evt)) evt.preventDefault();
+                        let evtArgs = {}; for (let k in evt) evtArgs[k] = evt[k];
+                        if (!this.#executeJavaScript(elt, evtArgs, filter, true, false)) return;
                     }
-                    let isRevealed = eventName === "revealed"
+                    timed(evt);
+                };
+
+                // Intersect/revealed: set up observer
+                if (eventName === 'intersect' || eventName === 'revealed') {
+                    let observerOptions = {rootMargin: spec.rootMargin};
+                    if (spec.root) observerOptions.root = this.#findOrWarn(elt, spec.root);
+                    if (spec.threshold) observerOptions.threshold = parseFloat(spec.threshold);
+                    let isRevealed = eventName === 'revealed';
                     spec.observer = new IntersectionObserver((entries) => {
                         for (let i = 0; i < entries.length; i++) {
-                            let entry = entries[i]
-                            if (entry.isIntersecting) {
-                                this.trigger(elt, 'intersect', {}, false)
-                                if (isRevealed) {
-                                    spec.observer.disconnect()
-                                }
+                            if (entries[i].isIntersecting) {
+                                this.trigger(elt, 'intersect', {}, false);
+                                if (isRevealed) spec.observer.disconnect();
                                 break;
                             }
                         }
-                    }, observerOptions)
-                    eventName = "intersect"
-                    spec.observer.observe(elt)
+                    }, observerOptions);
+                    eventName = 'intersect';
+                    spec.observer.observe(elt);
                 }
 
-                if (spec.delay) {
-                    let original = spec.handler
-                    spec.handler = evt => {
-                        clearTimeout(spec.timeout)
-                        spec.timeout = setTimeout(() => original(evt),
-                            this.parseInterval(spec.delay));
-                    }
-                }
-
-                if (spec.throttle) {
-                    let original = spec.handler
-                    spec.handler = evt => {
-                        if (spec.throttled) {
-                            spec.throttledEvent = evt
-                        } else {
-                            spec.throttled = true
-                            original(evt);
-                            spec.throttleTimeout = setTimeout(() => {
-                                spec.throttled = false
-                                if (spec.throttledEvent) {
-                                    // implement trailing-edge throttling
-                                    let throttledEvent = spec.throttledEvent;
-                                    spec.throttledEvent = null
-                                    spec.handler(throttledEvent);
-                                }
-                            }, this.parseInterval(spec.throttle))
-                        }
-                    }
-                }
-
-                if (spec.target) {
-                    let original = spec.handler
-                    spec.handler = evt => {
-                        if (evt.target?.matches?.(spec.target)) {
-                            original(evt)
-                        }
-                    }
-                }
-
+                // Every: set up interval
                 if (eventName === "every") {
                     let interval = Object.keys(spec).find(k => k !== 'name');
                     spec.interval = setInterval(() => {
-                        if (elt.isConnected) {
-                            this.#trigger(elt, 'every', {}, false);
-                        } else {
-                            clearInterval(spec.interval)
-                        }
+                        if (elt.isConnected) this.#trigger(elt, 'every', {}, false);
+                        else clearInterval(spec.interval);
                     }, this.parseInterval(interval));
                 }
 
-                if (filter) {
-                    let original = spec.handler
-                    spec.handler = (evt) => {
-                        if (this.#shouldCancel(evt)) evt.preventDefault()
-                        if (this.#executeFilter(elt, evt, filter)) {
-                            original(evt)
-                        }
-                    }
+                // Load: fire immediately, no listener needed
+                if (eventName === 'load') {
+                    spec.handler(new CustomEvent('load'));
+                    continue;
                 }
 
-                let fromElts = [elt];
-                if (spec.from) {
-                    fromElts = this.#findAllExt(elt, spec.from)
-                }
-
-                if (spec.consume) {
-                    let original = spec.handler
-                    spec.handler = (evt) => {
-                        evt.stopPropagation()
-                        original(evt)
-                    }
-                }
-
-                if (spec.changed) {
-                    let original = spec.handler
-                    spec.handler = (evt) => {
-                        let trigger = false
-                        for (let fromElt of fromElts) {
-                            if (spec.values[fromElt] !== fromElt.value) {
-                                trigger = true
-                                spec.values[fromElt] = fromElt.value
-                            }
-                        }
-                        if (trigger) {
-                            original(evt)
-                        }
-                    }
-                }
-
+                // Register listeners
                 for (let fromElt of fromElts) {
-                    let listenerInfo = {fromElt, eventName, handler: spec.handler};
-                    elt._htmx.listeners.push(listenerInfo)
-                    spec.listeners.push(listenerInfo)
-                    fromElt.addEventListener(eventName, spec.handler);
+                    let listenerInfo = {fromElt, eventName, handler: spec.handler,
+                        capture: !!spec.capture, passive: !!spec.passive};
+                    elt._htmx.listeners.push(listenerInfo);
+                    spec.listeners.push(listenerInfo);
+                    fromElt.addEventListener(eventName, spec.handler, listenerInfo);
                 }
             }
         }
@@ -931,8 +825,11 @@ var htmx = (() => {
                 let triggers = this.#parseConfig(value);
                 for (let name in triggers) {
                     let detail = triggers[name];
-                    if (detail?.target) elt = this.find(detail.target) || elt;
-                    this.trigger(elt, name, typeof detail === 'object' ? detail : {value: detail});
+                    let target = elt;
+                    if (detail?.target) {
+                        target = this.find(detail.target);
+                    }
+                    this.trigger(target, name, typeof detail === 'object' ? detail : {value: detail});
                 }
             } else {
                 value.split(',').forEach(name => this.trigger(elt, name.trim(), {}));
@@ -960,59 +857,56 @@ var htmx = (() => {
             return bound;
         }
 
-        async #executeJavaScriptAsync(thisArg, obj, code, expression = true) {
+        #executeJavaScript(thisArg, obj, code, expression = true, isAsync = true) {
             let args = {}
             Object.assign(args, this.#apiMethods(thisArg))
+            let scope = {};
+            this.#triggerExtensions(thisArg, "htmx:scope", { scope });
+            Object.assign(args, scope);
             Object.assign(args, obj)
             let keys = Object.keys(args);
             let values = Object.values(args);
-            let AsyncFunction = Object.getPrototypeOf(async function () {
-            }).constructor;
-            let func = new AsyncFunction(...keys, expression ? `return (${code})` : code);
-            return await func.call(thisArg, ...values);
-        }
-
-        #executeFilter(thisArg, event, code) {
-            let args = {}
-            Object.assign(args, this.#apiMethods(thisArg))
-            for (let key in event) {
-                args[key] = event[key];
-            }
-            let keys = Object.keys(args);
-            let values = Object.values(args);
-            let func = new Function(...keys, `return (${code})`);
+            let FunctionConstructor = isAsync ? this.#AsyncFunction : this.#Function;
+            let func = new FunctionConstructor(...keys, expression ? `return (${code})` : code);
             return func.call(thisArg, ...values);
         }
 
         process(elt) {
-            if (!elt || this.#ignore(elt)) return;
+            if (!elt) return;
+            if (!(elt instanceof Element)) {
+                for (let child of elt.children || []) this.process(child);
+                return;
+            }
+            if (this.#ignore(elt)) return;
             if (!this.#trigger(elt, "htmx:before:process")) return
+            let hxOnNodes = [elt];
+            let iter = this.#hxOnQuery.evaluate(elt)
+            let node = null
+            while (node = iter.iterateNext()) hxOnNodes.push(node)
+            for (let hxOnNode of hxOnNodes) {
+                if (!this.#ignore(hxOnNode) && this.#trigger(hxOnNode, "htmx:before:on:init", {}, true)) {
+                    this.#handleHxOnAttributes(hxOnNode);
+                }
+            }
             for (let child of this.#queryEltAndDescendants(elt, this.#actionSelector)) {
                 this.#initializeElement(child);
             }
             for (let child of this.#queryEltAndDescendants(elt, this.#boostSelector)) {
                 this.#maybeBoost(child);
             }
-            this.#handleHxOnAttributes(elt);
-            let iter = this.#hxOnQuery.evaluate(elt)
-            let node = null
-            while (node = iter.iterateNext()) this.#handleHxOnAttributes(node)
             this.#trigger(elt, "htmx:after:process");
         }
 
         #maybeBoost(elt) {
-            if (this.#attributeValue(elt, "hx-boost") === "true" && this.#shouldBoost(elt)) {
-                elt._htmx = {eventHandler: this.#createHtmxEventHandler(elt), requests: [], boosted: true}
-                elt.setAttribute('data-htmx-powered', 'true');
-                if (elt.matches('a') && !elt.hasAttribute("target")) {
-                    elt.addEventListener('click', (click) => {
-                        elt._htmx.eventHandler(click)
-                    })
-                } else {
-                    elt.addEventListener('submit', (submit) => {
-                        elt._htmx.eventHandler(submit)
-                    })
-                }
+            let boostValue = this.#attributeValue(elt, "hx-boost");
+            if (boostValue && boostValue !== "false" && this.#shouldBoost(elt) && this.#trigger(elt, "htmx:before:init", {}, true)) {
+                let htmxProp = this.#htmxProp(elt);
+                htmxProp.initialized = true;
+                htmxProp.eventHandler = this.#createHtmxEventHandler(elt);
+                htmxProp.boosted = boostValue;
+                let eventName = elt.matches('a') ? 'click' : 'submit';
+                elt._htmx.listeners.push({fromElt: elt, eventName, handler: elt._htmx.eventHandler});
+                elt.addEventListener(eventName, elt._htmx.eventHandler);
                 this.#trigger(elt, "htmx:after:init", {}, true)
             }
         }
@@ -1041,79 +935,86 @@ var htmx = (() => {
         }
 
         #shouldInitialize(elt) {
-            return !elt._htmx && !this.#ignore(elt);
+            return !elt._htmx?.initialized && !this.#ignore(elt);
         }
 
         #cleanup(elt) {
             if (elt._htmx) {
                 this.#trigger(elt, "htmx:before:cleanup")
-                if (elt._htmx.interval) clearInterval(elt._htmx.interval);
                 for (let spec of elt._htmx.triggerSpecs || []) {
                     if (spec.interval) clearInterval(spec.interval);
                     if (spec.timeout) clearTimeout(spec.timeout);
+                    if (spec.throttleTimeout) clearTimeout(spec.throttleTimeout);
+                    spec.observer?.disconnect()
                 }
                 for (let listenerInfo of elt._htmx.listeners || []) {
-                    listenerInfo.fromElt.removeEventListener(listenerInfo.eventName, listenerInfo.handler);
+                    listenerInfo.fromElt.removeEventListener(listenerInfo.eventName, listenerInfo.handler, listenerInfo);
                 }
                 this.#trigger(elt, "htmx:after:cleanup")
             }
-            for (let child of elt.querySelectorAll('[data-htmx-powered]')) {
-                this.#cleanup(child);
+            if (elt.firstChild) {
+                for (let child of elt.querySelectorAll('[data-htmx-powered]')) {
+                    this.#cleanup(child);
+                }
             }
         }
 
         #handlePreservedElements(fragment) {
             let pantry = document.createElement('div');
-            pantry.style.display = 'none';
-            document.body.appendChild(pantry);
-            let newPreservedElts = fragment.querySelectorAll?.(`[${this.#prefix('hx-preserve')}]`) || [];
+            pantry.hidden = true;
+            document.body.insertAdjacentElement('afterend', pantry);
+            let newPreservedElts = fragment.querySelectorAll?.(this.#prefixSelector('[hx-preserve]')) || [];
             for (let preservedElt of newPreservedElts) {
                 let currentElt = document.getElementById(preservedElt.id);
-                if (pantry.moveBefore) {
-                    pantry.moveBefore(currentElt, null);
-                } else {
-                    pantry.appendChild(currentElt);
+                if (currentElt) {
+                    this.#moveBefore(pantry, currentElt, null);
                 }
             }
             return pantry
         }
 
         #restorePreservedElements(pantry) {
-            for (let preservedElt of pantry.children) {
+            for (let preservedElt of [...pantry.children]) {
                 let newElt = document.getElementById(preservedElt.id);
-                if (newElt.parentNode.moveBefore) {
-                    newElt.parentNode.moveBefore(preservedElt, newElt);
-                } else {
-                    newElt.replaceWith(preservedElt);
+                if (newElt) {
+                    this.#moveBefore(newElt.parentNode, preservedElt, newElt);
+                    this.#cleanup(newElt)
+                    newElt.remove()
                 }
-                this.#cleanup(newElt)
-                newElt.remove()
             }
             pantry.remove();
         }
 
         #parseHTML(resp) {
-            return Document.parseHTMLUnsafe?.(resp) || new DOMParser().parseFromString(resp, 'text/html');
+            let trusted = this.#ttPolicy.createHTML(resp);
+            return Document.parseHTMLUnsafe?.(trusted) || new DOMParser().parseFromString(trusted, 'text/html');
         }
 
         #makeFragment(text) {
+            // Convert <hx-*> tags (e.g. <hx-partial>, <hx-oob>) to <template hx type="*">
             let response = text.replace(/<hx-([a-z]+)(\s+|>)/gi, '<template hx type="$1"$2').replace(/<\/hx-[a-z]+>/gi, '</template>');
             let title = '';
-            response = response.replace(/<title[^>]*>[\s\S]*?<\/title>/i, m => (title = this.#parseHTML(m).title, ''));
-            let responseWithNoHead = response.replace(/<head(\s[^>]*)?>[\s\S]*?<\/head>/i, '');
-            let startTag = responseWithNoHead.match(/<([a-z][^\/>\x20\t\r\n\f]*)/i)?.[1]?.toLowerCase();
+            response = response.replace(/<head(\s[^>]*)?>[\s\S]*?<\/head>/i, m => (title = this.#parseHTML(m).title, ''));
+            let startTag = response.match(/<([a-z][^\/>\x20\t\r\n\f]*)/i)?.[1]?.toLowerCase();
 
             let doc, fragment;
-            if (startTag === 'html') {
+            if (startTag === 'html' || startTag === 'body') {
                 doc = this.#parseHTML(response);
-                fragment = doc.body;
-            } else if (startTag === 'body') {
-                doc = this.#parseHTML(responseWithNoHead);
-                fragment = doc.body;
+                fragment = document.createDocumentFragment();
+                fragment.append(doc.body);
             } else {
-                doc = this.#parseHTML(`<template>${responseWithNoHead}</template>`);
+                doc = this.#parseHTML(`<template>${response}</template>`);
                 fragment = doc.querySelector('template').content;
             }
+
+            if (!title) {
+                let titleElt = fragment.querySelector('title:not(svg title)');
+                if (titleElt) {
+                    title = titleElt.textContent;
+                    titleElt.remove();
+                }
+            }
+
             this.#processScripts(fragment);
 
             return {
@@ -1123,19 +1024,23 @@ var htmx = (() => {
         }
 
         #createOOBTask(tasks, elt, oobValue, sourceElement) {
-            let target = elt.id ? '#' + CSS.escape(elt.id) : null;
+            let targetSelector = elt.id ? '#' + CSS.escape(elt.id) : null;
             if (oobValue !== 'true' && oobValue && !oobValue.includes(' ')) {
-                [oobValue, target = target] = oobValue.split(/:(.*)/);
+                [oobValue, targetSelector = targetSelector] = oobValue.split(/:(.*)/);
             }
             if (oobValue === 'true' || !oobValue) oobValue = 'outerHTML';
 
             let swapSpec = this.#parseSwapSpec(oobValue);
-            target = swapSpec.target || target;
+            targetSelector = swapSpec.target || targetSelector;
             swapSpec.strip ??= !swapSpec.style.startsWith('outer');
-            if (!target) return;
-            let fragment = document.createDocumentFragment();
-            fragment.append(elt);
-            tasks.push({type: 'oob', fragment, target, swapSpec, sourceElement});
+            if (!targetSelector) return;
+            let targets = [...document.querySelectorAll(targetSelector)];
+            for (let target of targets) {
+                let fragment = document.createDocumentFragment();
+                fragment.append(elt.cloneNode(true));
+                tasks.push({type: 'oob', fragment, target, swapSpec, sourceElement});
+            }
+            elt.remove();
         }
 
         #processOOB(fragment, sourceElement, selectOOB) {
@@ -1152,12 +1057,12 @@ var htmx = (() => {
             }
 
             // Process elements with hx-swap-oob attribute
-            for (let oobElt of fragment.querySelectorAll(`[${this.#prefix('hx-swap-oob')}]`)) {
-                let oobValue = oobElt.getAttribute(this.#prefix('hx-swap-oob'));
-                oobElt.removeAttribute(this.#prefix('hx-swap-oob'));
+            for (let oobElt of fragment.querySelectorAll(this.#prefixSelector('[hx-swap-oob]'))) {
+                let oobAttr = this.#attrName(oobElt, 'hx-swap-oob');
+                let oobValue = oobElt.getAttribute(oobAttr);
+                oobElt.removeAttribute(oobAttr);
                 this.#createOOBTask(tasks, oobElt, oobValue, sourceElement);
             }
-
             return tasks;
         }
 
@@ -1187,15 +1092,20 @@ var htmx = (() => {
                 let type = templateElt.getAttribute('type');
                 
                 if (type === 'partial') {
-                    let swapSpec = this.#parseSwapSpec(templateElt.getAttribute(this.#prefix('hx-swap')) || this.config.defaultSwap);
-
-                    tasks.push({
-                        type: 'partial',
-                        fragment: templateElt.content.cloneNode(true),
-                        target: templateElt.getAttribute(this.#prefix('hx-target')),
-                        swapSpec,
-                        sourceElement: ctx.sourceElement
-                    });
+                    let targetSelector = this.#attr(templateElt, 'hx-target') || (templateElt.id ? '#' + CSS.escape(templateElt.id) : null);
+                    if (targetSelector) {
+                        this.#processScripts(templateElt.content);
+                        let swapSpec = this.#parseSwapSpec(this.#attr(templateElt, 'hx-swap') || this.config.defaultSwap);
+                        for (let target of document.querySelectorAll(targetSelector)) {
+                            tasks.push({
+                                type: 'partial',
+                                fragment: templateElt.content.cloneNode(true),
+                                target,
+                                swapSpec,
+                                sourceElement: ctx.sourceElement
+                            });
+                        }
+                    }
                 } else {
                     this.#triggerExtensions(templateElt, 'htmx:process:' + type, { ctx, tasks });
                 }
@@ -1205,23 +1115,38 @@ var htmx = (() => {
             return tasks;
         }
 
-        #handleAutoFocus(elt) {
-            let autofocus = this.find(elt, "[autofocus]");
-            autofocus?.focus?.()
+        #setFocus(elt, options, start, end) {
+            try {
+                if (start != null && elt.setSelectionRange) {
+                    elt.setSelectionRange(start, end);
+                }
+                elt.focus(options);
+            } catch (e) {
+                // setSelectionRange or Web component focus may fail so ignore
+            }
         }
 
-        #handleScroll(task) {
-            if (task.swapSpec.scroll) {
-                let target = task.swapSpec.scrollTarget ? this.#findExt(task.swapSpec.scrollTarget) : task.target;
-                if (task.swapSpec.scroll === 'top') {
-                    target.scrollTop = 0;
-                } else if (task.swapSpec.scroll === 'bottom'){
-                    target.scrollTop = target.scrollHeight;
+        #handleAutoFocus(elt) {
+            let autofocus = this.#queryEltAndDescendants(elt, '[autofocus]')[0];
+            if (autofocus) {
+                this.#setFocus(autofocus);
+            }
+        }
+
+        #handleScroll(swapSpec, target) {
+            if (swapSpec.scroll) {
+                let scrollTarget = swapSpec.scrollTarget ? this.#findExt(swapSpec.scrollTarget) : target;
+                if (scrollTarget) {
+                    if (swapSpec.scroll === 'top') {
+                        scrollTarget.scrollTop = 0;
+                    } else if (swapSpec.scroll === 'bottom'){
+                        scrollTarget.scrollTop = scrollTarget.scrollHeight;
+                    }
                 }
             }
-            if (task.swapSpec.show) {
-                let target = task.swapSpec.showTarget ? this.#findExt(task.swapSpec.showTarget) : task.target;
-                target.scrollIntoView(task.swapSpec.show === 'top')
+            if (swapSpec.show === 'top' || swapSpec.show === 'bottom') {
+                let showTarget = swapSpec.showTarget ? this.#findExt(swapSpec.showTarget) : target;
+                showTarget?.scrollIntoView(swapSpec.show === 'top')
             }
         }
 
@@ -1241,7 +1166,7 @@ var htmx = (() => {
                 if (this.config.inlineScriptNonce) {
                     newScript.nonce = this.config.inlineScriptNonce;
                 }
-                newScript.textContent = oldScript.textContent;
+                newScript.textContent = this.#ttPolicy.createScript(oldScript.textContent);
                 oldScript.replaceWith(newScript);
             }
         }
@@ -1251,72 +1176,62 @@ var htmx = (() => {
         //============================================================================================
 
         async swap(ctx) {
-            this.#handleHistoryUpdate(ctx);
-            let {fragment, title} = this.#makeFragment(ctx.text);
-            ctx.title = title;
-            let tasks = [];
+            try {
+                this.#handleHistoryUpdate(ctx);
+                let {fragment, title} = this.#makeFragment(ctx.text);
+                ctx.title = title;
+                let tasks = [];
 
-            // Process OOB and partials
-            let oobTasks = this.#processOOB(fragment, ctx.sourceElement, ctx.selectOOB);
-            let partialTasks = this.#processPartials(fragment, ctx);
-            tasks.push(...oobTasks, ...partialTasks);
+                // Process OOB and partials
+                let oobTasks = this.#processOOB(fragment, ctx.sourceElement, ctx.selectOOB);
+                let partialTasks = this.#processPartials(fragment, ctx);
+                tasks.push(...oobTasks, ...partialTasks);
 
-            // Process main swap
-            let mainSwap = this.#processMainSwap(ctx, fragment, partialTasks);
-            if (mainSwap) {
-                tasks.push(mainSwap);
-            }
-
-            // TODO - can we remove this and just let the function complete?
-            if (tasks.length === 0) return;
-
-            // Separate transition/nonTransition tasks
-            let transitionTasks = tasks.filter(t => t.transition);
-            let nonTransitionTasks = tasks.filter(t => !t.transition);
-
-            if(!this.#trigger(document, "htmx:before:swap", {ctx, tasks})){
-                return
-            }
-
-            // insert non-transition tasks immediately or with delay
-            for (let task of nonTransitionTasks) {
-                if (task.swapSpec?.swap) {
-                    setTimeout(() => this.#insertContent(task), this.parseInterval(task.swapSpec.swap));
-                } else {
-                    this.#insertContent(task)
+                // Process main swap first
+                let mainSwap = this.#processMainSwap(ctx, fragment, partialTasks);
+                if (mainSwap) {
+                    tasks.unshift(mainSwap);
                 }
-            }
 
-            // insert transition tasks in the transition queue
-            if (transitionTasks.length > 0) {
-                let tasksWrapper = ()=> {
-                    for (let task of transitionTasks) {
-                        this.#insertContent(task)
+                if(!this.#trigger(ctx.sourceElement, "htmx:before:swap", {ctx, tasks})){
+                    return
+                }
+
+                let swapPromises = [];
+                let transitionTasks = [];
+                for (let task of tasks) {
+                    if (task.swapSpec?.transition ?? mainSwap?.transition ?? ctx.transition) {
+                        transitionTasks.push(task);
+                    } else {
+                        swapPromises.push(this.#insertContent(task));
                     }
                 }
-                await this.#submitTransitionTask(tasksWrapper);
-            }
 
-            this.#trigger(document, "htmx:after:swap", {ctx});
-            if (ctx.title && !mainSwap?.swapSpec?.ignoreTitle) document.title = ctx.title;
-            await this.timeout(1);
-            // invoke restore tasks
-            for (let task of tasks) {
-                for (let restore of task.restoreTasks || []) {
-                    restore()
+                // submit all transition tasks in the transition queue w/no CSS transitions
+                if (transitionTasks.length > 0) {
+                    let tasksWrapper = async ()=> {
+                        for (let task of transitionTasks) {
+                            await this.#insertContent(task, false)
+                        }
+                    }
+                    swapPromises.push(this.#submitTransitionTask(tasksWrapper));
                 }
+
+                await Promise.all(swapPromises);
+
+                this.#trigger(ctx.sourceElement, "htmx:after:swap", {ctx});
+                if (ctx.title && !mainSwap?.swapSpec?.ignoreTitle) document.title = ctx.title;
+                this.#handleAnchorScroll(ctx);
+            } finally {
+                this.#trigger(ctx.sourceElement, "htmx:swap:finally", {ctx});
             }
-            this.#trigger(document, "htmx:after:restore", { ctx });
-            this.#handleAnchorScroll(ctx);
-            // TODO this stuff should be an extension
-            // if (ctx.hx?.triggerafterswap) this.#handleTriggerHeader(ctx.hx.triggerafterswap, ctx.sourceElement);
         }
 
         #processMainSwap(ctx, fragment, partialTasks) {
             // Create main task if needed
             let swapSpec = this.#parseSwapSpec(ctx.swap || this.config.defaultSwap);
             // skip creating main swap if extracting partials resulted in empty response except for delete style
-            if (swapSpec.style === 'delete' || /\S/.test(fragment.innerHTML || '') || !partialTasks.length) {
+            if (swapSpec.style === 'delete' || fragment.childElementCount > 0 || /\S/.test(fragment.textContent) || !partialTasks.length) {
                 if (ctx.select) {
                     let selected = fragment.querySelectorAll(ctx.select);
                     fragment = document.createDocumentFragment();
@@ -1331,85 +1246,176 @@ var htmx = (() => {
                     target: this.#resolveTarget(ctx.sourceElement || document.body, swapSpec.target || ctx.target),
                     swapSpec,
                     sourceElement: ctx.sourceElement,
-                    transition: (ctx.transition !== false) && (swapSpec.transition !== false)
+                    transition: ctx.transition && swapSpec.transition !== false
                 };
                 return mainSwap;
             }
         }
 
-        #insertContent(task) {
+        async #insertContent(task, cssTransition = true) {
             let {target, swapSpec, fragment} = task;
             if (typeof target === 'string') {
                 target = document.querySelector(target);
             }
             if (!target) return;
+            if (typeof swapSpec === 'string') {
+                swapSpec = this.#parseSwapSpec(swapSpec);
+            }
+            let swapStyle = swapSpec.style;
+            if (swapStyle === 'none') return;
+            // full-page response: fragment has a <body> wrapper — upgrade outerHTML to outerSync, strip for everything else
+            if (fragment.firstElementChild?.tagName === 'BODY') {
+                if (swapStyle === 'outerHTML') swapStyle = 'outerSync';
+                else if (!swapStyle.startsWith('outer')) swapSpec.strip = true;
+            }
             if (swapSpec.strip && fragment.firstElementChild) {
-                task.unstripped = fragment;
                 fragment = document.createDocumentFragment();
                 fragment.append(...(task.fragment.firstElementChild.content || task.fragment.firstElementChild).childNodes);
             }
 
-            let pantry = this.#handlePreservedElements(fragment);
+            this.#addClass(target, "htmx-swapping")
+            if (cssTransition && task.swapSpec?.swap) {
+                await this.timeout(task.swapSpec?.swap)
+            }
+
+            if (swapStyle === 'delete') {
+                if (target.parentNode) {
+                    this.#cleanup(target);
+                    target.parentNode.removeChild(target);
+                }
+                return;
+            }
+
+            // innerHTML/outerHTML swaps backup focus and handle CSS transitions
+            let focusInfo;
+            let settleTasks = []
+            let settleDelay = swapSpec.settle ?? this.config.defaultSettleDelay;
             let parentNode = target.parentNode;
+            if (swapStyle === 'innerHTML' || (swapStyle === 'outerHTML' && parentNode)) {
+                let activeElt = document.activeElement;
+                if (activeElt?.id) {
+                    let start, end;
+                    try { start = activeElt.selectionStart; end = activeElt.selectionEnd; } catch (e) {}
+                    focusInfo = { elt: activeElt, start, end };
+                }
+                settleTasks = cssTransition && settleDelay ? this.#startCSSTransitions(fragment, target) : []
+            }
+
+            let pantry = this.#handlePreservedElements(fragment);
             let newContent = [...fragment.childNodes]
-            if (swapSpec.style === 'innerHTML') {
-                this.#captureCSSTransitions(task, target);
-                for (const child of target.children) {
-                    this.#cleanup(child)
+            try {
+                if (swapStyle === 'innerHTML') {
+                    for (const child of target.children) {
+                        this.#cleanup(child)
+                    }
+                    target.replaceChildren(...fragment.childNodes);
+                } else if (swapStyle === 'textContent') {
+                    for (const child of target.querySelectorAll('[data-htmx-powered]')) {
+                        this.#cleanup(child)
+                    }
+                    target.textContent = fragment.textContent;
+                } else if (swapStyle === 'outerHTML') {
+                    if (parentNode) {
+                        this.#insertNodes(parentNode, target, fragment);
+                        this.#cleanup(target)
+                        parentNode.removeChild(target);
+                        target = newContent[0] || parentNode
+                    }
+                } else if (swapStyle === 'outerSync') {
+                    this.#copyAttributes(target, fragment.firstElementChild);
+                    this.#cleanup(target);
+                    delete target._htmx;
+                    target.replaceChildren(...fragment.firstElementChild.childNodes);
+                    newContent = [target];
+                } else if (swapStyle === 'innerMorph') {
+                    this.#morph(target, fragment, true);
+                    newContent = [...target.childNodes];
+                } else if (swapStyle === 'outerMorph') {
+                    this.#morph(target, fragment, false);
+                    newContent.push(target);
+                } else if (swapStyle === 'beforebegin') {
+                    if (parentNode) {
+                        this.#insertNodes(parentNode, target, fragment);
+                    }
+                } else if (swapStyle === 'afterbegin') {
+                    this.#insertNodes(target, target.firstChild, fragment);
+                } else if (swapStyle === 'beforeend') {
+                    this.#insertNodes(target, null, fragment);
+                } else if (swapStyle === 'afterend') {
+                    if (parentNode) {
+                        this.#insertNodes(parentNode, target.nextSibling, fragment);
+                    }
+                } else {
+                    let methods = this.#extMethods.get('handle_swap') || []
+                    let handled = false;
+                    for (const method of methods) {
+                        let result = method(swapStyle, target, fragment, swapSpec);
+                        if (result) {
+                            handled = true;
+                            if (Array.isArray(result)) {
+                                newContent = result;
+                            }
+                            break;
+                        }
+                    }
+                    if (!handled) {
+                        throw new Error(`Unknown swap style: ${swapStyle}`);
+                    }
                 }
-                target.replaceChildren(...fragment.childNodes);
-            } else if (swapSpec.style === 'outerHTML') {
-                if (parentNode) {
-                    this.#captureCSSTransitions(task, parentNode);
-                    this.#insertNodes(parentNode, target, fragment);
-                    this.#cleanup(target)
-                    parentNode.removeChild(target);
-                }
-            } else if (swapSpec.style === 'innerMorph') {
-                this.#morph(target, fragment, true);
-            } else if (swapSpec.style === 'outerMorph') {
-                this.#morph(target, fragment, false);
-            } else if (swapSpec.style === 'beforebegin') {
-                if (parentNode) {
-                    this.#insertNodes(parentNode, target, fragment);
-                }
-            } else if (swapSpec.style === 'afterbegin') {
-                this.#insertNodes(target, target.firstChild, fragment);
-            } else if (swapSpec.style === 'beforeend') {
-                this.#insertNodes(target, null, fragment);
-            } else if (swapSpec.style === 'afterend') {
-                if (parentNode) {
-                    this.#insertNodes(parentNode, target.nextSibling, fragment);
-                }
-            } else if (swapSpec.style === 'delete') {
-                if (parentNode) {
-                    this.#cleanup(target)
-                    parentNode.removeChild(target)
-                }
-                return;
-            } else if (swapSpec.style === 'none') {
-                return;
-            } else {
-                task.target = target;
-                task.fragment = fragment;
-                if (!this.#triggerExtensions(target, 'htmx:handle:swap', task)) return;
-                throw new Error(`Unknown swap style: ${swapSpec.style}`);
+            } finally {
+                this.#removeClass(target, "htmx-swapping")
             }
             this.#restorePreservedElements(pantry);
+            if (focusInfo && !focusInfo.elt.matches(':focus')) {
+                let newElt = document.getElementById(focusInfo.elt.id);
+                if (newElt) {
+                    let focusOptions = { preventScroll: swapSpec.focusScroll !== undefined ? !swapSpec.focusScroll : !this.config.defaultFocusScroll };
+                    this.#setFocus(newElt, focusOptions, focusInfo.start, focusInfo.end);
+                }
+            }
+
+            this.#trigger(target, "htmx:before:settle", {task, newContent, settleTasks})
+
             for (const elt of newContent) {
+                this.#addClass(elt, "htmx-added")
+            }
+
+            if (cssTransition && settleTasks.length > 0) {
+                this.#addClass(target, "htmx-settling")
+                await this.timeout(settleDelay);
+                // invoke settle tasks
+                for (let settleTask of settleTasks) {
+                    settleTask()
+                }
+                this.#removeClass(target, "htmx-settling")
+            }
+
+            this.#trigger(target, "htmx:after:settle", {task, newContent, settleTasks})
+
+            for (const elt of newContent) {
+                this.#removeClass(elt, "htmx-added")
                 this.process(elt);
                 this.#handleAutoFocus(elt);
             }
-            this.#handleScroll(task);
+            
+            this.#handleScroll(swapSpec, target);
         }
 
         #trigger(on, eventName, detail = {}, bubbles = true) {
-            if (this.config.logAll) {
-                console.log(eventName, detail, on)
+            // Convention: events with detail.error log at error level, detail.warn at warn level,
+            // otherwise at event level (gated by config.logAll). One emit per event.
+            if (detail.error) {
+                let prefix = `htmx: ${eventName}: ${detail.error.message ?? detail.error}`;
+                if (detail.error instanceof Error) console.error(prefix, detail.error, { elt: on, detail });
+                else console.error(prefix, { elt: on, detail });
+            } else if (detail.warn) {
+                console.warn(`htmx: ${eventName}: ${detail.warn}`, { elt: on, detail });
+            } else if (this.config.logAll) {
+                console.log(`htmx: ${eventName}`, { elt: on, detail });
             }
             on = this.#normalizeElement(on)
             this.#triggerExtensions(on, eventName, detail);
-            return this.trigger(on, eventName, detail, bubbles)
+            return this.trigger(on, this.#maybeAdjustMetaCharacter(eventName), detail, bubbles)
         }
 
         #triggerExtensions(elt, eventName, detail = {}) {
@@ -1433,33 +1439,10 @@ var htmx = (() => {
             }
         }
 
-        forEvent(event, timeout, on = document) {
-            return new Promise((resolve, reject) => {
-                let handler = (evt) => {
-                    clearTimeout(timeoutId);
-                    resolve(evt);
-                };
-
-                let timeoutId = timeout && setTimeout(() => {
-                    on.removeEventListener(event, handler);
-                    resolve(null);
-                }, timeout);
-
-                on.addEventListener(event, handler, { once: true });
-            })
-        }
-
         onLoad(callback) {
-            this.on("htmx:after:process", (evt) => {
+            this.on(this.#maybeAdjustMetaCharacter("htmx:after:process"), (evt) => {
                 callback(evt.target)
             })
-        }
-
-        takeClass(element, className, container = element.parentElement) {
-            for (let elt of this.findAll(this.#normalizeElement(container), "." + className)) {
-                elt.classList.remove(className);
-            }
-            element.classList.add(className);
         }
 
         on(eventOrElt, eventOrCallback, callback) {
@@ -1498,14 +1481,12 @@ var htmx = (() => {
                 detail,
                 cancelable: true,
                 bubbles,
-                composed: true,
-                originalTarget: on
+                composed: true
             });
-            let target = on.isConnected ? on : document;
+            let target = on?.isConnected ? on : document;
             let result = !detail.cancelled && target.dispatchEvent(evt);
             return result
         }
-        // TODO - make async
         ajax(verb, path, context) {
             // Normalize context to object
             if (!context || context instanceof Element || typeof context === 'string') {
@@ -1520,16 +1501,20 @@ var htmx = (() => {
                 return Promise.reject(new Error('Source not found'));
             }
 
-            // Resolve target, defaulting to body only if no source or target provided
-            let target = this.#resolveTarget(document.body, context.target || sourceElt);
-            if (!target) {
-                return Promise.reject(new Error('Target not found'));
+            // Resolve explicit target if provided; otherwise #createRequestContext
+            // will resolve from hx-target on the source element
+            if (context.target) {
+                let target = this.#resolveTarget(document.body, context.target);
+                if (!target) {
+                    return Promise.reject(new Error('Target not found'));
+                }
+                sourceElt ||= target;
             }
-
-            sourceElt ||= target;
+            sourceElt ||= document.body;
 
             let ctx = this.#createRequestContext(sourceElt, context.event || {});
-            Object.assign(ctx, context, {target});
+            Object.assign(ctx, context);
+            if (context.target) ctx.target = this.#resolveTarget(document.body, context.target);
             Object.assign(ctx.request, {action: path, method: verb.toUpperCase()});
             if (context.headers) Object.assign(ctx.request.headers, context.headers);
 
@@ -1543,126 +1528,167 @@ var htmx = (() => {
         #initHistoryHandling() {
             if (!this.config.history) return;
             if (!history.state) {
-                history.replaceState({htmx: true}, '', location.pathname + location.search);
+                history.replaceState({htmx: true}, '', location.href);
             }
             window.addEventListener('popstate', (event) => {
                 if (event.state && event.state.htmx) {
+                    this.#historyAbort?.abort();
                     this.#restoreHistory();
-                } 
+                }
             });
         }
 
         #pushUrlIntoHistory(path) {
             if (!this.config.history) return;
             history.pushState({htmx: true}, '', path);
-            this.#trigger(document, "htmx:after:push:into:history", {path});
+            this.#trigger(document, "htmx:after:history:push", {path});
         }
 
         #replaceUrlInHistory(path) {
             if (!this.config.history) return;
             history.replaceState({htmx: true}, '', path);
-            this.#trigger(document, "htmx:after:replace:into:history", {path});
+            this.#trigger(document, "htmx:after:history:replace", {path});
         }
 
         #restoreHistory(path) {
             path = path || location.pathname + location.search;
-            if (this.#trigger(document, "htmx:before:restore:history", {path, cacheMiss: true})) {
-                if (this.config.historyReload) {
+            let historyElt = document.querySelector(this.#prefixSelector('[hx-history-elt]')) || document.body;
+            if (this.#trigger(document, "htmx:before:history:restore", {path, cacheMiss: true})) {
+                if (this.config.history === "reload") {
                     location.reload();
                 } else {
+                    this.#historyAbort = new AbortController();
                     this.ajax('GET', path, {
-                        target: 'body',
-                        request: {headers: {'HX-History-Restore-Request': 'true'}}
-                    });
-                }
-            } else if (elt.tagName === "FORM") {
-                return elt.method !== 'dialog' &&  this.#isSameOrigin(elt.action);
-            }
-        }
-
-        #handleHistoryUpdate(ctx) {
-            let {sourceElement, push, replace, hx, response} = ctx;
-            if (hx?.push || hx?.pushurl || hx?.replaceurl) {
-                push = hx.push || hx.pushurl;
-                replace = hx.replaceurl;
-            }
-
-            if (!push && !replace && this.#isBoosted(sourceElement)) {
-                push = 'true';
-            }
-
-            let path = push || replace;
-            if (!path || path === 'false' || path === false) return;
-
-            if (path === 'true') {
-                path = ctx.request.action + (ctx.request.anchor ? '#' + ctx.request.anchor : '');
-            }
-
-            let type = push ? 'push' : 'replace';
-
-            let historyDetail = {
-                history: {type, path},
-                sourceElement,
-                response
-            };
-            if (!this.#trigger(document, "htmx:before:history:update", historyDetail)) return;
-            if (type === 'push') {
-                this.#pushUrlIntoHistory(path);
-            } else {
-                this.#replaceUrlInHistory(path);
-            }
-            this.#trigger(document, "htmx:after:history:update", historyDetail);
-        }
-
-        #handleHxOnAttributes(node) {
-            for (let attr of node.getAttributeNames()) {
-                var searchString = this.#maybeAdjustMetaCharacter(this.#prefix("hx-on:"));
-                if (attr.startsWith(searchString)) {
-                    let evtName = attr.substring(searchString.length)
-                    let code = node.getAttribute(attr);
-                    node.addEventListener(evtName, async (evt) => {
-                        try {
-                            await this.#executeJavaScriptAsync(node, {"event": evt}, code, false)
-                        } catch (e) {
-                            console.log(e);
+                        target: historyElt,
+                        swap: 'outerSync',
+                        select: historyElt !== document.body ? this.#prefixSelector('[hx-history-elt]') : undefined,
+                        request: {
+                            headers: {'HX-History-Restore-Request': 'true'},
+                            signal: this.#historyAbort.signal
                         }
                     });
                 }
             }
         }
 
-        #showIndicators(elt, indicatorsSelector) {
-            let indicatorElements = []
-            if (indicatorsSelector) {
-                indicatorElements = [elt, ...this.#queryEltAndDescendants(elt, indicatorsSelector)];
-                for (const indicator of indicatorElements) {
-                    indicator._htmxReqCount ||= 0
-                    indicator._htmxReqCount++
-                    indicator.classList.add(this.config.requestClass)
+        #resolveHistoryAction(ctx) {
+            let {sourceElement, push, replace, hx, response} = ctx;
+
+            // allow response headers to override history action
+            if (hx?.pushurl || hx?.replaceurl) { // HX-Push-Url, HX-Replace-Url
+                push = hx.pushurl;
+                replace = hx.replaceurl;
+            }
+
+            // if this is a boosted element, default to pushing
+            if (push == null && replace == null && this.#isBoosted(sourceElement)) {
+                push = 'true';
+            }
+            
+            // normalize "false" to null
+            if (push === 'false' || push === false) push = null;
+            if (replace === 'false' || replace === false) replace = null;
+
+            if (!push && !replace) return null;
+
+            let path = push || replace;
+            // if the path is simply "true" normalize to the current path
+            if (path === 'true') {
+                let finalUrl = response?.raw?.url || ctx.request.action;
+                let url = new URL(finalUrl, location.href);
+                path = url.pathname + url.search + (ctx.request.anchor ? '#' + ctx.request.anchor : '');
+            }
+
+            let type = push ? 'push' : 'replace';
+            return {type, path};
+        }
+
+        #handleHistoryUpdate(ctx) {
+            let action = this.#resolveHistoryAction(ctx);
+            if (!action) return;
+
+            let historyDetail = {
+                history: action,
+                sourceElement: ctx.sourceElement,
+                response: ctx.response
+            };
+            if (!this.#trigger(document, "htmx:before:history:update", historyDetail)) return;
+            if (action.type === 'push') {
+                this.#pushUrlIntoHistory(action.path);
+            } else {
+                this.#replaceUrlInHistory(action.path);
+            }
+            this.#trigger(document, "htmx:after:history:update", historyDetail);
+        }
+
+        // hx-on:<event> binds to <event> directly
+        // hx-on::<event> is shorthand for hx-on:htmx:<event> (htmx events)
+        #handleHxOnAttributes(node) {
+            let hxOnNames = this.#prefixes("hx-on");
+            let mc = this.config.metaCharacter || ':';
+            let handler = (code) => async (evt) => {
+                try {
+                    await this.#executeJavaScript(node, { event: evt },
+                        `with(event?.detail||{}){${code}}`, false);
+                } catch (e) {
+                    if (typeof e !== 'symbol') this.#trigger(node, 'htmx:error', { error: e });
                 }
+            };
+            for (let attr of node.getAttributeNames()) {
+                let prefix = hxOnNames.find(p => attr.startsWith(p));
+                if (!prefix) continue;
+                let rest = attr.substring(prefix.length);
+                let value = node.getAttribute(attr);
+                // hx-on="click once -> doA(); blur -> doB()"
+                if (!rest) {
+                    for (let part of value.split(/;(?=[^;]*->)/)) {
+                        let idx = part.indexOf('->');
+                        if (idx !== -1) this.#onTrigger(node, part.substring(0, idx).trim(), handler(part.substring(idx + 2).trim()));
+                    }
+                    continue;
+                }
+                // hx-on:click="code" or hx-on::before:request="code"
+                if (rest[0] !== mc) continue;
+                let eventName = rest.substring(1);
+                if (eventName.startsWith(mc)) eventName = 'htmx' + mc + eventName.substring(1);
+                this.#onTrigger(node, eventName, handler(value));
+            }
+        }
+
+        #showIndicators(elt) {
+            let indicatorsSelector = this.#attributeValue(elt, "hx-indicator");
+            let indicatorElements;
+            if (!indicatorsSelector) {
+                indicatorElements = [elt]
+            } else {
+                indicatorElements = this.#findAllExt(elt, indicatorsSelector, "hx-indicator");
+            }
+            for (const indicator of indicatorElements) {
+                let p = this.#htmxProp(indicator);
+                p.rc = (p.rc || 0) + 1;
+                this.#addClass(indicator, this.config.requestClass)
             }
             return indicatorElements
         }
 
         #hideIndicators(indicatorElements) {
             for (let indicator of indicatorElements) {
-                if (indicator._htmxReqCount) {
-                    indicator._htmxReqCount--;
-                    if (indicator._htmxReqCount <= 0) {
-                        indicator.classList.remove(this.config.requestClass);
-                        delete indicator._htmxReqCount
-                    }
+                let p = this.#htmxProp(indicator);
+                if (p.rc && --p.rc <= 0) {
+                    this.#removeClass(indicator, this.config.requestClass);
+                    delete p.rc;
                 }
             }
         }
 
-        #disableElements(elt, disabledSelector) {
+        #disableElements(elt) {
+            let disabledSelector = this.#attributeValue(elt, "hx-disable");
             let disabledElements = []
             if (disabledSelector) {
-                disabledElements = this.#queryEltAndDescendants(elt, disabledSelector);
+                disabledElements = this.#findAllExt(elt, disabledSelector, "hx-disable");
                 for (let indicator of disabledElements) {
-                    indicator._htmxDisableCount ||= 0
-                    indicator._htmxDisableCount++
+                    let p = this.#htmxProp(indicator);
+                    p.dc = (p.dc || 0) + 1;
                     indicator.disabled = true
                 }
             }
@@ -1671,22 +1697,22 @@ var htmx = (() => {
 
         #enableElements(disabledElements) {
             for (const indicator of disabledElements) {
-                if (indicator._htmxDisableCount) {
-                    indicator._htmxDisableCount--
-                    if (indicator._htmxDisableCount <= 0) {
-                        indicator.disabled = false
-                        delete indicator._htmxDisableCount
-                    }
+                let p = this.#htmxProp(indicator);
+                if (p.dc && --p.dc <= 0) {
+                    indicator.disabled = false
+                    delete p.dc;
                 }
             }
         }
 
-        #collectFormData(elt, form, submitter) {
+        #collectFormData(elt, form, submitter, validate, isGet) {
+            if (validate && form && !form.reportValidity()) return
+            
             let formData = form ? new FormData(form) : new FormData()
             let included = form ? new Set(form.elements) : new Set()
-            if (!form && elt.name) {
-                formData.append(elt.name, elt.value)
-                included.add(elt);
+            if (!form) {
+                if (validate && elt.reportValidity && !elt.reportValidity()) return
+                this.#addInputValues(elt, included, formData, isGet);
             }
             if (submitter && submitter.name) {
                 formData.append(submitter.name, submitter.value)
@@ -1694,19 +1720,26 @@ var htmx = (() => {
             }
             let includeSelector = this.#attributeValue(elt, "hx-include");
             if (includeSelector) {
-                let includeNodes = this.#findAllExt(elt, includeSelector);
-                for (let node of includeNodes) {
+                for (let node of this.#findAllExt(elt, includeSelector)) {
+                    if (validate && node.reportValidity && !node.reportValidity()) return
                     this.#addInputValues(node, included, formData);
                 }
             }
             return formData
         }
 
-        #addInputValues(elt, included, formData) {
-            let inputs = this.#queryEltAndDescendants(elt, 'input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+        #addInputValues(elt, included, formData, isGet) {
+            let tag = elt.tagName;
+            let inputs = [];
+            if (tag === 'BUTTON') {
+                inputs = [elt]; // buttons only send own value, never collect children
+            } else if (['INPUT', 'SELECT', 'TEXTAREA', 'FIELDSET'].includes(tag) || !isGet) {
+                inputs = this.#queryEltAndDescendants(elt, 'input, select, textarea');
+            }
+            // GET on non-form-control containers (div, etc.) sends nothing — use hx-include for explicit inclusion
 
             for (let input of inputs) {
-                if (!input.name || included.has(input)) continue;
+                if (!input.name || input.matches(':disabled') || included.has(input)) continue;
                 included.add(input);
 
                 let type = input.type;
@@ -1725,31 +1758,29 @@ var htmx = (() => {
                     for (let option of input.selectedOptions) {
                         formData.append(input.name, option.value);
                     }
-                } else if (input.matches('select, textarea, input')) {
-                    // Regular inputs, single selects, textareas
+                } else {
                     formData.append(input.name, input.value);
                 }
             }
         }
 
-        #handleHxVals(elt, body) {
-            let hxValsValue = this.#attributeValue(elt, "hx-vals");
-            if (hxValsValue) {
-                let javascriptContent = this.#extractJavascriptContent(hxValsValue);
-                if (javascriptContent) {
-                    // Return promise for async evaluation
-                    return this.#executeJavaScriptAsync(elt, {}, javascriptContent, true).then(obj => {
-                        for (let key in obj) {
-                            body.append(key, obj[key])
-                        }
-                    });
-                } else {
-                    // Synchronous path
-                    let obj = this.#parseConfig(hxValsValue);
-                    for (let key in obj) {
-                        body.append(key, obj[key])
-                    }
+        #getAttributeObject(elt, attrName, callback) {
+            let attrValue = this.#attributeValue(elt, attrName);
+            if (!attrValue) return null;
+
+            let javascriptContent = this.#extractJavascriptContent(attrValue);
+            if (javascriptContent) {
+                // Wrap in braces if not already wrapped (for htmx 2.x compatibility)
+                if (javascriptContent.indexOf('{') !== 0) {
+                    javascriptContent = '{' + javascriptContent + '}';
                 }
+                // Return promise for async evaluation
+                return this.#executeJavaScript(elt, {}, javascriptContent, true).then(obj => {
+                    callback(obj);
+                });
+            } else {
+                // Synchronous path - return the parsed object directly
+                callback(this.#parseConfig(attrValue));
             }
         }
 
@@ -1758,11 +1789,11 @@ var htmx = (() => {
             return s.startsWith('<') && s.endsWith('/>') ? s.slice(1, -2) : s;
         }
 
-        #findAllExt(eltOrSelector, maybeSelector, global) {
+        #findAllExt(eltOrSelector, maybeSelector, thisAttr, global) {
             let selector = maybeSelector ?? eltOrSelector;
             let elt = maybeSelector ? this.#normalizeElement(eltOrSelector) : document;
             if (selector.startsWith('global ')) {
-                return this.#findAllExt(elt, selector.slice(7), true);
+                return this.#findAllExt(elt, selector.slice(7), thisAttr, true);
             }
             let parts = selector ? selector.replace(/<[^>]+\/>/g, m => m.replace(/,/g, '%2C'))
                 .split(',').map(p => p.replace(/%2C/g, ',')) : [];
@@ -1774,7 +1805,9 @@ var htmx = (() => {
                 if (selector.startsWith('closest ')) {
                     item = elt.closest(selector.slice(8))
                 } else if (selector.startsWith('find ')) {
-                    item = document.querySelector(elt, selector.slice(5))
+                    item = elt.querySelector(selector.slice(5))
+                } else if (selector.startsWith('findAll ')) {
+                    result.push(...elt.querySelectorAll(selector.slice(8)))
                 } else if (selector === 'next' || selector === 'nextElementSibling') {
                     item = elt.nextElementSibling
                 } else if (selector.startsWith('next ')) {
@@ -1789,10 +1822,14 @@ var htmx = (() => {
                     item = window
                 } else if (selector === 'body') {
                     item = document.body
-                } else if (selector === 'root') {
-                    item = this.#getRootNode(elt, !!global)
                 } else if (selector === 'host') {
                     item = (elt.getRootNode()).host
+                } else if (selector === 'this') {
+                    if (thisAttr) {
+                        result.push(...this.#findThisElements(elt, thisAttr));
+                        continue;
+                    }
+                    item = elt
                 } else {
                     unprocessedParts.push(selector)
                 }
@@ -1808,7 +1845,7 @@ var htmx = (() => {
                 result.push(...rootNode.querySelectorAll(standardSelector))
             }
 
-            return result
+            return [...new Set(result)]
         }
 
         #scanForwardQuery(start, match, global) {
@@ -1836,8 +1873,17 @@ var htmx = (() => {
             }
         }
 
-        #findExt(eltOrSelector, selector) {
-            return this.#findAllExt(eltOrSelector, selector)[0]
+        #findOrWarn(elt, selector, thisAttr) {
+            let result = this.#findAllExt(elt, selector, thisAttr)[0]
+            if (!result) {
+                console.warn(`htmx: '${selector}' on ${thisAttr} did not match any element`,
+                    { elt, selector, attr: thisAttr });
+            }
+            return result
+        }
+
+        #findExt(eltOrSelector, selector, thisAttr) {
+            return this.#findAllExt(eltOrSelector, selector, thisAttr)[0]
         }
 
         #extractJavascriptContent(string) {
@@ -1851,10 +1897,12 @@ var htmx = (() => {
         }
 
         #initializeAbortListener(elt) {
-            elt.addEventListener("htmx:abort", () => {
+            let handler = () => {
                 let requestQueue = this.#getRequestQueue(elt);
                 requestQueue.abort();
-            })
+            };
+            elt.addEventListener("htmx:abort", handler);
+            elt._htmx.listeners.push({fromElt: elt, eventName: "htmx:abort", handler});
         }
 
         #morph(oldNode, fragment, innerHTML) {
@@ -1862,7 +1910,7 @@ var htmx = (() => {
             let pantry = document.createElement("div");
             pantry.hidden = true;
             document.body.after( pantry);
-            let ctx = {target: oldNode, idMap, persistentIds, pantry};
+            let ctx = {target: oldNode, idMap, persistentIds, pantry, futureMatches: new WeakSet()};
 
             if (innerHTML) {
                 this.#morphChildren(ctx, oldNode, fragment);
@@ -1880,53 +1928,62 @@ var htmx = (() => {
             }
             insertionPoint ||= oldParent.firstChild;
 
-            for (const newChild of newParent.childNodes) {
+            let newChild = newParent.firstChild;
+            while (newChild) {
+                let matchedNode;
                 if (insertionPoint && insertionPoint != endPoint) {
-                    let bestMatch = this.#findBestMatch(ctx, newChild, insertionPoint, endPoint);
-                    if (bestMatch) {
-                        if (bestMatch !== insertionPoint) {
+                    matchedNode = this.#findBestMatch(ctx, newChild, insertionPoint, endPoint);
+                    if (matchedNode) {
+                        if (matchedNode !== insertionPoint) {
                             let cursor = insertionPoint;
-                            while (cursor && cursor !== bestMatch) {
+                            while (cursor && cursor !== matchedNode) {
                                 let tempNode = cursor;
                                 cursor = cursor.nextSibling;
-                                this.#removeNode(ctx, tempNode);
+                                // remove nodes unless they match upcoming content in which case move them to end for later use
+                                if (tempNode instanceof Element && (ctx.idMap.has(tempNode) || this.#matchesUpcomingSibling(ctx, tempNode, newChild))) {
+                                    this.#moveBefore(oldParent, tempNode, endPoint);
+                                } else {
+                                    this.#removeNode(ctx, tempNode);
+                                }
                             }
                         }
-                        this.#morphNode(bestMatch, newChild, ctx);
-                        insertionPoint = bestMatch.nextSibling;
-                        continue;
                     }
                 }
 
-                if (newChild instanceof Element && ctx.persistentIds.has(newChild.id)) {
-                    let target = (ctx.target.id === newChild.id && ctx.target) ||
-                        ctx.target.querySelector(`[id="${newChild.id}"]`) ||
-                        ctx.pantry.querySelector(`[id="${newChild.id}"]`);
-                    let elementId = target.id;
-                    let element = target;
+                if (!matchedNode && newChild instanceof Element && ctx.persistentIds.has(newChild.id)) {
+                    let escapedId = CSS.escape(newChild.id);
+                    matchedNode = (ctx.target.id === newChild.id && ctx.target) ||
+                        ctx.target.querySelector(`[id="${escapedId}"]`) ||
+                        ctx.pantry.querySelector(`[id="${escapedId}"]`);
+                    let element = matchedNode;
                     while ((element = element.parentNode)) {
                         let idSet = ctx.idMap.get(element);
                         if (idSet) {
-                            idSet.delete(elementId);
+                            idSet.delete(matchedNode.id);
                             if (!idSet.size) ctx.idMap.delete(element);
                         }
                     }
-                    this.#moveBefore(oldParent, target, insertionPoint);
-                    this.#morphNode(target, newChild, ctx);
-                    insertionPoint = target.nextSibling;
+                    this.#moveBefore(oldParent, matchedNode, insertionPoint);
+                }
+
+                if (matchedNode) {
+                    this.#morphNode(matchedNode, newChild, ctx);
+                    insertionPoint = matchedNode.nextSibling;
+                    newChild = newChild.nextSibling;
                     continue;
                 }
 
-                let tempChild;
+                let nextNewChild = newChild.nextSibling;
                 if (ctx.idMap.has(newChild)) {
-                    tempChild = document.createElement(newChild.tagName);
-                    oldParent.insertBefore(tempChild, insertionPoint);
-                    this.#morphNode(tempChild, newChild, ctx);
+                    let placeholder = document.createElement(newChild.tagName);
+                    oldParent.insertBefore(placeholder, insertionPoint);
+                    this.#morphNode(placeholder, newChild, ctx);
+                    insertionPoint = placeholder.nextSibling;
                 } else {
-                    tempChild = document.importNode(newChild, true);
-                    oldParent.insertBefore(tempChild, insertionPoint);
+                    oldParent.insertBefore(newChild, insertionPoint);
+                    insertionPoint = newChild.nextSibling;
                 }
-                insertionPoint = tempChild.nextSibling;
+                newChild = nextNewChild;
             }
 
             while (insertionPoint && insertionPoint != endPoint) {
@@ -1936,35 +1993,61 @@ var htmx = (() => {
             }
         }
 
+        #matchesUpcomingSibling(ctx, oldElt, startNode) {
+            if (ctx.futureMatches.has(oldElt)) return true;
+            for (let sibling = startNode.nextSibling, i = 0; sibling && i < this.config.morphScanLimit; sibling = sibling.nextSibling, i++) {
+                if (sibling instanceof Element && oldElt.isEqualNode(sibling)) {
+                    ctx.futureMatches.add(oldElt);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         #findBestMatch(ctx, node, startPoint, endPoint) {
-            let softMatch = null, nextSibling = node.nextSibling, siblingSoftMatchCount = 0, displaceMatchCount = 0;
+            if (!(node instanceof Element)) return null;
+            let softMatch = null, displaceMatchCount = 0, scanLimit = this.config.morphScanLimit;
             let newSet = ctx.idMap.get(node), nodeMatchCount = newSet?.size || 0;
+            // If node has a non-persistent ID, insert instead of soft matching
+            if (node.id && !newSet) return null;
             let cursor = startPoint;
             while (cursor && cursor != endPoint) {
                 let oldSet = ctx.idMap.get(cursor);
-                if (this.#isSoftMatch(cursor, node)) {
+                if (this.#internalAPI.isSoftMatch(cursor, node)) {
+                    // Hard match: matching IDs found in both nodes
                     if (oldSet && newSet && [...oldSet].some(id => newSet.has(id))) return cursor;
-                    if (softMatch === null && !oldSet) {
-                        if (!nodeMatchCount) return cursor;
-                        else softMatch = cursor;
+                    if (!oldSet) {
+                        // Exact match: nodes are identical
+                        if (scanLimit > 0 && cursor.isEqualNode(node)) return cursor;
+                        // Soft match: same tag/type, save as fallback
+                        if (!softMatch) softMatch = cursor;
                     }
                 }
+                // Stop if too many ID elements would be displaced
                 displaceMatchCount += oldSet?.size || 0;
                 if (displaceMatchCount > nodeMatchCount) break;
-                if (softMatch === null && nextSibling && this.#isSoftMatch(cursor, nextSibling)) {
-                    siblingSoftMatchCount++;
-                    nextSibling = nextSibling.nextSibling;
-                    if (siblingSoftMatchCount >= 2) softMatch = undefined;
-                }
+                // Don't move elements containing focus
                 if (cursor.contains(document.activeElement)) break;
+                // Stop scanning if limit reached and no IDs to match
+                if (--scanLimit < 1 && nodeMatchCount === 0) break;
                 cursor = cursor.nextSibling;
             }
-            return softMatch || null;
+            // Only return fallback softMatch if it does not match upcoming content
+            if (softMatch && this.#matchesUpcomingSibling(ctx, softMatch, node)) return null;
+            return softMatch;
         }
 
         #isSoftMatch(oldNode, newNode) {
-            return oldNode.nodeType === newNode.nodeType && oldNode.tagName === newNode.tagName &&
-                (!oldNode.id || oldNode.id === newNode.id);
+            if (!(oldNode instanceof Element) || oldNode.tagName !== newNode.tagName) {
+                return false;
+            }
+            // Script tags must be identical to match - never patch a script with different content
+            if (oldNode.tagName === 'SCRIPT' && !oldNode.isEqualNode(newNode)) return false;
+            // If both have Alpine reactive ID bindings, ignore ID mismatch
+            if (oldNode._x_bindings?.id && newNode.matches?.('[\\:id], [x-bind\\:id]')) {
+                return true;
+            }
+            return !oldNode.id || oldNode.id === newNode.id;
         }
 
         #removeNode(ctx, node) {
@@ -1982,30 +2065,31 @@ var htmx = (() => {
                     parentNode.moveBefore(element, after);
                     return
                 } catch (e) {
-                    // ignore and insertBefore insteat
+                    // ignore and insertBefore instead
                 }
             }
             parentNode.insertBefore(element, after);
         }
 
         #morphNode(oldNode, newNode, ctx) {
-            let type = newNode.nodeType;
-
-            if (type === 1) {
-                let noMorph = this.config.morphIgnore || [];
-                this.#copyAttributes(oldNode, newNode, noMorph);
-                if (oldNode instanceof HTMLTextAreaElement && oldNode.defaultValue != newNode.defaultValue) {
-                    oldNode.value = newNode.value;
-                }
+            if (this.config.morphSkip && oldNode.matches?.(this.config.morphSkip)) return;
+                
+            // Trigger extension hook - if returns false, skip morphing this node
+            if (!this.#triggerExtensions(oldNode, "htmx:before:morph:node", {oldNode, newNode})) return;
+                
+            this.#copyAttributes(oldNode, newNode);
+            if (oldNode instanceof HTMLTextAreaElement && oldNode.defaultValue != newNode.defaultValue) {
+                oldNode.value = newNode.value;
             }
-
-            if ((type === 8 || type === 3) && oldNode.nodeValue !== newNode.nodeValue) {
-                oldNode.nodeValue = newNode.nodeValue;
+            let skipChildren = this.config.morphSkipChildren && oldNode.matches?.(this.config.morphSkipChildren);
+            // isEqualNode does not detect template content diff so always morph templates
+            if (!skipChildren && (!oldNode.isEqualNode(newNode) || newNode.tagName === 'TEMPLATE' || newNode.querySelector?.('template'))) {
+                this.#morphChildren(ctx, oldNode, newNode);
             }
-            if (!oldNode.isEqualNode(newNode)) this.#morphChildren(ctx, oldNode, newNode);
         }
 
-        #copyAttributes(destination, source, attributesToIgnore = []) {
+        #copyAttributes(destination, source) {
+            let attributesToIgnore = this.config.morphIgnore || [];
             for (const attr of source.attributes) {
                 if (!attributesToIgnore.includes(attr.name) && destination.getAttribute(attr.name) !== attr.value) {
                     destination.setAttribute(attr.name, attr.value);
@@ -2053,7 +2137,7 @@ var htmx = (() => {
             let duplicateIds = new Set(), oldIdTagNameMap = new Map();
             for (const {id, tagName} of oldIdElements) {
                 if (oldIdTagNameMap.has(id)) duplicateIds.add(id);
-                else oldIdTagNameMap.set(id, tagName);
+                else if (id) oldIdTagNameMap.set(id, tagName);
             }
             let persistentIds = new Set();
             for (const {id, tagName} of newIdElements) {
@@ -2075,7 +2159,7 @@ var htmx = (() => {
                 }
                 let statusValue = this.#attributeValue(ctx.sourceElement, "hx-status:" + pattern);
                 if (statusValue) {
-                    Object.assign(ctx, this.#parseConfig(statusValue));
+                    this.#mergeConfig(statusValue, ctx);
                     return;
                 }
             }
@@ -2105,7 +2189,7 @@ var htmx = (() => {
                     await document.startViewTransition(task).finished;
                     this.#trigger(document, "htmx:after:viewTransition", {task})
                 } else {
-                    task();
+                    await task();
                 }
             } catch (e) {
                 // Transitions can be skipped/aborted - this is normal
@@ -2116,21 +2200,31 @@ var htmx = (() => {
             }
         }
 
-        #captureCSSTransitions(task, root) {
+        #startCSSTransitions(fragment, root) {
             let idElements = root.querySelectorAll("[id]");
             let existingElementsById = Object.fromEntries([...idElements].map(e => [e.id, e]));
-            let newElementsWithIds = task.fragment.querySelectorAll("[id]");
-            task.restoreTasks = []
+            let newElementsWithIds = fragment.querySelectorAll("[id]");
+            let restoreTasks = []
             for (let elt of newElementsWithIds) {
                 let existing = existingElementsById[elt.id];
                 if (existing?.tagName === elt.tagName) {
                     let clone = elt.cloneNode(false); // shallow clone node
-                    this.#copyAttributes(elt, existing, this.config.morphIgnore)
-                    task.restoreTasks.push(()=>{
-                        this.#copyAttributes(elt, clone, this.config.morphIgnore)
+                    this.#copyAttributes(elt, existing)
+                    restoreTasks.push(()=>{
+                        this.#copyAttributes(elt, clone)
                     })
                 }
             }
+            return restoreTasks;
+        }
+
+        #addClass(elt, cls) {
+            elt?.classList?.add?.(cls);
+        }
+
+        #removeClass(elt, cls) {
+            elt?.classList?.remove?.(cls);
+            if (elt?.classList?.length === 0) elt.removeAttribute('class');
         }
 
         #normalizeElement(cssOrElement) {
@@ -2148,7 +2242,10 @@ var htmx = (() => {
                 return string;
             }
         }
+
     }
 
     return new Htmx()
 })()
+
+;
