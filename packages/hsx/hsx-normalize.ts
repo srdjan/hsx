@@ -1,4 +1,4 @@
-import type { Route, Urlish, Params } from "./hsx-types.ts";
+import type { Params, Route, Urlish } from "./hsx-types.ts";
 
 export interface RenderContext {
   depth: number;
@@ -7,7 +7,11 @@ export interface RenderContext {
   maxNodes?: number;
   usesHtmx: boolean;
   ancestors: string[];
-  onElement?: (tag: string, props: Record<string, unknown>, ancestors: ReadonlyArray<string>) => void;
+  onElement?: (
+    tag: string,
+    props: Record<string, unknown>,
+    ancestors: ReadonlyArray<string>,
+  ) => void;
   /** override for HTMX script injection (true = force, false = disable) */
   injectHtmxOverride?: boolean;
 }
@@ -36,6 +40,18 @@ const HSX_NON_VERB_ATTRS = [
   ["swapOob", "hx-swap-oob"],
 ] as const;
 
+/**
+ * All HSX source prop keys (params + verbs + non-verb aliases). Used by
+ * needsHsxNormalization to scan an element's own keys (usually 1-3) instead of
+ * probing every HSX key on every element - keeps detection O(props), not
+ * O(table), so the alias table is free to grow.
+ */
+const HSX_SOURCE_KEYS: ReadonlySet<string> = new Set<string>([
+  "params",
+  ...HTTP_VERBS,
+  ...HSX_NON_VERB_ATTRS.map(([src]) => src),
+]);
+
 function isRoute(x: unknown): x is Route<string, unknown> {
   return (
     typeof x === "object" &&
@@ -61,19 +77,9 @@ function markHtmx(ctx: RenderContext): void {
  * Used to implement lazy copy - only spread props when mutation is needed.
  */
 function needsHsxNormalization(props: Props): boolean {
-  // Check for params
-  if (props.params !== undefined) return true;
-
-  // Check for HTTP verb attributes
-  for (const verb of HTTP_VERBS) {
-    if (props[verb] !== undefined) return true;
+  for (const key in props) {
+    if (HSX_SOURCE_KEYS.has(key) && props[key] !== undefined) return true;
   }
-
-  // Check for non-verb HSX attributes
-  for (const [src] of HSX_NON_VERB_ATTRS) {
-    if (props[src] !== undefined) return true;
-  }
-
   return false;
 }
 
@@ -102,9 +108,11 @@ function normalizeNonVerb(next: Props, ctx: RenderContext): void {
     if (value !== undefined) {
       markHtmx(ctx);
       if (next[hxAttr] == null) {
-        // Coerce booleans to their string form: hx-push-url / hx-swap-oob need
-        // the literal "true"/"false" value, since a bare attribute is falsy to HTMX.
-        next[hxAttr] = typeof value === "boolean" ? String(value) : value;
+        // hx-push-url / hx-swap-oob need the literal string "true" (a bare/valueless
+        // attribute is falsy to HTMX). Boolean false is left as-is so propsToAttrs
+        // omits the attribute entirely - emitting "false" would wrongly mark a
+        // swap-oob element as out-of-band (HTMX keys on attribute presence).
+        next[hxAttr] = value === true ? "true" : value;
       }
       delete next[srcAttr];
     }
@@ -153,7 +161,7 @@ export function normalizeFormProps(
   if (verbCount > 1) {
     throw new Error(
       `<form> cannot have multiple HTTP verb attributes. ` +
-      `Found: ${verbs.join(", ")}. Use only one verb per form.`
+        `Found: ${verbs.join(", ")}. Use only one verb per form.`,
     );
   }
 

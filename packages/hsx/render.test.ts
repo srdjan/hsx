@@ -5,8 +5,11 @@
  * Run with: deno test --allow-read packages/hsx/render.test.ts
  */
 
-import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { renderHtml, Fragment } from "./mod.ts";
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { Fragment, renderHtml } from "./mod.ts";
 import { jsx } from "./jsx-runtime.ts";
 
 // =============================================================================
@@ -14,13 +17,23 @@ import { jsx } from "./jsx-runtime.ts";
 // =============================================================================
 
 Deno.test("escapes HTML entities in text content", () => {
-  const html = renderHtml(jsx("div", { children: "<script>alert('xss')</script>" }));
-  assertEquals(html, "<div>&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;</div>");
+  const html = renderHtml(
+    jsx("div", { children: "<script>alert('xss')</script>" }),
+  );
+  assertEquals(
+    html,
+    "<div>&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;</div>",
+  );
 });
 
 Deno.test("escapes HTML entities in attribute values", () => {
-  const html = renderHtml(jsx("div", { title: '"><script>alert("xss")</script>' }));
-  assertEquals(html, '<div title="&quot;&gt;&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"></div>');
+  const html = renderHtml(
+    jsx("div", { title: '"><script>alert("xss")</script>' }),
+  );
+  assertEquals(
+    html,
+    '<div title="&quot;&gt;&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"></div>',
+  );
 });
 
 Deno.test("escapes ampersands correctly", () => {
@@ -62,7 +75,10 @@ Deno.test("rejects style property names with colons", () => {
 Deno.test("accepts valid camelCase style properties", () => {
   const style = { backgroundColor: "red", fontSize: "16px" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="background-color:red;font-size:16px;"></div>');
+  assertEquals(
+    html,
+    '<div style="background-color:red;font-size:16px;"></div>',
+  );
 });
 
 Deno.test("accepts valid kebab-case style properties", () => {
@@ -86,13 +102,19 @@ Deno.test("filters Infinity values from styles", () => {
 Deno.test("sanitizes semicolons from style values", () => {
   const style = { color: "red; background: url(evil)" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="color:red background: /* blocked */evil);"></div>');
+  assertEquals(
+    html,
+    '<div style="color:red background: /* blocked */evil);"></div>',
+  );
 });
 
 Deno.test("sanitizes curly braces from style values", () => {
   const style = { color: "red} .evil { background: url()" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="color:red .evil  background: /* blocked */);"></div>');
+  assertEquals(
+    html,
+    '<div style="color:red .evil  background: /* blocked */);"></div>',
+  );
 });
 
 // =============================================================================
@@ -106,7 +128,7 @@ Deno.test("throws clear error for circular references in vals", () => {
   assertThrows(
     () => renderHtml(jsx("button", { vals: circular })),
     Error,
-    "circular reference detected"
+    "circular reference detected",
   );
 });
 
@@ -117,7 +139,7 @@ Deno.test("includes attribute name in circular reference error", () => {
   assertThrows(
     () => renderHtml(jsx("div", { headers: circular })),
     Error,
-    '"hx-headers"'
+    '"hx-headers"',
   );
 });
 
@@ -129,7 +151,7 @@ Deno.test("rejects manual hx-get attribute", () => {
   assertThrows(
     () => renderHtml(jsx("button", { "hx-get": "/api" })),
     Error,
-    "Manual hx-* props are disallowed"
+    "Manual hx-* props are disallowed",
   );
 });
 
@@ -137,7 +159,7 @@ Deno.test("rejects manual hx-post attribute", () => {
   assertThrows(
     () => renderHtml(jsx("form", { "hx-post": "/submit" })),
     Error,
-    "Manual hx-* props are disallowed"
+    "Manual hx-* props are disallowed",
   );
 });
 
@@ -145,7 +167,7 @@ Deno.test("rejects manual hx-target attribute", () => {
   assertThrows(
     () => renderHtml(jsx("button", { "hx-target": "#list" })),
     Error,
-    "Manual hx-* props are disallowed"
+    "Manual hx-* props are disallowed",
   );
 });
 
@@ -163,19 +185,20 @@ Deno.test("enforces maxDepth limit", () => {
   assertThrows(
     () => renderHtml(node, { maxDepth: 10 }),
     Error,
-    "Maximum render depth exceeded"
+    "Maximum render depth exceeded",
   );
 });
 
 Deno.test("enforces maxNodes limit", () => {
-  const children = Array.from({ length: 20 }, (_, i) =>
-    jsx("span", { children: String(i) })
+  const children = Array.from(
+    { length: 20 },
+    (_, i) => jsx("span", { children: String(i) }),
   );
 
   assertThrows(
     () => renderHtml(jsx("div", { children }), { maxNodes: 10 }),
     Error,
-    "Maximum node count exceeded"
+    "Maximum node count exceeded",
   );
 });
 
@@ -208,7 +231,9 @@ Deno.test("does not escape script content", () => {
 });
 
 Deno.test("does not escape style content", () => {
-  const html = renderHtml(jsx("style", { children: ".foo > .bar { color: red; }" }));
+  const html = renderHtml(
+    jsx("style", { children: ".foo > .bar { color: red; }" }),
+  );
   assertEquals(html, "<style>.foo > .bar { color: red; }</style>");
 });
 
@@ -223,7 +248,7 @@ Deno.test("Fragment renders children without wrapper", () => {
         jsx("span", { children: "A" }),
         jsx("span", { children: "B" }),
       ],
-    })
+    }),
   );
   assertEquals(html, "<span>A</span><span>B</span>");
 });
@@ -292,7 +317,10 @@ Deno.test("renders string 0 correctly", () => {
 Deno.test("accepts CSS custom properties (--variable-name)", () => {
   const style = { "--custom-color": "red", "--spacing-lg": "24px" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="--custom-color:red;--spacing-lg:24px;"></div>');
+  assertEquals(
+    html,
+    '<div style="--custom-color:red;--spacing-lg:24px;"></div>',
+  );
 });
 
 Deno.test("rejects malicious CSS custom property names", () => {
@@ -308,7 +336,10 @@ Deno.test("rejects malicious CSS custom property names", () => {
 Deno.test("blocks url() in style values", () => {
   const style = { background: "url(javascript:alert('xss'))" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, `<div style="background:/* blocked */javascript:alert(&#x27;xss&#x27;));"></div>`);
+  assertEquals(
+    html,
+    `<div style="background:/* blocked */javascript:alert(&#x27;xss&#x27;));"></div>`,
+  );
 });
 
 Deno.test("preserves calc() in style values", () => {
@@ -320,13 +351,19 @@ Deno.test("preserves calc() in style values", () => {
 Deno.test("blocks expression() in style values", () => {
   const style = { width: "expression(document.body.clientWidth)" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, '<div style="width:/* blocked */document.body.clientWidth);"></div>');
+  assertEquals(
+    html,
+    '<div style="width:/* blocked */document.body.clientWidth);"></div>',
+  );
 });
 
 Deno.test("blocks @import in style values", () => {
   const style = { content: "@import 'evil.css'" };
   const html = renderHtml(jsx("div", { style }));
-  assertEquals(html, `<div style="content:/* blocked */ &#x27;evil.css&#x27;;"></div>`);
+  assertEquals(
+    html,
+    `<div style="content:/* blocked */ &#x27;evil.css&#x27;;"></div>`,
+  );
 });
 
 // =============================================================================
@@ -337,7 +374,7 @@ Deno.test("rejects form with multiple HTTP verbs", () => {
   assertThrows(
     () => renderHtml(jsx("form", { post: "/submit", get: "/data" })),
     Error,
-    "cannot have multiple HTTP verb attributes"
+    "cannot have multiple HTTP verb attributes",
   );
 });
 
@@ -356,9 +393,12 @@ Deno.test("auto-injects HTMX script when HSX attributes are used", () => {
       children: jsx("body", {
         children: jsx("button", { get: "/api/data", children: "Load" }),
       }),
-    })
+    }),
   );
-  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+  assertEquals(
+    html.includes('<script src="/static/htmx.js"></script></body>'),
+    true,
+  );
 });
 
 Deno.test("does not inject HTMX script for plain HTML", () => {
@@ -367,7 +407,7 @@ Deno.test("does not inject HTMX script for plain HTML", () => {
       children: jsx("body", {
         children: jsx("div", { children: "Hello" }),
       }),
-    })
+    }),
   );
   assertEquals(html.includes("htmx.js"), false);
 });
@@ -379,9 +419,12 @@ Deno.test("forces HTMX injection with injectHtmx: true", () => {
         children: jsx("div", { children: "No HSX attrs" }),
       }),
     }),
-    { injectHtmx: true }
+    { injectHtmx: true },
   );
-  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+  assertEquals(
+    html.includes('<script src="/static/htmx.js"></script></body>'),
+    true,
+  );
 });
 
 Deno.test("suppresses HTMX injection with injectHtmx: false", () => {
@@ -391,7 +434,7 @@ Deno.test("suppresses HTMX injection with injectHtmx: false", () => {
         children: jsx("button", { get: "/api", children: "Load" }),
       }),
     }),
-    { injectHtmx: false }
+    { injectHtmx: false },
   );
   assertEquals(html.includes("htmx.js"), false);
 });
@@ -450,7 +493,9 @@ Deno.test("explicit method is not overridden by HSX verb", () => {
 // =============================================================================
 
 Deno.test("get + target + swap render together", () => {
-  const html = renderHtml(jsx("button", { get: "/data", target: "#list", swap: "innerHTML" }));
+  const html = renderHtml(
+    jsx("button", { get: "/data", target: "#list", swap: "innerHTML" }),
+  );
   assertEquals(html.includes('hx-get="/data"'), true);
   assertEquals(html.includes('hx-target="#list"'), true);
   assertEquals(html.includes('hx-swap="innerHTML"'), true);
@@ -463,12 +508,14 @@ Deno.test("post + vals + headers render together", () => {
     headers: JSON.stringify({ "X-Custom": "value" }),
   }));
   assertEquals(html.includes('hx-post="/submit"'), true);
-  assertEquals(html.includes('hx-vals='), true);
-  assertEquals(html.includes('hx-headers='), true);
+  assertEquals(html.includes("hx-vals="), true);
+  assertEquals(html.includes("hx-headers="), true);
 });
 
 Deno.test("get + trigger + swap on div", () => {
-  const html = renderHtml(jsx("div", { get: "/poll", trigger: "every 2s", swap: "outerHTML" }));
+  const html = renderHtml(
+    jsx("div", { get: "/poll", trigger: "every 2s", swap: "outerHTML" }),
+  );
   assertEquals(html.includes('hx-get="/poll"'), true);
   assertEquals(html.includes('hx-trigger="every 2s"'), true);
   assertEquals(html.includes('hx-swap="outerHTML"'), true);
@@ -479,7 +526,9 @@ Deno.test("get + trigger + swap on div", () => {
 // =============================================================================
 
 Deno.test("indicator maps to hx-indicator", () => {
-  const html = renderHtml(jsx("button", { get: "/data", indicator: "#spinner" }));
+  const html = renderHtml(
+    jsx("button", { get: "/data", indicator: "#spinner" }),
+  );
   assertEquals(html.includes('hx-indicator="#spinner"'), true);
   assertEquals(html.includes(" indicator="), false);
 });
@@ -495,7 +544,9 @@ Deno.test("sync maps to hx-sync", () => {
 });
 
 Deno.test("confirm maps to hx-confirm", () => {
-  const html = renderHtml(jsx("button", { delete: "/item/1", confirm: "Sure?" }));
+  const html = renderHtml(
+    jsx("button", { delete: "/item/1", confirm: "Sure?" }),
+  );
   assertEquals(html.includes('hx-confirm="Sure?"'), true);
 });
 
@@ -504,16 +555,16 @@ Deno.test("select maps to hx-select", () => {
   assertEquals(html.includes('hx-select="#content"'), true);
 });
 
-Deno.test("pushUrl boolean true serializes as hx-push-url=\"true\"", () => {
+Deno.test('pushUrl boolean true serializes as hx-push-url="true"', () => {
   const html = renderHtml(jsx("a", { get: "/page", pushUrl: true }));
   assertEquals(html.includes('hx-push-url="true"'), true);
   // must be the string form, not a bare attribute (bare is falsy to htmx)
   assertEquals(html.includes("hx-push-url>"), false);
 });
 
-Deno.test("pushUrl boolean false serializes as hx-push-url=\"false\"", () => {
+Deno.test("pushUrl boolean false omits hx-push-url (off = no attribute)", () => {
   const html = renderHtml(jsx("a", { get: "/page", pushUrl: false }));
-  assertEquals(html.includes('hx-push-url="false"'), true);
+  assertEquals(html.includes("hx-push-url"), false);
 });
 
 Deno.test("pushUrl accepts an explicit URL string", () => {
@@ -521,7 +572,7 @@ Deno.test("pushUrl accepts an explicit URL string", () => {
   assertEquals(html.includes('hx-push-url="/canonical"'), true);
 });
 
-Deno.test("swapOob boolean true serializes as hx-swap-oob=\"true\"", () => {
+Deno.test('swapOob boolean true serializes as hx-swap-oob="true"', () => {
   const html = renderHtml(jsx("div", { swapOob: true, id: "msg" }));
   assertEquals(html.includes('hx-swap-oob="true"'), true);
 });
@@ -531,11 +582,23 @@ Deno.test("swapOob accepts a swap spec string", () => {
   assertEquals(html.includes('hx-swap-oob="beforeend:#messages"'), true);
 });
 
+Deno.test("swapOob boolean false omits hx-swap-oob (not out-of-band)", () => {
+  // HTMX marks any element with an [hx-swap-oob] attribute as OOB regardless of
+  // value, so false must drop the attribute entirely - not emit "false".
+  const html = renderHtml(jsx("div", { id: "m", swapOob: false }));
+  assertEquals(html.includes("hx-swap-oob"), false);
+});
+
 Deno.test("indicator alone triggers HTMX script injection", () => {
   const html = renderHtml(
-    jsx("html", { children: jsx("body", { children: jsx("button", { indicator: "#s" }) }) }),
+    jsx("html", {
+      children: jsx("body", { children: jsx("button", { indicator: "#s" }) }),
+    }),
   );
-  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+  assertEquals(
+    html.includes('<script src="/static/htmx.js"></script></body>'),
+    true,
+  );
 });
 
 Deno.test("rejects manual hx-indicator attribute", () => {
@@ -572,7 +635,12 @@ Deno.test("renders SVG group with nested elements", () => {
       class: "my-group",
       children: [
         jsx("rect", { x: 0, y: 0, width: 100, height: 50, rx: 8 }),
-        jsx("text", { x: 50, y: 25, "text-anchor": "middle", children: "Hello" }),
+        jsx("text", {
+          x: 50,
+          y: 25,
+          "text-anchor": "middle",
+          children: "Hello",
+        }),
       ],
     }),
   );
@@ -588,7 +656,8 @@ Deno.test("renders SVG group with nested elements", () => {
 Deno.test("renders SVG path and line elements", () => {
   const html = renderHtml(
     jsx("svg", {
-      width: 200, height: 200,
+      width: 200,
+      height: 200,
       children: [
         jsx("path", { d: "M 10 10 L 90 90", fill: "none", stroke: "black" }),
         jsx("line", { x1: 0, y1: 0, x2: 100, y2: 100, "stroke-width": 2 }),
@@ -625,7 +694,11 @@ Deno.test("renders SVG defs with marker", () => {
 Deno.test("renders SVG textPath with href", () => {
   const html = renderHtml(
     jsx("text", {
-      children: jsx("textPath", { href: "#my-path", startOffset: "50%", children: "Along the path" }),
+      children: jsx("textPath", {
+        href: "#my-path",
+        startOffset: "50%",
+        children: "Along the path",
+      }),
     }),
   );
   assertEquals(html.includes('<textPath href="#my-path"'), true);

@@ -5,9 +5,12 @@
  * Run with: deno test --allow-read packages/hsx/hsx-page.test.ts
  */
 
-import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { hsxPage } from "./hsx-page.ts";
-import { jsx, isVNode } from "./jsx-runtime.ts";
+import { isVNode, jsx } from "./jsx-runtime.ts";
 import type { Renderable, VNodeType } from "./jsx-runtime.ts";
 
 // Helper to create a valid page structure
@@ -37,7 +40,7 @@ Deno.test("rejects async components with clear error", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "Async components are not supported"
+    "Async components are not supported",
   );
 });
 
@@ -54,16 +57,14 @@ Deno.test("async component error includes component name", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "MyAsyncWidget"
+    "MyAsyncWidget",
   );
 });
 
 Deno.test("accepts synchronous components", () => {
   const SyncComponent = () => jsx("div", { children: "sync content" });
 
-  const page = hsxPage(() =>
-    validPage(jsx(SyncComponent, {}))
-  );
+  const page = hsxPage(() => validPage(jsx(SyncComponent, {})));
 
   // Should not throw
   const result = page.Component({});
@@ -80,7 +81,7 @@ Deno.test("requires root html element", () => {
   assertThrows(
     () => page.Component({}),
     Error,
-    "must return a root <html> element"
+    "must return a root <html> element",
   );
 });
 
@@ -94,7 +95,7 @@ Deno.test("requires head and body children", () => {
   assertThrows(
     () => page.Component({}),
     Error,
-    "requires both <head> and <body>"
+    "requires both <head> and <body>",
   );
 });
 
@@ -111,7 +112,7 @@ Deno.test("requires head before body", () => {
   assertThrows(
     () => page.Component({}),
     Error,
-    "<head> must appear before <body>"
+    "<head> must appear before <body>",
   );
 });
 
@@ -127,7 +128,7 @@ Deno.test("rejects class on semantic elements", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "Semantic element <h1> cannot have a class"
+    "Semantic element <h1> cannot have a class",
   );
 });
 
@@ -139,7 +140,7 @@ Deno.test("rejects className on semantic elements", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "Semantic element <p> cannot have a class"
+    "Semantic element <p> cannot have a class",
   );
 });
 
@@ -151,7 +152,7 @@ Deno.test("rejects style on semantic elements", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "cannot have inline style"
+    "cannot have inline style",
   );
 });
 
@@ -175,12 +176,29 @@ Deno.test("allows style on non-semantic elements", () => {
   assertEquals(response.status, 200);
 });
 
-Deno.test("allows <s> strikethrough text-level element", () => {
-  const page = hsxPage(() => validPage(jsx("s", { children: "done" })));
+Deno.test("allows inline text-level elements (s, del, ins, b, i, u, etc.)", () => {
+  // <s> is used for struck-through completed items; the rest are common
+  // phrasing content that should not 500 the page.
+  const inlineTextTags = [
+    "s",
+    "del",
+    "ins",
+    "u",
+    "i",
+    "b",
+    "var",
+    "dfn",
+    "bdi",
+    "bdo",
+  ];
 
-  // Should not throw (used for struck-through completed items)
-  const response = page.render();
-  assertEquals(response.status, 200);
+  for (const tag of inlineTextTags) {
+    const page = hsxPage(() =>
+      validPage(jsx(tag as "div", { children: "text" }))
+    );
+    const response = page.render();
+    assertEquals(response.status, 200, `<${tag}> should be allowed`);
+  }
 });
 
 // =============================================================================
@@ -195,7 +213,7 @@ Deno.test("rejects style tags outside head", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "<style> tags must live inside <head>"
+    "<style> tags must live inside <head>",
   );
 });
 
@@ -231,12 +249,23 @@ Deno.test("rejects unknown tags", () => {
   assertThrows(
     () => page.render(),
     Error,
-    "Element <custom-element> is not allowed"
+    "Element <custom-element> is not allowed",
   );
 });
 
 Deno.test("allows standard semantic tags", () => {
-  const semanticTags = ["header", "main", "nav", "section", "article", "footer", "h1", "p", "ul", "li"];
+  const semanticTags = [
+    "header",
+    "main",
+    "nav",
+    "section",
+    "article",
+    "footer",
+    "h1",
+    "p",
+    "ul",
+    "li",
+  ];
 
   for (const tag of semanticTags) {
     const page = hsxPage(() =>
@@ -266,7 +295,7 @@ Deno.test("allows anchor tags in body", () => {
     validPage(
       jsx("p", {
         children: ["Visit ", jsx("a", { href: "/about", children: "About" })],
-      })
+      }),
     )
   );
 
@@ -288,9 +317,7 @@ Deno.test("enforces depth limit to prevent infinite recursion", () => {
     return jsx("div", { children: jsx(DeepComponent, {}) });
   };
 
-  const page = hsxPage(() =>
-    validPage(jsx(DeepComponent, {}))
-  );
+  const page = hsxPage(() => validPage(jsx(DeepComponent, {})));
 
   // renderHtml's maxDepth (or stack overflow) prevents infinite recursion
   assertThrows(
@@ -304,20 +331,19 @@ Deno.test("enforces depth limit to prevent infinite recursion", () => {
 // =============================================================================
 
 Deno.test("render() returns Response object", () => {
-  const page = hsxPage(() =>
-    validPage(jsx("div", { children: "Hello" }))
-  );
+  const page = hsxPage(() => validPage(jsx("div", { children: "Hello" })));
 
   const response = page.render();
 
   assertEquals(response instanceof Response, true);
-  assertEquals(response.headers.get("content-type"), "text/html; charset=utf-8");
+  assertEquals(
+    response.headers.get("content-type"),
+    "text/html; charset=utf-8",
+  );
 });
 
 Deno.test("render() returns 200 status", () => {
-  const page = hsxPage(() =>
-    validPage(jsx("div", { children: "Content" }))
-  );
+  const page = hsxPage(() => validPage(jsx("div", { children: "Content" })));
 
   const response = page.render();
 
@@ -329,9 +355,7 @@ Deno.test("render() returns 200 status", () => {
 // =============================================================================
 
 Deno.test("Component property returns the validated component", () => {
-  const page = hsxPage(() =>
-    validPage(jsx("div", { children: "Test" }))
-  );
+  const page = hsxPage(() => validPage(jsx("div", { children: "Test" })));
 
   assertEquals(typeof page.Component, "function");
 });
@@ -361,9 +385,7 @@ Deno.test("components execute exactly once during render", async () => {
     return jsx("div", { children: `called ${componentCallCount} times` });
   };
 
-  const page = hsxPage(() =>
-    validPage(jsx(CountingComponent, {}))
-  );
+  const page = hsxPage(() => validPage(jsx(CountingComponent, {})));
 
   const response = page.render();
   const html = await response.text();

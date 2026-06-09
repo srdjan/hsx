@@ -125,6 +125,15 @@ const NON_SEMANTIC_TAGS = new Set([
   "mark",
   "abbr",
   "data",
+  "del",
+  "ins",
+  "u",
+  "i",
+  "b",
+  "var",
+  "dfn",
+  "bdi",
+  "bdo",
   "br",
   "wbr",
   "hr",
@@ -144,7 +153,10 @@ function childrenOf(node: VNode): Renderable[] {
   return Array.isArray(c) ? c : [c];
 }
 
-function pathString(ancestors: ReadonlyArray<string>, current?: string): string {
+function pathString(
+  ancestors: ReadonlyArray<string>,
+  current?: string,
+): string {
   const parts = [...ancestors];
   if (current) parts.push(current);
   return parts.length ? parts.join(" > ") : "<root>";
@@ -160,7 +172,9 @@ function assertHtmlSkeleton(root: VNode): void {
   const body = kids.find((k) => k.type === "body");
 
   if (!head || !body) {
-    throw new Error("hsxPage requires both <head> and <body> as children of <html>");
+    throw new Error(
+      "hsxPage requires both <head> and <body> as children of <html>",
+    );
   }
 
   const headIndex = kids.indexOf(head);
@@ -182,7 +196,9 @@ function validateElement(
   // Tag whitelist
   if (!ALLOWED_TAGS.has(tag)) {
     throw new Error(
-      `Element <${tag}> is not allowed in hsxPage. Use semantic HTML, standard head/body tags, or HSX components. Path: ${pathString(ancestors, tag)}`,
+      `Element <${tag}> is not allowed in hsxPage. Use semantic HTML, standard head/body tags, or HSX components. Path: ${
+        pathString(ancestors, tag)
+      }`,
     );
   }
 
@@ -190,12 +206,16 @@ function validateElement(
   if (SEMANTIC_TAGS.has(tag)) {
     if (props.class !== undefined || props.className !== undefined) {
       throw new Error(
-        `Semantic element <${tag}> cannot have a class. Offending path: ${pathString(ancestors, tag)}`,
+        `Semantic element <${tag}> cannot have a class. Offending path: ${
+          pathString(ancestors, tag)
+        }`,
       );
     }
     if (props.style !== undefined) {
       throw new Error(
-        `Semantic element <${tag}> cannot have inline style. Offending path: ${pathString(ancestors, tag)}`,
+        `Semantic element <${tag}> cannot have inline style. Offending path: ${
+          pathString(ancestors, tag)
+        }`,
       );
     }
   }
@@ -204,7 +224,9 @@ function validateElement(
   if (tag === "style") {
     const parent = ancestors[ancestors.length - 1];
     if (parent !== "head") {
-      throw new Error("<style> tags must live inside <head> when using hsxPage");
+      throw new Error(
+        "<style> tags must live inside <head> when using hsxPage",
+      );
     }
   }
 }
@@ -230,14 +252,19 @@ export interface HsxPage {
  * Validation happens during the render pass itself via an onElement callback,
  * so components execute exactly once - no double-rendering.
  */
-export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}): HsxPage {
+export function hsxPage(
+  renderFn: () => Renderable,
+  options: HsxPageOptions = {},
+): HsxPage {
   const { validateOnce = false } = options;
   let validated = false;
 
   const Component: ComponentType = (_props) => {
     const tree = renderFn();
     if (!isVNode(tree)) {
-      throw new Error("hsxPage render function must return a single <html> VNode");
+      throw new Error(
+        "hsxPage render function must return a single <html> VNode",
+      );
     }
 
     // Skeleton check (head/body order) runs on the VNode tree directly -
@@ -255,7 +282,9 @@ export function hsxPage(renderFn: () => Renderable, options: HsxPageOptions = {}
       const shouldValidate = !validateOnce || !validated;
       const tree = renderFn();
       if (!isVNode(tree)) {
-        throw new Error("hsxPage render function must return a single <html> VNode");
+        throw new Error(
+          "hsxPage render function must return a single <html> VNode",
+        );
       }
       if (shouldValidate) {
         assertHtmlSkeleton(tree);
