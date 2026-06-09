@@ -41,10 +41,8 @@ const HSX_NON_VERB_ATTRS = [
 ] as const;
 
 /**
- * All HSX source prop keys (params + verbs + non-verb aliases). Used by
- * needsHsxNormalization to scan an element's own keys (usually 1-3) instead of
- * probing every HSX key on every element - keeps detection O(props), not
- * O(table), so the alias table is free to grow.
+ * All HSX source prop keys. needsHsxNormalization scans an element's own keys
+ * against this Set, keeping detection O(props) not O(table) as the table grows.
  */
 const HSX_SOURCE_KEYS: ReadonlySet<string> = new Set<string>([
   "params",
