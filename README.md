@@ -30,6 +30,9 @@ the rendering process, and compiles them to `hx-*` attributes.
   Shadow DOM
 - **Generative UI** - AI models select and render widgets via tool calling,
   streamed to the browser via SSE + HTMX
+- **Agent-operable** - Any `hsxComponent` that declares `describe` + `input`
+  becomes an AI tool; an agent drives your real endpoints from the same
+  definition that serves humans
 
 ## Installation
 
@@ -75,6 +78,9 @@ import {
   createGenUIRoutes,
 } from "jsr:@srdjan/hsx-genui";
 import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
+
+// Agent - make your app agent-operable (components become AI tools)
+import { createAppAgent } from "jsr:@srdjan/hsx-agent";
 ```
 
 Install individually:
@@ -84,6 +90,7 @@ deno add jsr:@srdjan/hsx
 deno add jsr:@srdjan/hsx-styles
 deno add jsr:@srdjan/hsx-widgets
 deno add jsr:@srdjan/hsx-genui
+deno add jsr:@srdjan/hsx-agent
 ```
 
 ### Selective Imports (Tree-Shaking)
@@ -644,6 +651,77 @@ Pairs with HTMX's SSE extension:
 </div>;
 ```
 
+## Agent-Operable Apps
+
+The `@srdjan/hsx-agent` package turns your existing application into an agent
+action space. Where GenUI lets an AI render display widgets, this lets an AI
+**drive your real endpoints**: each `hsxComponent` that declares `describe` +
+`input` becomes an AI tool from the same definition that serves humans over
+HTMX. The agent calls the component's own `handle()` and reads back the exact
+semantic HTML a person would see. One definition, two consumers.
+
+A component is agent-callable **only** when it declares both `describe` and
+`input`. Components without them are invisible to the agent - no surprise
+mutations.
+
+```tsx
+import { createAppAgent } from "@srdjan/hsx-agent";
+import { claudeProvider } from "@srdjan/hsx-genui/claude";
+
+// The same component the human form posts to is now also an AI tool:
+const AddTodo = hsxComponent("/todos", {
+  methods: ["POST"],
+  describe: "Add a new todo item to the list.",
+  input: {
+    schema: {
+      type: "object",
+      properties: { text: { type: "string", description: "The todo text." } },
+      required: ["text"],
+    },
+  },
+  async handler(req) {
+    const form = await req.formData();
+    addTodo(String(form.get("text")));
+    return {};
+  },
+  render: () => <TodoListView />,
+});
+
+// Humans use it via HTMX (unchanged):
+<form post={AddTodo} swap="none" />;
+
+// The agent uses the same definition as a tool:
+const agent = createAppAgent({
+  components: [AddTodo, ToggleTodo, ClearDone],
+  provider: claudeProvider({ model: "claude-sonnet-4-6" }),
+});
+```
+
+`AppAgent` is structurally a GenUI handler (`{ handleMessage, tools }`), so it
+drops straight into the pre-built chat routes:
+
+```tsx
+import { createConversationStore, createGenUIRoutes } from "@srdjan/hsx-genui";
+
+const store = createConversationStore();
+const { send, stream } = createGenUIRoutes({
+  handler: agent,
+  store,
+  basePath: "/copilot",
+});
+```
+
+The agent's tool calls invoke the real components; each rendered fragment is
+streamed to the browser and fed back to the model as its observation. In the
+`todos-copilot` example the mutating components render the list with `swapOob`,
+so whether a change comes from the human form or the agent, the canonical
+`#todo-list` updates out-of-band while the agent narrates in the chat. Run it
+with `ANTHROPIC_API_KEY=... deno task example:todos-copilot`.
+
+`componentsToTools(components)` and `toRequest(component, args, origin)` are
+exported for building custom agent loops or MCP adapters on top of the same
+metadata.
+
 ## API Reference
 
 ### `render(node, options?)`
@@ -803,8 +881,15 @@ packages/
     components.tsx       # Pre-built chat page + send routes
     providers/
       claude.ts          # Claude/Anthropic adapter (raw fetch + SSE)
+  hsx-agent/             # Agent-operable apps package (@srdjan/hsx-agent)
+    mod.ts               # Main entry point
+    app-agent.ts         # createAppAgent (AI drives real components)
+    component-tools.ts   # componentsToTools (components -> AI tool defs)
+    request-build.ts     # toRequest (tool-call args -> Request)
+    types.ts             # AgentComponent structural type
 examples/
   todos/                 # Full todo app example
+  todos-copilot/         # Todos with an AI copilot driving real endpoints
   active-search/         # Search example
   lazy-loading/          # Lazy load example
   form-validation/       # Form validation example

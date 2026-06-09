@@ -29,7 +29,7 @@ deno run --allow-net --allow-read examples/todos/server.tsx
 
 ## Architecture
 
-HSX is a monorepo with four packages:
+HSX is a monorepo with five packages:
 
 **Packages:**
 
@@ -44,6 +44,10 @@ HSX is a monorepo with four packages:
 - `@srdjan/hsx-genui` (packages/hsx-genui/) - Generative UI server:
   `createGenUIHandler()`, `createGenUIRoutes()`, `AIProvider` port, Claude
   adapter
+- `@srdjan/hsx-agent` (packages/hsx-agent/) - Agent-operable apps:
+  `createAppAgent()`, `componentsToTools()`, `toRequest()`. Turns
+  agent-callable `hsxComponent`s into AI tools that drive the app's real
+  endpoints, reusing the genui provider/SSE plumbing
 
 **JSX Transform Pipeline (packages/hsx/):**
 
@@ -101,6 +105,7 @@ import {
   createGenUIRoutes,
 } from "@srdjan/hsx-genui";
 import { claudeProvider } from "@srdjan/hsx-genui/claude";
+import { createAppAgent } from "@srdjan/hsx-agent";
 ```
 
 **Tree-shaking entry points:**
@@ -139,6 +144,35 @@ tool calling, streamed to the browser via SSE + HTMX.
   system prompts
 - `widget-wrapper.ts` - Shared wrapping logic for SSR and catalog rendering
   (Light DOM or Shadow DOM)
+
+**Agent-Operable Apps (packages/hsx-agent/):**
+
+Lets an AI drive the application's real `hsxComponent`s (not inert widgets). A
+component is agent-callable only when it declares both `describe` and `input`
+in its `hsxComponent` options; this produces a pure-metadata `.agent`
+descriptor on the component (`{ name, description, schema, method, assert? }`).
+Components without it are invisible to the agent (opt-in by declaration).
+
+- `hsx-component.ts` (in `@srdjan/hsx`) - `describe`/`input`/`agentName`
+  options and the derived `.agent` descriptor (`AgentDescriptor`,
+  `AgentInputSchema`)
+- `component-tools.ts` - `componentsToTools()` derives AI tool definitions from
+  `.agent` descriptors (mirrors `widgetToToolDefinition`)
+- `request-build.ts` - `toRequest()` splits tool-call args into path params vs
+  body, synthesizes a `Request` that drives the component's own `handle()`
+- `app-agent.ts` - `createAppAgent()` runs the multi-turn loop (a near-copy of
+  `createGenUIHandler`); each tool call invokes the real component, streams the
+  rendered HTML to the browser, and feeds it back to the model as its
+  observation. `AppAgent` is structurally a `GenUIHandler`, so it drops into
+  `createGenUIRoutes` directly
+- `types.ts` - `AgentComponent`, the structural subset of `HsxComponent` the
+  runner needs (no `any`; `build`/`handle` are bivariant method signatures)
+
+The `examples/todos-copilot/` example wires this end to end: the same mutating
+components serve the human form and the agent, and render the list with
+`swapOob` so changes update the canonical `#todo-list` out-of-band from either
+path. The MCP server adapter is a planned follow-on built on the same
+`componentsToTools()` metadata.
 
 ## Key Patterns
 

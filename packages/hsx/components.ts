@@ -25,6 +25,8 @@
 
 // HSX Component and Page
 export {
+  type AgentDescriptor,
+  type AgentInputSchema,
   type HsxComponent,
   hsxComponent,
   type HsxComponentOptions,

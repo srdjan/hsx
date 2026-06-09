@@ -64,6 +64,33 @@ function responseFromHsxHttpError(error: HsxHttpError): Response {
 }
 
 /**
+ * Input contract that makes a component agent-callable.
+ *
+ * `schema` is the JSON schema exposed to the AI model as the tool's
+ * parameters. `assert`, if present, is a runtime guard that throws on
+ * invalid input before the component handler runs.
+ */
+export type AgentInputSchema = {
+  readonly schema: Record<string, unknown>;
+  readonly assert?: (raw: unknown) => void;
+};
+
+/**
+ * Pure metadata describing how an agent invokes a component as a tool.
+ *
+ * Present on a component only when it declares both `describe` and `input`.
+ * It carries no behaviour: `@srdjan/hsx-agent` reads it to build tool
+ * definitions and to synthesize the request that drives `handle()`.
+ */
+export type AgentDescriptor = {
+  readonly name: string;
+  readonly description: string;
+  readonly schema: Record<string, unknown>;
+  readonly method: HttpMethod;
+  readonly assert?: (raw: unknown) => void;
+};
+
+/**
  * Options for creating an HSX Component.
  *
  * @typeParam Params - Path parameters extracted from the route
@@ -75,6 +102,25 @@ export interface HsxComponentOptions<Params, Props> {
    * @default ["GET"]
    */
   methods?: HttpMethod[];
+
+  /**
+   * Natural-language description of what this component does. Together with
+   * `input`, this makes the component agent-callable (it gains an `.agent`
+   * descriptor). Without both fields the component is invisible to agents.
+   */
+  describe?: string;
+
+  /**
+   * Input contract for agent tool-calls. Together with `describe`, makes the
+   * component agent-callable.
+   */
+  input?: AgentInputSchema;
+
+  /**
+   * Override the tool name derived from method + path. Must match
+   * /^[a-zA-Z0-9_-]{1,64}$/ to satisfy AI provider tool-name rules.
+   */
+  agentName?: string;
 
   /**
    * Handler function that processes the request and returns props.
@@ -142,6 +188,12 @@ export interface HsxComponent<
    * HTTP methods this component handles.
    */
   readonly methods: readonly HttpMethod[];
+
+  /**
+   * Agent tool metadata, present only when the component declared both
+   * `describe` and `input`. Undefined for components not exposed to agents.
+   */
+  readonly agent?: AgentDescriptor;
 }
 
 // =============================================================================
@@ -159,6 +211,25 @@ function pathToRegex(path: string): RegExp {
 
 function extractParamNames(path: string): string[] {
   return Array.from(path.matchAll(PARAM_RE), (m) => m[1]);
+}
+
+// =============================================================================
+// Agent Descriptor
+// =============================================================================
+
+/** The method an agent invokes: first non-GET (the mutation), else GET. */
+function primaryMethod(methods: readonly HttpMethod[]): HttpMethod {
+  return methods.find((m) => m !== "GET") ?? methods[0] ?? "GET";
+}
+
+/** Derive an AI-tool-safe name from method + path, e.g. POST /users/:id -> post_users_id. */
+function slugifyToolName(method: HttpMethod, path: string): string {
+  const segments = path
+    .split("/")
+    .filter((s) => s.length > 0)
+    .map((s) => (s.startsWith(":") ? s.slice(1) : s));
+  const raw = `${method.toLowerCase()}_${segments.join("_")}`;
+  return raw.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
 // =============================================================================
@@ -212,6 +283,9 @@ export function hsxComponent<
     fullPage = false,
     status = 200,
     headers = {},
+    describe,
+    input,
+    agentName,
   } = options;
 
   // Precompute path regex and param names (fixed per component, no need to recompute)
@@ -327,6 +401,19 @@ export function hsxComponent<
     }
   };
 
+  // Agent descriptor: pure metadata, only when both describe and input are set.
+  const agentMethod = primaryMethod(methods);
+  const agent: AgentDescriptor | undefined =
+    describe !== undefined && input !== undefined
+      ? {
+        name: agentName ?? slugifyToolName(agentMethod, path),
+        description: describe,
+        schema: input.schema,
+        method: agentMethod,
+        assert: input.assert,
+      }
+      : undefined;
+
   // Create the component object
   const component: HsxComponent<Path, Params, Props> = {
     path,
@@ -335,6 +422,7 @@ export function hsxComponent<
     match,
     Component: renderFn,
     methods: Object.freeze([...methods]),
+    agent,
   };
 
   return component;

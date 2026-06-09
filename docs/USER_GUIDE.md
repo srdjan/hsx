@@ -424,6 +424,12 @@ Unexpected handler or render errors return a generic `500` response. Throw
 `HsxHttpError` from a handler for intentional HTTP failures such as invalid
 input.
 
+A component that declares both `describe` and `input` also becomes an AI tool:
+the `@srdjan/hsx-agent` package exposes it to an agent that drives the same
+`handle()` the browser hits, from the one definition that serves humans.
+Components without both fields stay invisible to the agent. The README's
+"Agent-Operable Apps" section covers the full workflow.
+
 ---
 
 ## HSX Page
@@ -888,6 +894,7 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 | HSX Page        | `deno task example:hsx-page`        | `examples/hsx-page/server.tsx`        |
 | Low-Level API   | `deno task example:low-level-api`   | `examples/low-level-api/server.tsx`   |
 | HSX Widget      | `deno task example:hsx-widget`      | `examples/hsx-widget/server.tsx`      |
+| Todos Copilot   | `deno task example:todos-copilot`   | `examples/todos-copilot/server.tsx`   |
 
 For the HSX Widgets demo, build assets once before starting the server:
 

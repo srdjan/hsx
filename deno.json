@@ -3,7 +3,8 @@
     "./packages/hsx",
     "./packages/hsx-styles",
     "./packages/hsx-widgets",
-    "./packages/hsx-genui"
+    "./packages/hsx-genui",
+    "./packages/hsx-agent"
   ],
   "exports": {
     ".": "./packages/hsx/mod.ts",
@@ -20,6 +21,7 @@
     "@srdjan/hsx-widgets/styles": "./packages/hsx-widgets/styles.ts",
     "@srdjan/hsx-genui": "./packages/hsx-genui/mod.ts",
     "@srdjan/hsx-genui/claude": "./packages/hsx-genui/providers/claude.ts",
+    "@srdjan/hsx-agent": "./packages/hsx-agent/mod.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
@@ -35,7 +37,7 @@
     "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/ && deno task test:hsx-widgets:build",
     "test:hsx-widgets": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/hsx-widgets/",
     "test:hsx-widgets:build": "deno test --allow-all packages/hsx-widgets/build/",
-    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts packages/hsx-genui/mod.ts && deno task check:examples",
+    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts packages/hsx-genui/mod.ts packages/hsx-agent/mod.ts && deno task check:examples",
     "check:examples": "deno check examples/*/server.tsx",
     "check:hsx-widgets": "deno check packages/hsx-widgets/mod.ts",
     "publish": "deno publish",
@@ -54,6 +56,7 @@
     "example:low-level-api": "deno run --allow-net --allow-read examples/low-level-api/server.tsx",
     "example:ats": "deno run --allow-net --allow-read examples/ats/server.tsx",
     "example:hsx-widget": "deno run --allow-net --allow-read examples/hsx-widget/server.tsx",
+    "example:todos-copilot": "deno run --allow-net --allow-read --allow-env examples/todos-copilot/server.tsx",
     "build:hsx-widgets:embeds": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds",
     "build:hsx-widgets:snippet": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=snippet",
     "build:hsx-widgets": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=all"

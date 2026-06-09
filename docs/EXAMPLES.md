@@ -22,6 +22,7 @@ deno task example:<name>
 | HSX Page        | `deno task example:hsx-page`        | `examples/hsx-page/server.tsx`        | Full-document guardrails with `hsxPage`               |
 | Low-Level API   | `deno task example:low-level-api`   | `examples/low-level-api/server.tsx`   | Direct `render` / `renderHtml` and manual routing     |
 | HSX Widget      | `deno task example:hsx-widget`      | `examples/hsx-widget/server.tsx`      | Two widgets across SSR routes + iframe embed shells   |
+| Todos Copilot   | `deno task example:todos-copilot`   | `examples/todos-copilot/server.tsx`   | AI copilot driving real `hsxComponent` endpoints as tools |
 
 ## Widget Example Workflow
 
@@ -40,6 +41,19 @@ Then try:
 - `/embed/hsx-greeting?name=World&message=Hi!` for embed shell output
 - `/embed/hsx-status?label=Build%20Healthy&tone=ok` for status embed shell
   output
+
+## Copilot Example Workflow
+
+The Todos Copilot calls the Claude API, so it needs an API key in the
+environment:
+
+```bash
+ANTHROPIC_API_KEY=sk-... deno task example:todos-copilot
+```
+
+Then open `/` and ask the copilot something like "add milk and eggs, then mark
+the first one done". The agent calls the same `hsxComponent`s the human form
+posts to, and the todo list updates live.
 
 ## Notes
 

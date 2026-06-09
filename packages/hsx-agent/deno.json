@@ -1,0 +1,23 @@
+{
+  "name": "@srdjan/hsx-agent",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "imports": {
+    "@srdjan/hsx": "jsr:@srdjan/hsx@^1.4.0",
+    "@srdjan/hsx/core": "jsr:@srdjan/hsx@^1.4.0/core",
+    "@srdjan/hsx/components": "jsr:@srdjan/hsx@^1.4.0/components",
+    "@srdjan/hsx-widgets": "jsr:@srdjan/hsx-widgets@^0.1.2",
+    "@srdjan/hsx-genui": "jsr:@srdjan/hsx-genui@^0.1.1",
+    "hsx/jsx-runtime": "jsr:@srdjan/hsx@^1.4.0/jsx-runtime"
+  },
+  "publish": {
+    "exclude": ["*.test.ts"]
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@srdjan/hsx",
+    "strict": true
+  }
+}

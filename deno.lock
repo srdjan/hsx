@@ -310,6 +310,13 @@
   },
   "workspace": {
     "members": {
+      "packages/hsx-agent": {
+        "dependencies": [
+          "jsr:@srdjan/hsx-genui@~0.1.1",
+          "jsr:@srdjan/hsx-widgets@~0.1.2",
+          "jsr:@srdjan/hsx@^1.4.0"
+        ]
+      },
       "packages/hsx-genui": {
         "dependencies": [
           "jsr:@srdjan/hsx-widgets@~0.1.1",
