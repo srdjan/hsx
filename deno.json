@@ -28,6 +28,9 @@
     "lib": ["dom", "dom.iterable", "deno.ns"],
     "strict": true
   },
+  "fmt": {
+    "exclude": ["vendor/", "**/vendor/"]
+  },
   "tasks": {
     "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/",
     "test:hsx-widgets": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/hsx-widgets/",
