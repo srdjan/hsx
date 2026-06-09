@@ -49,7 +49,29 @@ During rendering, HSX:
 | `trigger` | `hx-trigger` | Event specification |
 | `vals` | `hx-vals` | JSON-encoded object |
 | `headers` | `hx-headers` | JSON-encoded object |
+| `indicator` | `hx-indicator` | CSS selector or Id; elements that get `htmx-request` during the request |
+| `disable` | `hx-disable` | CSS selector or Id to disable during the request (HTMX 4; replaces v2 `hx-disabled-elt`) |
+| `sync` | `hx-sync` | Request synchronization spec, e.g. `this:abort` |
+| `confirm` | `hx-confirm` | Confirmation prompt before the request |
+| `select` | `hx-select` | CSS selector for the part of the response to swap |
+| `pushUrl` | `hx-push-url` | `true`/`false` or an explicit URL; booleans render as `"true"`/`"false"` |
+| `swapOob` | `hx-swap-oob` | `true` or a swap spec; on returned fragment elements for out-of-band swaps |
 | `behavior="boost"` | `hx-boost="true"` | Anchor boost mode |
+
+### Loading indicators in HTMX 4
+
+HTMX 4 applies the `htmx-request` class to the triggering element by default, and
+to the element(s) named by `indicator` when it is set. Point `indicator` at a
+separate element (a spinner, a sibling, a region) to drive that element's loading
+state instead of, or in addition to, the trigger:
+
+```tsx
+<button get={routes.search} indicator={ids.spinner}>Search</button>
+<span id="spinner" class="htmx-indicator">Loading...</span>
+```
+
+Booleans on `pushUrl`/`swapOob` are emitted as the literal strings `"true"`/`"false"`,
+not as bare attributes, because HTMX treats a valueless `hx-push-url` as falsy.
 
 ### Output HTML
 

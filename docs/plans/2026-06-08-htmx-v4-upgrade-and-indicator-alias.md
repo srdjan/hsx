@@ -1,8 +1,18 @@
 # Plan: Upgrade vendored HTMX to v4 (beta4) and make the loading-indicator mechanism reachable
 
-Status: workstream A complete; B and C pending
+Status: workstreams A and B complete; C pending
 Date: 2026-06-08
 Owner: srdjan
+
+## Update 2026-06-09: Workstream B done
+
+Added seven v4 aliases to `HSX_NON_VERB_ATTRS` (`hsx-normalize.ts`) and the
+matching props to `HsxAttrs` (`jsx-runtime.ts`): `indicator`, `disable`, `sync`,
+`confirm`, `select`, `pushUrl`, `swapOob`. `normalizeNonVerb` now coerces boolean
+alias values to their string form so `pushUrl={true}` emits `hx-push-url="true"`
+rather than a bare (HTMX-falsy) attribute. 12 new unit tests in `render.test.ts`;
+full suite 218 passed / 0 failed; `deno task check` green. Docs table and a
+"Loading indicators in HTMX 4" note added to `docs/HTMX_INTEGRATION.md`.
 
 ## Update 2026-06-09: Workstream A done, A.2 gate resolved
 

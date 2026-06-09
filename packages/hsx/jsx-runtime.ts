@@ -68,6 +68,20 @@ type HsxAttrs = {
   sseConnect?: string;
   /** SSE swap mapping (event:target). Maps to sse-swap. */
   sseSwap?: string;
+  /** Element(s) to receive the htmx-request class while the request is in flight. Maps to hx-indicator. */
+  indicator?: Id<string> | string;
+  /** Element(s) to disable for the duration of the request. Maps to hx-disable (HTMX 4; replaces v2 hx-disabled-elt). */
+  disable?: Id<string> | string;
+  /** Request synchronization/queuing spec, e.g. "this:abort". Maps to hx-sync. */
+  sync?: string;
+  /** Confirmation prompt shown before issuing the request. Maps to hx-confirm. */
+  confirm?: string;
+  /** Select a subset of the response to swap in. Maps to hx-select. */
+  select?: Id<string> | string;
+  /** Push the request URL into browser history (true/false or an explicit URL). Maps to hx-push-url. */
+  pushUrl?: boolean | string;
+  /** Mark this element for out-of-band swapping (true or a swap spec). Maps to hx-swap-oob. */
+  swapOob?: boolean | string;
 };
 
 // =============================================================================

@@ -27,6 +27,13 @@ const HSX_NON_VERB_ATTRS = [
   ["ext", "hx-ext"],
   ["sseConnect", "sse-connect"],
   ["sseSwap", "sse-swap"],
+  ["indicator", "hx-indicator"],
+  ["disable", "hx-disable"],
+  ["sync", "hx-sync"],
+  ["confirm", "hx-confirm"],
+  ["select", "hx-select"],
+  ["pushUrl", "hx-push-url"],
+  ["swapOob", "hx-swap-oob"],
 ] as const;
 
 function isRoute(x: unknown): x is Route<string, unknown> {
@@ -91,10 +98,13 @@ function normalizeVerbs(
 
 function normalizeNonVerb(next: Props, ctx: RenderContext): void {
   for (const [srcAttr, hxAttr] of HSX_NON_VERB_ATTRS) {
-    if (next[srcAttr] !== undefined) {
+    const value = next[srcAttr];
+    if (value !== undefined) {
       markHtmx(ctx);
       if (next[hxAttr] == null) {
-        next[hxAttr] = next[srcAttr];
+        // Coerce booleans to their string form: hx-push-url / hx-swap-oob need
+        // the literal "true"/"false" value, since a bare attribute is falsy to HTMX.
+        next[hxAttr] = typeof value === "boolean" ? String(value) : value;
       }
       delete next[srcAttr];
     }

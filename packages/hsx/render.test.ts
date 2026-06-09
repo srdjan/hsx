@@ -475,6 +475,78 @@ Deno.test("get + trigger + swap on div", () => {
 });
 
 // =============================================================================
+// HTMX v4 alias mapping tests
+// =============================================================================
+
+Deno.test("indicator maps to hx-indicator", () => {
+  const html = renderHtml(jsx("button", { get: "/data", indicator: "#spinner" }));
+  assertEquals(html.includes('hx-indicator="#spinner"'), true);
+  assertEquals(html.includes(" indicator="), false);
+});
+
+Deno.test("disable maps to hx-disable", () => {
+  const html = renderHtml(jsx("button", { post: "/save", disable: "this" }));
+  assertEquals(html.includes('hx-disable="this"'), true);
+});
+
+Deno.test("sync maps to hx-sync", () => {
+  const html = renderHtml(jsx("div", { get: "/x", sync: "this:abort" }));
+  assertEquals(html.includes('hx-sync="this:abort"'), true);
+});
+
+Deno.test("confirm maps to hx-confirm", () => {
+  const html = renderHtml(jsx("button", { delete: "/item/1", confirm: "Sure?" }));
+  assertEquals(html.includes('hx-confirm="Sure?"'), true);
+});
+
+Deno.test("select maps to hx-select", () => {
+  const html = renderHtml(jsx("button", { get: "/page", select: "#content" }));
+  assertEquals(html.includes('hx-select="#content"'), true);
+});
+
+Deno.test("pushUrl boolean true serializes as hx-push-url=\"true\"", () => {
+  const html = renderHtml(jsx("a", { get: "/page", pushUrl: true }));
+  assertEquals(html.includes('hx-push-url="true"'), true);
+  // must be the string form, not a bare attribute (bare is falsy to htmx)
+  assertEquals(html.includes("hx-push-url>"), false);
+});
+
+Deno.test("pushUrl boolean false serializes as hx-push-url=\"false\"", () => {
+  const html = renderHtml(jsx("a", { get: "/page", pushUrl: false }));
+  assertEquals(html.includes('hx-push-url="false"'), true);
+});
+
+Deno.test("pushUrl accepts an explicit URL string", () => {
+  const html = renderHtml(jsx("a", { get: "/page", pushUrl: "/canonical" }));
+  assertEquals(html.includes('hx-push-url="/canonical"'), true);
+});
+
+Deno.test("swapOob boolean true serializes as hx-swap-oob=\"true\"", () => {
+  const html = renderHtml(jsx("div", { swapOob: true, id: "msg" }));
+  assertEquals(html.includes('hx-swap-oob="true"'), true);
+});
+
+Deno.test("swapOob accepts a swap spec string", () => {
+  const html = renderHtml(jsx("div", { swapOob: "beforeend:#messages" }));
+  assertEquals(html.includes('hx-swap-oob="beforeend:#messages"'), true);
+});
+
+Deno.test("indicator alone triggers HTMX script injection", () => {
+  const html = renderHtml(
+    jsx("html", { children: jsx("body", { children: jsx("button", { indicator: "#s" }) }) }),
+  );
+  assertEquals(html.includes('<script src="/static/htmx.js"></script></body>'), true);
+});
+
+Deno.test("rejects manual hx-indicator attribute", () => {
+  assertThrows(
+    () => renderHtml(jsx("button", { "hx-indicator": "#spinner" })),
+    Error,
+    "Manual hx-* props are disallowed",
+  );
+});
+
+// =============================================================================
 // SVG Rendering Tests
 // =============================================================================
 
