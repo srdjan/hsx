@@ -29,7 +29,7 @@ deno run --allow-net --allow-read examples/todos/server.tsx
 
 ## Architecture
 
-HSX is a monorepo with five packages:
+HSX is a monorepo with six packages:
 
 **Packages:**
 
@@ -45,9 +45,12 @@ HSX is a monorepo with five packages:
   `createGenUIHandler()`, `createGenUIRoutes()`, `AIProvider` port, Claude
   adapter
 - `@srdjan/hsx-agent` (packages/hsx-agent/) - Agent-operable apps:
-  `createAppAgent()`, `componentsToTools()`, `toRequest()`. Turns
-  agent-callable `hsxComponent`s into AI tools that drive the app's real
-  endpoints, reusing the genui provider/SSE plumbing
+  `createAppAgent()`, `componentsToTools()`, `toRequest()`. Turns agent-callable
+  `hsxComponent`s into AI tools that drive the app's real endpoints, reusing the
+  genui provider/SSE plumbing
+- `@srdjan/hsx-lens` (packages/hsx-lens/) - Development workbench:
+  `createHsxManifest()`, `createHsxLens()`. Maps explicit page samples,
+  components, widgets, targets, and agent tools into a hypermedia manifest
 
 **JSX Transform Pipeline (packages/hsx/):**
 
@@ -148,14 +151,13 @@ tool calling, streamed to the browser via SSE + HTMX.
 **Agent-Operable Apps (packages/hsx-agent/):**
 
 Lets an AI drive the application's real `hsxComponent`s (not inert widgets). A
-component is agent-callable only when it declares both `describe` and `input`
-in its `hsxComponent` options; this produces a pure-metadata `.agent`
-descriptor on the component (`{ name, description, schema, method, assert? }`).
-Components without it are invisible to the agent (opt-in by declaration).
+component is agent-callable only when it declares both `describe` and `input` in
+its `hsxComponent` options; this produces a pure-metadata `.agent` descriptor on
+the component (`{ name, description, schema, method, assert? }`). Components
+without it are invisible to the agent (opt-in by declaration).
 
-- `hsx-component.ts` (in `@srdjan/hsx`) - `describe`/`input`/`agentName`
-  options and the derived `.agent` descriptor (`AgentDescriptor`,
-  `AgentInputSchema`)
+- `hsx-component.ts` (in `@srdjan/hsx`) - `describe`/`input`/`agentName` options
+  and the derived `.agent` descriptor (`AgentDescriptor`, `AgentInputSchema`)
 - `component-tools.ts` - `componentsToTools()` derives AI tool definitions from
   `.agent` descriptors (mirrors `widgetToToolDefinition`)
 - `request-build.ts` - `toRequest()` splits tool-call args into path params vs

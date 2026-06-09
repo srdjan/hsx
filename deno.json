@@ -4,7 +4,8 @@
     "./packages/hsx-styles",
     "./packages/hsx-widgets",
     "./packages/hsx-genui",
-    "./packages/hsx-agent"
+    "./packages/hsx-agent",
+    "./packages/hsx-lens"
   ],
   "exports": {
     ".": "./packages/hsx/mod.ts",
@@ -22,6 +23,7 @@
     "@srdjan/hsx-genui": "./packages/hsx-genui/mod.ts",
     "@srdjan/hsx-genui/claude": "./packages/hsx-genui/providers/claude.ts",
     "@srdjan/hsx-agent": "./packages/hsx-agent/mod.ts",
+    "@srdjan/hsx-lens": "./packages/hsx-lens/mod.ts",
     "hsx/jsx-runtime": "./packages/hsx/jsx-runtime.ts"
   },
   "compilerOptions": {
@@ -37,7 +39,7 @@
     "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/ && deno task test:hsx-widgets:build",
     "test:hsx-widgets": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/hsx-widgets/",
     "test:hsx-widgets:build": "deno test --allow-all packages/hsx-widgets/build/",
-    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts packages/hsx-genui/mod.ts packages/hsx-agent/mod.ts && deno task check:examples",
+    "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts packages/hsx-genui/mod.ts packages/hsx-agent/mod.ts packages/hsx-lens/mod.ts && deno task check:examples",
     "check:examples": "deno check examples/*/server.tsx",
     "check:hsx-widgets": "deno check packages/hsx-widgets/mod.ts",
     "publish": "deno publish",

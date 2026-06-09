@@ -323,6 +323,12 @@
           "jsr:@srdjan/hsx@^1.3.0"
         ]
       },
+      "packages/hsx-lens": {
+        "dependencies": [
+          "jsr:@srdjan/hsx-styles@^1.2.1",
+          "jsr:@srdjan/hsx@^1.4.0"
+        ]
+      },
       "packages/hsx-widgets": {
         "dependencies": [
           "jsr:@srdjan/hsx@^1.3.0"

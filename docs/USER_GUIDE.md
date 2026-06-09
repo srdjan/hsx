@@ -16,9 +16,10 @@ applications.
 9. [HTMX Script Injection](#htmx-script-injection)
 10. [Render Options](#render-options)
 11. [HSX Widgets](#hsx-widgets)
-12. [Best Practices](#best-practices)
-13. [Troubleshooting](#troubleshooting)
-14. [Examples Index](#examples-index)
+12. [HSX Lens](#hsx-lens)
+13. [Best Practices](#best-practices)
+14. [Troubleshooting](#troubleshooting)
+15. [Examples Index](#examples-index)
 
 ---
 
@@ -796,6 +797,45 @@ const GreetingRoute = widgetToHsxComponent(greetingWidget, {
 
 For the full widget guide including the build pipeline, see
 [WIDGETS.md](WIDGETS.md).
+
+---
+
+## HSX Lens
+
+`@srdjan/hsx-lens` gives you a local development view of the hypermedia contract
+your pages and components already declare. It renders page samples, records HSX
+attributes before they are normalized to `hx-*`, mirrors component/widget/agent
+metadata, and serves a workbench plus JSON manifest.
+
+Install it separately:
+
+```bash
+deno add jsr:@srdjan/hsx-lens
+```
+
+Mount it explicitly in development:
+
+```tsx
+import { createHsxLens } from "jsr:@srdjan/hsx-lens";
+
+const lens = createHsxLens({
+  appName: "Todos",
+  pages: [{ name: "Home", path: "/", render: () => <Page.Component /> }],
+  components: todoComponents,
+});
+
+Deno.serve((req) => {
+  const lensResponse = lens.handle(req);
+  if (lensResponse) return lensResponse;
+
+  // Your app routes...
+  return new Response("Not found", { status: 404 });
+});
+```
+
+Open `/__hsx` for the HTML workbench or `/__hsx/manifest.json` for the manifest.
+Lens does not call component handlers; pass one page sample for each state you
+want inspected.
 
 ---
 

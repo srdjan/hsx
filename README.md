@@ -33,6 +33,8 @@ the rendering process, and compiles them to `hx-*` attributes.
 - **Agent-operable** - Any `hsxComponent` that declares `describe` + `input`
   becomes an AI tool; an agent drives your real endpoints from the same
   definition that serves humans
+- **HSX Lens** - Opt-in dev workbench that maps page samples, components,
+  widgets, targets, and agent tools into a hypermedia manifest
 
 ## Installation
 
@@ -50,7 +52,7 @@ import { id, render, route } from "jsr:@srdjan/hsx";
 
 ### Separate Packages
 
-HSX is a monorepo with four packages:
+HSX is a monorepo with six packages:
 
 ```ts
 // Core - JSX rendering, type-safe routes, hsxComponent, hsxPage, SSE
@@ -81,6 +83,9 @@ import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
 
 // Agent - make your app agent-operable (components become AI tools)
 import { createAppAgent } from "jsr:@srdjan/hsx-agent";
+
+// Lens - inspect the app's hypermedia contract during development
+import { createHsxLens } from "jsr:@srdjan/hsx-lens";
 ```
 
 Install individually:
@@ -91,6 +96,7 @@ deno add jsr:@srdjan/hsx-styles
 deno add jsr:@srdjan/hsx-widgets
 deno add jsr:@srdjan/hsx-genui
 deno add jsr:@srdjan/hsx-agent
+deno add jsr:@srdjan/hsx-lens
 ```
 
 ### Selective Imports (Tree-Shaking)
@@ -722,6 +728,36 @@ with `ANTHROPIC_API_KEY=... deno task example:todos-copilot`.
 exported for building custom agent loops or MCP adapters on top of the same
 metadata.
 
+## HSX Lens
+
+The `@srdjan/hsx-lens` package is an opt-in development workbench for the
+hypermedia contract your app already declares. It renders explicit page samples,
+collects author-time HSX attributes before they become `hx-*`, mirrors
+component/widget/agent metadata, and serves a local manifest plus an HTML
+workbench. It does not call component handlers.
+
+```tsx
+import { createHsxLens } from "@srdjan/hsx-lens";
+
+const lens = createHsxLens({
+  appName: "Todos",
+  pages: [{ name: "Home", path: "/", render: () => <Page.Component /> }],
+  components: todoComponents,
+});
+
+Deno.serve((req) => {
+  const lensResponse = lens.handle(req);
+  if (lensResponse) return lensResponse;
+
+  // Your app routes...
+  return new Response("Not found", { status: 404 });
+});
+```
+
+By default, the workbench is served at `/__hsx` and the JSON manifest at
+`/__hsx/manifest.json`. Mount it only in local or trusted development
+environments.
+
 ## API Reference
 
 ### `render(node, options?)`
@@ -823,6 +859,7 @@ Run examples with `deno task`:
 | **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails                      |
 | **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent           |
 | **HSX Widget**        | `deno task example:hsx-widget`      | Widget SSR route + iframe embed shell                           |
+| **Todos Copilot**     | `deno task example:todos-copilot`   | AI copilot driving real hsxComponent endpoints                  |
 | **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                           |
 
 For the HSX widget example, build client assets first:
@@ -856,9 +893,9 @@ packages/
     hsx-component.ts     # hsxComponent factory (route + handler + render)
     hsx-page.ts          # hsxPage guardrail for full-page layouts
   hsx-styles/            # Styles package (@srdjan/hsx-styles)
-    mod.ts               # Entry point (reads .css files)
-    hsx.css              # Default light theme
-    hsx-dark.css         # Dark theme variant
+    mod.ts               # Entry point (bundles CSS strings)
+    hsx-brand.css        # HSX brand layer
+    vendor/              # Vendored Auras foundation
   hsx-widgets/           # HSX widgets package (@srdjan/hsx-widgets)
     mod.ts               # Main entry point
     widget.ts            # Widget protocol
@@ -887,6 +924,10 @@ packages/
     component-tools.ts   # componentsToTools (components -> AI tool defs)
     request-build.ts     # toRequest (tool-call args -> Request)
     types.ts             # AgentComponent structural type
+  hsx-lens/              # Dev workbench package (@srdjan/hsx-lens)
+    mod.ts               # Main entry point
+    manifest.ts          # createHsxManifest (samples -> manifest)
+    workbench.tsx        # createHsxLens (local HTML + JSON routes)
 examples/
   todos/                 # Full todo app example
   todos-copilot/         # Todos with an AI copilot driving real endpoints

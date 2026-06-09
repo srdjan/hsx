@@ -81,7 +81,7 @@ JSX Code → jsx-runtime → VNode Tree → render → HTML String
   experimental flows
 - See `examples/low-level-api/` for a minimal reference
 
-**hsx-jsx.d.ts**
+**jsx-runtime.ts JSX namespace**
 
 - TypeScript JSX declarations
 - Augments intrinsic elements with HSX attributes
@@ -161,6 +161,30 @@ Widget<P> definition
 
 - Dual-compile build pipeline using esbuild
 - Produces per-widget client bundles and the host snippet
+
+## HSX Lens Package
+
+The `@srdjan/hsx-lens` package adds an opt-in development workbench over an
+existing HSX app. It renders explicit page samples, observes raw HSX attributes
+through `renderHtml(..., { onElement })`, and creates a manifest of pages,
+components, widgets, targets, interactions, warnings, and agent tool metadata.
+
+### Lens Architecture
+
+```
+Page sample render()
+  └─ renderHtml(..., onElement) → targets + HSX interactions
+
+HsxComponent[] + Widget[]
+  └─ metadata projection → routes + tools + widget entries
+
+createHsxLens()
+  ├─ GET /__hsx               → local HTML workbench
+  └─ GET /__hsx/manifest.json → JSON manifest
+```
+
+The Lens package does not call component handlers. Dynamic states must be passed
+as explicit page samples.
 
 ## Performance Considerations
 
