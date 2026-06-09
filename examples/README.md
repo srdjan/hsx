@@ -8,12 +8,16 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
 - `tabs-modal` - tabs and modal overlays with fragment endpoints
 - `form-validation` - inline validation and submit validation endpoints
 - `polling` - live stats/feed/status polling
+- `event-bus` - client-side pub/sub bus: filters, toast, optimistic add
 - `auras-showcase` - first-impression Auras demo with a live HSX scene
   playground and compact semantic reference
 - `hsx-components` - minimal co-located route/handler/render demo
 - `hsx-page` - semantic full-page guardrails showcase
 - `low-level-api` - direct `render` / `renderHtml` with `route()`
 - `hsx-widget` - widget SSR route and iframe embed shell (HSX Widgets)
+- `ats` - Light DOM custom elements styled by host CSS, HTMX polling
+- `todos-copilot` - AI copilot + MCP server driving the same `hsxComponent`s
+  (the copilot needs `ANTHROPIC_API_KEY`; the `/mcp` endpoint does not)
 
 ## Pick The Right Example
 
@@ -26,6 +30,8 @@ Use these to see common patterns. All tasks run with `deno task example:<name>`.
   swaps? Start with `auras-showcase`.
 - Want full control routing? Use `low-level-api`.
 - Need embeddable widgets? Use `hsx-widget` and read `docs/WIDGETS.md`.
+- Making your app agent-operable or serving it over MCP? Start with
+  `todos-copilot`.
 
 ## Widget Example Setup
 

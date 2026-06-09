@@ -329,6 +329,13 @@
           "jsr:@srdjan/hsx@^1.4.0"
         ]
       },
+      "packages/hsx-mcp": {
+        "dependencies": [
+          "jsr:@srdjan/hsx-agent@0.1",
+          "jsr:@srdjan/hsx-widgets@~0.1.2",
+          "jsr:@srdjan/hsx@^1.4.0"
+        ]
+      },
       "packages/hsx-widgets": {
         "dependencies": [
           "jsr:@srdjan/hsx@^1.3.0"

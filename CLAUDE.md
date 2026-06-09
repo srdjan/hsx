@@ -29,7 +29,7 @@ deno run --allow-net --allow-read examples/todos/server.tsx
 
 ## Architecture
 
-HSX is a monorepo with six packages:
+HSX is a monorepo with seven packages:
 
 **Packages:**
 
@@ -51,6 +51,11 @@ HSX is a monorepo with six packages:
 - `@srdjan/hsx-lens` (packages/hsx-lens/) - Development workbench:
   `createHsxManifest()`, `createHsxLens()`. Maps explicit page samples,
   components, widgets, targets, and agent tools into a hypermedia manifest
+- `@srdjan/hsx-mcp` (packages/hsx-mcp/) - MCP server adapter:
+  `createMcpHandler()`. Mounts a Model Context Protocol endpoint (Streamable
+  HTTP, stateless, POST-only) into the app's `Deno.serve`, exposing
+  agent-callable components as MCP tools for external clients (Claude Code,
+  Claude Desktop). Hand-rolled JSON-RPC subset, no SDK dependency
 
 **JSX Transform Pipeline (packages/hsx/):**
 
@@ -109,6 +114,7 @@ import {
 } from "@srdjan/hsx-genui";
 import { claudeProvider } from "@srdjan/hsx-genui/claude";
 import { createAppAgent } from "@srdjan/hsx-agent";
+import { createMcpHandler } from "@srdjan/hsx-mcp";
 ```
 
 **Tree-shaking entry points:**
@@ -173,8 +179,20 @@ without it are invisible to the agent (opt-in by declaration).
 The `examples/todos-copilot/` example wires this end to end: the same mutating
 components serve the human form and the agent, and render the list with
 `swapOob` so changes update the canonical `#todo-list` out-of-band from either
-path. The MCP server adapter is a planned follow-on built on the same
-`componentsToTools()` metadata.
+path. It also mounts `/mcp` so external MCP clients drive the same components.
+
+**MCP Server (packages/hsx-mcp/):**
+
+`createMcpHandler({ components, basePath?, serverName?, serverVersion?,
+instructions?, origin?, observationCap?, authorize?, bearerToken?,
+allowedOrigins?, manifest? })`
+returns `{ tools, handle(req) }`; `handle` returns `null` when the path does not
+match (mounts like the lens). Tools come from `componentsToTools()`; execution
+goes through `toRequest()` + `component.handle()`; tool results carry
+`HTTP <status>` plus the capped rendered HTML. Passing a lens manifest exposes
+it as MCP resource `hsx://manifest`. Tools mutate real app state - never mount
+publicly without `authorize` or `bearerToken`. Connect with
+`claude mcp add --transport http <name> http://localhost:8000/mcp`.
 
 ## Key Patterns
 

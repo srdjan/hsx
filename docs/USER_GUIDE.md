@@ -16,10 +16,13 @@ applications.
 9. [HTMX Script Injection](#htmx-script-injection)
 10. [Render Options](#render-options)
 11. [HSX Widgets](#hsx-widgets)
-12. [HSX Lens](#hsx-lens)
-13. [Best Practices](#best-practices)
-14. [Troubleshooting](#troubleshooting)
-15. [Examples Index](#examples-index)
+12. [Generative UI](#generative-ui)
+13. [Agent-Operable Apps](#agent-operable-apps)
+14. [MCP Server](#mcp-server)
+15. [HSX Lens](#hsx-lens)
+16. [Best Practices](#best-practices)
+17. [Examples Index](#examples-index)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -428,8 +431,11 @@ input.
 A component that declares both `describe` and `input` also becomes an AI tool:
 the `@srdjan/hsx-agent` package exposes it to an agent that drives the same
 `handle()` the browser hits, from the one definition that serves humans.
-Components without both fields stay invisible to the agent. The README's
-"Agent-Operable Apps" section covers the full workflow.
+Components without both fields stay invisible to the agent. The same declaration
+feeds `@srdjan/hsx-mcp` too: `createMcpHandler()` mounts an MCP endpoint so
+external clients such as Claude Code can call the components from outside the
+app. See [Agent-Operable Apps](#agent-operable-apps) and
+[MCP Server](#mcp-server).
 
 ---
 
@@ -800,6 +806,286 @@ For the full widget guide including the build pipeline, see
 
 ---
 
+## Generative UI
+
+`@srdjan/hsx-genui` lets an AI model render UI in your app: the model picks from
+a catalog of pre-registered widgets via tool calling, and each rendered widget
+streams to the browser over SSE + HTMX. The model never writes raw HTML; it can
+only invoke widgets you registered.
+
+### Installation
+
+```bash
+deno add jsr:@srdjan/hsx-genui jsr:@srdjan/hsx-widgets
+```
+
+### Catalog: Widgets as AI Tools
+
+Extend a widget with AI metadata to make it selectable. `GenUIWidget<P>` adds a
+`description`, a JSON Schema for the props, optional few-shot `examples`, and a
+`category`:
+
+```tsx
+import { createCatalog, type GenUIWidget } from "jsr:@srdjan/hsx-widgets";
+
+const weatherWidget: GenUIWidget<WeatherProps> = {
+  ...baseWidget, // a regular Widget<WeatherProps>
+  description: "Show current weather for a city.",
+  schema: {
+    type: "object",
+    properties: { city: { type: "string" } },
+    required: ["city"],
+  },
+  category: "display",
+};
+
+const catalog = createCatalog([weatherWidget]);
+```
+
+The catalog derives one AI tool definition per widget (`catalog.toTools()`) and
+renders tool calls back to HTML (`catalog.render(tag, props)`), running the
+widget's own `validate()` on the model-supplied props.
+
+### The Handler
+
+`createGenUIHandler()` runs the conversation loop: it sends history plus the
+tool definitions to the provider, renders each tool call through the catalog,
+streams text and widget HTML as SSE frames, and reports render results back to
+the model for follow-up turns.
+
+```tsx
+import { createGenUIHandler } from "jsr:@srdjan/hsx-genui";
+import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
+
+const handler = createGenUIHandler({
+  catalog,
+  provider: claudeProvider({ model: "claude-sonnet-4-6" }),
+});
+```
+
+| Option              | Default  | Description                                   |
+| ------------------- | -------- | --------------------------------------------- |
+| `catalog`           | required | The widget catalog                            |
+| `provider`          | required | An `AIProvider` (see below)                   |
+| `systemPrompt`      | none     | Extra system prompt, prepended                |
+| `includeGuidelines` | `true`   | Append design guidelines to the system prompt |
+| `maxTurns`          | `10`     | Maximum tool-calling turns per message        |
+
+### Providers
+
+`AIProvider` is a one-method port: `stream(messages, tools)` returns an async
+iterable of `text`, `tool_call`, and `done` events. The built-in
+`claudeProvider()` implements it with raw `fetch` against the Anthropic API, no
+SDK. It reads `ANTHROPIC_API_KEY` from the environment unless you pass `apiKey`;
+`model` defaults to `claude-sonnet-4-6` and `maxTokens` to `4096`. Implement the
+same interface to plug in another model.
+
+### Pre-Built Chat Routes
+
+`createGenUIRoutes()` wires the HTMX + SSE plumbing for a chat interface:
+
+```tsx
+import {
+  createConversationStore,
+  createGenUIRoutes,
+} from "jsr:@srdjan/hsx-genui";
+
+const store = createConversationStore();
+const { page, send, stream } = createGenUIRoutes({
+  handler,
+  store,
+  basePath: "/genui",
+});
+
+// In your server:
+if (page.match(url.pathname)) return page.handle(req);
+if (send.match(url.pathname)) return send.handle(req);
+if (stream.match(url.pathname)) return stream.handle(req);
+```
+
+`page` (GET `/genui`) renders the chat shell, `send` (POST `/genui/send`)
+accepts user input and renders the user bubble plus an SSE-connected div, and
+`stream` (GET `/genui/stream/:id`) returns the AI's SSE response. The
+conversation store is in-memory only; entries evict past 1000 conversations
+(LRU) or after 30 minutes idle, configurable via `maxSize` and `ttlMs`.
+
+---
+
+## Agent-Operable Apps
+
+Where GenUI renders inert display widgets, `@srdjan/hsx-agent` lets an AI drive
+your application's real endpoints. A component that declares both `describe` and
+`input` carries a `.agent` descriptor; `createAppAgent()` turns those
+descriptors into AI tools, and each tool call runs the component's own
+`handle()` - the same code path a human's HTMX request takes.
+
+### Installation
+
+```bash
+deno add jsr:@srdjan/hsx-agent jsr:@srdjan/hsx-genui
+```
+
+The agent reuses the `AIProvider` port and chat routes from `hsx-genui`.
+
+### Declaring Agent-Callable Components
+
+```tsx
+const AddTodo = hsxComponent("/todos", {
+  methods: ["POST"],
+  describe: "Add a new todo item to the list.",
+  input: {
+    schema: {
+      type: "object",
+      properties: { text: { type: "string", description: "The todo text." } },
+      required: ["text"],
+    },
+  },
+  async handler(req) {
+    const form = await req.formData();
+    addTodo(String(form.get("text")));
+    return {};
+  },
+  render: () => <TodoListView />,
+});
+```
+
+The schema must be a JSON Schema object (`"type": "object"`). An optional
+`input.assert` function validates tool arguments before the request is built; a
+throw becomes the tool error the model sees. Components without both fields stay
+invisible to the agent - exposure is opt-in by declaration.
+
+Tool names derive from the method and path (`POST /todos` becomes `post_todos`);
+set `agentName` to override.
+
+### Running the Agent
+
+```tsx
+import { createAppAgent } from "jsr:@srdjan/hsx-agent";
+import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
+
+const agent = createAppAgent({
+  components: [AddTodo, ToggleTodo, ClearDone],
+  provider: claudeProvider(),
+});
+```
+
+For each tool call the agent synthesizes a `Request` from the tool arguments
+(path parameters go in the URL, the rest become a urlencoded body so
+`req.formData()` works), runs the component, streams the rendered HTML to the
+browser, and reports `HTTP <status>` plus the same HTML back to the model as its
+observation.
+
+Options: `origin` (base for synthesized requests, default `http://localhost`),
+`systemPrompt`, `maxTurns` (default `10`), and `observationCap` (max HTML
+characters per observation, default `4096`).
+
+`AppAgent` is structurally a `GenUIHandler`, so it drops into
+`createGenUIRoutes()` unchanged. The `todos-copilot` example serves the agent
+through the same chat routes and renders the list with `swapOob`, so the
+canonical `#todo-list` updates whether the change came from the human form or
+the agent.
+
+For custom loops, `componentsToTools(components)` and
+`toRequest(component, args, origin)` expose the two building blocks directly.
+
+---
+
+## MCP Server
+
+`@srdjan/hsx-mcp` serves the same agent-callable components to clients outside
+your app. `createMcpHandler()` mounts a Model Context Protocol endpoint into
+your existing `Deno.serve`, so MCP clients such as Claude Code or Claude Desktop
+discover the components as tools and drive them remotely. No chat UI, no API key
+on the server: the connecting client brings its own model.
+
+### Installation
+
+```bash
+deno add jsr:@srdjan/hsx-mcp
+```
+
+### Mounting the Endpoint
+
+```tsx
+import { createMcpHandler } from "jsr:@srdjan/hsx-mcp";
+
+const mcp = createMcpHandler({
+  components: todoComponents,
+  serverName: "todos",
+});
+
+Deno.serve((req) => {
+  const mcpResponse = mcp.handle(req);
+  if (mcpResponse) return mcpResponse;
+
+  // Your app routes...
+  return new Response("Not found", { status: 404 });
+});
+```
+
+`handle()` returns `null` for requests outside `basePath` (default `/mcp`), the
+same mount contract as HSX Lens. Connect from Claude Code:
+
+```bash
+claude mcp add --transport http todos http://localhost:8000/mcp
+```
+
+Tool results carry `HTTP <status>` plus the component's rendered HTML, capped at
+`observationCap` characters, so the connecting agent observes the same
+hypermedia a human sees.
+
+### Authorization
+
+MCP tools mutate real application state. The endpoint ships with two opt-in
+guards; use one before exposing it beyond localhost:
+
+```tsx
+// Require Authorization: Bearer <token> (constant-time compare):
+const mcp = createMcpHandler({
+  components: todoComponents,
+  bearerToken: Deno.env.get("MCP_TOKEN"),
+});
+
+// Or a custom check, sync or async:
+const mcp = createMcpHandler({
+  components: todoComponents,
+  authorize: (req) => checkSession(req),
+});
+```
+
+`bearerToken` and `authorize` are mutually exclusive. Browser requests with a
+cross-origin `Origin` header are rejected unless listed in `allowedOrigins`;
+requests without an `Origin` header (MCP CLIs) pass.
+
+### Manifest Resource
+
+Pass a lens manifest to expose the app's hypermedia contract as an MCP resource:
+
+```tsx
+import { createHsxManifest } from "jsr:@srdjan/hsx-lens";
+
+const mcp = createMcpHandler({
+  components: todoComponents,
+  manifest: createHsxManifest({
+    appName: "Todos",
+    pages: [{ name: "Home", path: "/", render: () => <Page.Component /> }],
+    components: todoComponents,
+  }),
+});
+```
+
+Clients then read `hsx://manifest` (JSON) to see pages, components,
+interactions, targets, and tools before calling anything.
+
+### Protocol Notes
+
+The endpoint speaks stateless MCP Streamable HTTP: a single POST endpoint, plain
+JSON responses, no sessions, no SDK dependency. GET returns `405` because the
+server never initiates messages. Supported protocol revisions: `2025-06-18` and
+`2025-03-26`.
+
+---
+
 ## HSX Lens
 
 `@srdjan/hsx-lens` gives you a local development view of the hypermedia contract
@@ -934,6 +1220,8 @@ app.get("/todos", () => renderHtml(<TodoList todos={todos} />));
 | HSX Page        | `deno task example:hsx-page`        | `examples/hsx-page/server.tsx`        |
 | Low-Level API   | `deno task example:low-level-api`   | `examples/low-level-api/server.tsx`   |
 | HSX Widget      | `deno task example:hsx-widget`      | `examples/hsx-widget/server.tsx`      |
+| ATS             | `deno task example:ats`             | `examples/ats/server.tsx`             |
+| Event Bus       | `deno task example:event-bus`       | `examples/event-bus/server.tsx`       |
 | Todos Copilot   | `deno task example:todos-copilot`   | `examples/todos-copilot/server.tsx`   |
 
 For the HSX Widgets demo, build assets once before starting the server:

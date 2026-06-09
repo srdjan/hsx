@@ -52,7 +52,7 @@ import { id, render, route } from "jsr:@srdjan/hsx";
 
 ### Separate Packages
 
-HSX is a monorepo with six packages:
+HSX is a monorepo with seven packages:
 
 ```ts
 // Core - JSX rendering, type-safe routes, hsxComponent, hsxPage, SSE
@@ -84,6 +84,9 @@ import { claudeProvider } from "jsr:@srdjan/hsx-genui/claude";
 // Agent - make your app agent-operable (components become AI tools)
 import { createAppAgent } from "jsr:@srdjan/hsx-agent";
 
+// MCP - serve those components to external MCP clients (Claude Code, ...)
+import { createMcpHandler } from "jsr:@srdjan/hsx-mcp";
+
 // Lens - inspect the app's hypermedia contract during development
 import { createHsxLens } from "jsr:@srdjan/hsx-lens";
 ```
@@ -96,6 +99,7 @@ deno add jsr:@srdjan/hsx-styles
 deno add jsr:@srdjan/hsx-widgets
 deno add jsr:@srdjan/hsx-genui
 deno add jsr:@srdjan/hsx-agent
+deno add jsr:@srdjan/hsx-mcp
 deno add jsr:@srdjan/hsx-lens
 ```
 
@@ -725,8 +729,54 @@ so whether a change comes from the human form or the agent, the canonical
 with `ANTHROPIC_API_KEY=... deno task example:todos-copilot`.
 
 `componentsToTools(components)` and `toRequest(component, args, origin)` are
-exported for building custom agent loops or MCP adapters on top of the same
-metadata.
+exported for building custom agent loops on top of the same metadata.
+
+## MCP Server
+
+The `@srdjan/hsx-mcp` package mounts a Model Context Protocol endpoint into your
+existing `Deno.serve`, so external MCP clients - Claude Code, Claude Desktop,
+any MCP-capable tool - can discover and operate the same agent-callable
+components. The in-app copilot needs a chat UI and an API key; the MCP endpoint
+needs neither. Write a component once and it serves humans over HTMX, your
+embedded copilot over SSE, and every MCP client over JSON-RPC, all through the
+component's own `handle()`.
+
+```tsx
+import { createMcpHandler } from "@srdjan/hsx-mcp";
+
+const mcp = createMcpHandler({
+  components: todoComponents,
+  serverName: "todos",
+  // REQUIRED before exposing beyond localhost:
+  // bearerToken: Deno.env.get("MCP_TOKEN"),
+});
+
+Deno.serve((req) => {
+  const mcpResponse = mcp.handle(req);
+  if (mcpResponse) return mcpResponse;
+
+  // Your app routes...
+  return new Response("Not found", { status: 404 });
+});
+```
+
+Connect from Claude Code:
+
+```bash
+claude mcp add --transport http todos http://localhost:8000/mcp
+```
+
+Tool results carry the HTTP status plus the same rendered HTML a human receives,
+so the agent observes the app as a user sees it. Pass a lens manifest
+(`createHsxManifest()` output) as `manifest` to expose the app's full hypermedia
+contract as MCP resource `hsx://manifest`.
+
+The endpoint is stateless Streamable HTTP: POST-only, plain JSON responses, no
+sessions, no SDK dependency - the protocol subset is hand-rolled like the
+raw-fetch Claude adapter.
+
+**Security:** MCP tools mutate real application state. Never mount the endpoint
+on a publicly reachable server without `authorize` or `bearerToken`.
 
 ## HSX Lens
 
@@ -924,6 +974,12 @@ packages/
     component-tools.ts   # componentsToTools (components -> AI tool defs)
     request-build.ts     # toRequest (tool-call args -> Request)
     types.ts             # AgentComponent structural type
+  hsx-mcp/               # MCP server package (@srdjan/hsx-mcp)
+    mod.ts               # Main entry point
+    mcp-handler.ts       # createMcpHandler (Streamable HTTP endpoint)
+    protocol.ts          # MCP method dispatch (initialize/tools/resources)
+    jsonrpc.ts           # Hand-rolled JSON-RPC 2.0 envelope
+    types.ts             # McpHandlerOptions, McpHandler
   hsx-lens/              # Dev workbench package (@srdjan/hsx-lens)
     mod.ts               # Main entry point
     manifest.ts          # createHsxManifest (samples -> manifest)

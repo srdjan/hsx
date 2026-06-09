@@ -6,6 +6,10 @@
  * add or toggle todos and watch the real list update live, driven by the
  * app's own endpoints - no parallel API.
  *
+ * The same components are also exposed as an MCP server at /mcp, so external
+ * MCP clients can operate the app:
+ *   claude mcp add --transport http todos http://localhost:8000/mcp
+ *
  * Run: ANTHROPIC_API_KEY=... deno task example:todos-copilot
  */
 
@@ -13,6 +17,7 @@ import { hsxPage } from "@srdjan/hsx";
 import { createAppAgent } from "@srdjan/hsx-agent";
 import { createConversationStore, createGenUIRoutes } from "@srdjan/hsx-genui";
 import { claudeProvider } from "@srdjan/hsx-genui/claude";
+import { createMcpHandler } from "@srdjan/hsx-mcp";
 import {
   AddTodo,
   CopilotPanel,
@@ -132,6 +137,13 @@ const { send, stream } = createGenUIRoutes({
   basePath: "/copilot",
 });
 
+// The same components, exposed to external MCP clients. Local demo only:
+// pass `bearerToken` or `authorize` before mounting this anywhere public.
+const mcp = createMcpHandler({
+  components: todoComponents,
+  serverName: "todos-copilot",
+});
+
 // =============================================================================
 // Server
 // =============================================================================
@@ -144,6 +156,9 @@ Deno.serve(async (req) => {
 
   if (send.match(pathname)) return send.handle(req);
   if (stream.match(pathname)) return stream.handle(req);
+
+  const mcpResponse = mcp.handle(req);
+  if (mcpResponse) return mcpResponse;
 
   for (const component of todoComponents) {
     const method = req.method as typeof component.methods[number];
