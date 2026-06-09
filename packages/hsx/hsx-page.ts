@@ -119,6 +119,7 @@ const NON_SEMANTIC_TAGS = new Set([
   "strong",
   "em",
   "small",
+  "s",
   "sup",
   "sub",
   "mark",

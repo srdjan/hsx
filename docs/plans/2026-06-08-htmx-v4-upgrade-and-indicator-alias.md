@@ -1,8 +1,26 @@
 # Plan: Upgrade vendored HTMX to v4 (beta4) and make the loading-indicator mechanism reachable
 
-Status: workstreams A and B complete; C pending
+Status: complete (all three workstreams)
 Date: 2026-06-08
 Owner: srdjan
+
+## Update 2026-06-09: Workstream C done
+
+Example audit was clean: no example used the removed `hx-trigger` `queue:`
+modifier, SSE, `hx-disabled-elt`, or parent->child attribute inheritance. The
+only defect was two examples (`todos`, `hsx-components`) using `<s>` inside
+`hsxPage`, which the validator rejected. Fixed at the source by adding `s` to
+`NON_SEMANTIC_TAGS` (`hsx-page.ts`) - a legitimate HTML5 text-level element that
+was simply missing alongside `strong`/`em`/`small`/`mark`. Added a regression
+test. All 12 examples now boot and render 200.
+
+The `active-search` spinner needed no code change. Verified end-to-end with a
+real browser (Playwright): during a live search the input receives
+`htmx-request` automatically (beta4 behavior), and the existing CSS
+`.htmx-request + .indicator` resolves the indicator to opacity 1
+(deterministically confirmed). The beta4 upgrade alone revives it.
+
+Final: `deno task check` green; full suite 219 passed / 0 failed.
 
 ## Update 2026-06-09: Workstream B done
 

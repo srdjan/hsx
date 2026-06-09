@@ -175,6 +175,14 @@ Deno.test("allows style on non-semantic elements", () => {
   assertEquals(response.status, 200);
 });
 
+Deno.test("allows <s> strikethrough text-level element", () => {
+  const page = hsxPage(() => validPage(jsx("s", { children: "done" })));
+
+  // Should not throw (used for struck-through completed items)
+  const response = page.render();
+  assertEquals(response.status, 200);
+});
+
 // =============================================================================
 // Style Placement Validation Tests
 // =============================================================================
