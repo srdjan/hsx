@@ -12,6 +12,7 @@
  */
 
 import type {
+  EventName,
   HsxExt,
   HsxSwap,
   HsxTrigger,
@@ -89,6 +90,20 @@ type HsxAttrs = {
   pushUrl?: boolean | string;
   /** Mark this element for out-of-band swapping (true or a swap spec). Maps to hx-swap-oob. */
   swapOob?: boolean | string;
+
+  // ---------------------------------------------------------------------------
+  // Client event bus (compile to data-hsx-*, never hx-*). See packages/hsx/bus.ts.
+  // ---------------------------------------------------------------------------
+  /** Publish this client-bus event when the element is activated. Maps to data-hsx-emit. */
+  emit?: EventName<string, unknown> | string;
+  /** Payload for the published event (JSON-encoded). Maps to data-hsx-detail. */
+  emitDetail?: Params;
+  /** Subscribe to this client-bus event. Maps to data-hsx-on. */
+  on?: EventName<string, unknown> | string;
+  /** Declarative client action(s) to run when the subscribed event fires. Maps to data-hsx-act. */
+  act?: string;
+  /** Override the DOM event that triggers a publish (click/submit/change/custom). Maps to data-hsx-trigger. */
+  busTrigger?: HsxTrigger;
 };
 
 // =============================================================================

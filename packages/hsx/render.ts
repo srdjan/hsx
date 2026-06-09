@@ -280,13 +280,16 @@ function renderElement(node: VNode, ctx: RenderContext): string {
   try {
     const inner = renderNode(children, ctx);
 
-    // Special handling for <body>: inject HTMX script if needed
+    // Special handling for <body>: inject HTMX and/or client-bus scripts if needed.
+    // Ordering between the two is irrelevant - they have no load-time coupling.
     if (tag === "body") {
-      const shouldInject = ctx.injectHtmxOverride ?? ctx.usesHtmx;
-      const script = shouldInject
+      const htmxScript = (ctx.injectHtmxOverride ?? ctx.usesHtmx)
         ? `<script src="/static/htmx.js"></script>`
         : "";
-      return `<body${attrs}>${inner}${script}</body>`;
+      const busScript = (ctx.injectBusOverride ?? ctx.usesBus)
+        ? `<script src="/static/hsx-bus.js"></script>`
+        : "";
+      return `<body${attrs}>${inner}${htmxScript}${busScript}</body>`;
     }
 
     return `<${tag}${attrs}>${inner}</${tag}>`;
@@ -360,6 +363,14 @@ export interface RenderHtmlOptions {
   injectHtmx?: boolean;
 
   /**
+   * Control client-bus script injection (/static/hsx-bus.js).
+   * - true: always inject
+   * - false: never inject
+   * - undefined: auto (inject when an emit/on/act attribute is used)
+   */
+  injectBus?: boolean;
+
+  /**
    * Called for each HTML element during rendering, before its children are rendered.
    * Throw an Error to reject the element. Used by hsxPage for structural validation.
    */
@@ -413,7 +424,9 @@ export function renderHtml(
     maxDepth: options.maxDepth,
     maxNodes: options.maxNodes,
     usesHtmx: false,
+    usesBus: false,
     injectHtmxOverride: options.injectHtmx,
+    injectBusOverride: options.injectBus,
     ancestors: [],
     onElement: options.onElement,
   };

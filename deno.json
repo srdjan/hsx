@@ -59,6 +59,7 @@
     "example:ats": "deno run --allow-net --allow-read examples/ats/server.tsx",
     "example:hsx-widget": "deno run --allow-net --allow-read examples/hsx-widget/server.tsx",
     "example:todos-copilot": "deno run --allow-net --allow-read --allow-env examples/todos-copilot/server.tsx",
+    "example:event-bus": "deno run --allow-net --allow-read examples/event-bus/server.tsx",
     "build:hsx-widgets:embeds": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=embeds",
     "build:hsx-widgets:snippet": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=snippet",
     "build:hsx-widgets": "deno run --allow-all packages/hsx-widgets/build/tasks.ts --target=all"

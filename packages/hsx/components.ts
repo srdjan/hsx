@@ -27,6 +27,7 @@
 export {
   type AgentDescriptor,
   type AgentInputSchema,
+  type EventsDescriptor,
   type HsxComponent,
   hsxComponent,
   type HsxComponentOptions,
@@ -34,3 +35,6 @@ export {
   type HttpMethod,
 } from "./hsx-component.ts";
 export { type HsxPage, hsxPage, type HsxPageOptions } from "./hsx-page.ts";
+
+// Client event bus configuration
+export { HsxBus, type HsxBusProps } from "./bus.ts";

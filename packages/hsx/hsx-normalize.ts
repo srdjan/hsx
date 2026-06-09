@@ -6,6 +6,8 @@ export interface RenderContext {
   maxDepth?: number;
   maxNodes?: number;
   usesHtmx: boolean;
+  /** set when any client-bus attribute (emit/on/act/...) is encountered */
+  usesBus: boolean;
   ancestors: string[];
   onElement?: (
     tag: string,
@@ -14,6 +16,8 @@ export interface RenderContext {
   ) => void;
   /** override for HTMX script injection (true = force, false = disable) */
   injectHtmxOverride?: boolean;
+  /** override for client-bus script injection (true = force, false = disable) */
+  injectBusOverride?: boolean;
 }
 
 export type Props = Record<string, unknown>;
@@ -41,6 +45,19 @@ const HSX_NON_VERB_ATTRS = [
 ] as const;
 
 /**
+ * Client-bus attributes that map to data-hsx-* attributes. These are read by
+ * the bus runtime (packages/hsx/runtime/hsx-bus.js) in the browser; they are
+ * NOT hx-* attributes, so the no-manual-hx-* rule is unaffected.
+ */
+const HSX_BUS_ATTRS = [
+  ["emit", "data-hsx-emit"],
+  ["emitDetail", "data-hsx-detail"],
+  ["on", "data-hsx-on"],
+  ["act", "data-hsx-act"],
+  ["busTrigger", "data-hsx-trigger"],
+] as const;
+
+/**
  * All HSX source prop keys. needsHsxNormalization scans an element's own keys
  * against this Set, keeping detection O(props) not O(table) as the table grows.
  */
@@ -48,6 +65,7 @@ const HSX_SOURCE_KEYS: ReadonlySet<string> = new Set<string>([
   "params",
   ...HTTP_VERBS,
   ...HSX_NON_VERB_ATTRS.map(([src]) => src),
+  ...HSX_BUS_ATTRS.map(([src]) => src),
 ]);
 
 function isRoute(x: unknown): x is Route<string, unknown> {
@@ -68,6 +86,10 @@ function asUrl(urlish: Urlish, params?: Params): string {
 
 function markHtmx(ctx: RenderContext): void {
   ctx.usesHtmx = true;
+}
+
+function markBus(ctx: RenderContext): void {
+  ctx.usesBus = true;
 }
 
 /**
@@ -117,6 +139,21 @@ function normalizeNonVerb(next: Props, ctx: RenderContext): void {
   }
 }
 
+function normalizeBus(next: Props, ctx: RenderContext): void {
+  for (const [srcAttr, dataAttr] of HSX_BUS_ATTRS) {
+    const value = next[srcAttr];
+    if (value !== undefined) {
+      markBus(ctx);
+      if (next[dataAttr] == null) {
+        // Objects (emitDetail) flow through propsToAttrs' JSON fallback;
+        // strings pass through verbatim.
+        next[dataAttr] = value;
+      }
+      delete next[srcAttr];
+    }
+  }
+}
+
 /**
  * Base normalization: lazily copies props only if HSX attributes are present.
  * Returns [props (possibly copied), params] tuple.
@@ -139,6 +176,7 @@ function baseNormalize(
 
   normalizeVerbs(next, ctx, params);
   normalizeNonVerb(next, ctx);
+  normalizeBus(next, ctx);
 
   return next;
 }

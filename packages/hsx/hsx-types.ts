@@ -155,6 +155,48 @@ export function id<Name extends string>(name: Name): Id<Name> {
 }
 
 /**
+ * A branded client-bus event name that carries its detail payload type.
+ *
+ * The runtime value is the bare name string; the brand exists only at the
+ * type level so `emit`/`on` attributes and a component's `emits`/`consumes`
+ * can be type-checked against a shared registry.
+ *
+ * @typeParam Name - The event name string
+ * @typeParam Detail - The shape of the CustomEvent detail payload
+ */
+export type EventName<Name extends string, Detail = void> =
+  & Name
+  & { readonly __eventBrand: Name; readonly __detail: Detail };
+
+/**
+ * Define a typed client-bus event for use with the HSX event bus.
+ *
+ * Mirrors {@link id} and {@link route}: returns the bare name at runtime,
+ * branded with its detail payload type at compile time. Use the result in
+ * `emit`/`on` element attributes and in a component's `emits`/`consumes`.
+ *
+ * @param name - The event name (published as a DOM CustomEvent on <body>)
+ * @returns A branded event name string
+ *
+ * @example
+ * ```ts
+ * const events = {
+ *   filterChanged: event<{ filter: string }>("filter-changed"),
+ *   toast: event<{ message: string }>("toast"),
+ * };
+ *
+ * // In JSX:
+ * <button emit={events.filterChanged} emitDetail={{ filter: "done" }}>Done</button>
+ * <li on={events.filterChanged} act="toggle-class active">...</li>
+ * ```
+ */
+export function event<Detail = void, Name extends string = string>(
+  name: Name,
+): EventName<Name, Detail> {
+  return name as EventName<Name, Detail>;
+}
+
+/**
  * HTMX swap strategies for replacing content.
  * Maps to the hx-swap attribute.
  *

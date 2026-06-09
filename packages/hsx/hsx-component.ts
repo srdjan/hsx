@@ -13,7 +13,7 @@
 
 import type { Renderable } from "./jsx-runtime.ts";
 import { render as renderResponse, renderHtml } from "./render.ts";
-import type { ParamsFromPath, Route } from "./hsx-types.ts";
+import type { EventName, ParamsFromPath, Route } from "./hsx-types.ts";
 
 // =============================================================================
 // Types
@@ -91,6 +91,20 @@ export type AgentDescriptor = {
 };
 
 /**
+ * Pure metadata describing the client-bus events a component participates in.
+ *
+ * Present only when the component declares `emits` and/or `consumes`. Like
+ * {@link AgentDescriptor} it carries no behaviour - the element-level
+ * `emit`/`on` attributes do the wiring. Tooling can read `.events` to discover
+ * what a component publishes and subscribes to (e.g. to draw an event graph or
+ * check that every consumer has a producer).
+ */
+export type EventsDescriptor = {
+  readonly emits: ReadonlyArray<string>;
+  readonly consumes: ReadonlyArray<string>;
+};
+
+/**
  * Options for creating an HSX Component.
  *
  * @typeParam Params - Path parameters extracted from the route
@@ -121,6 +135,18 @@ export interface HsxComponentOptions<Params, Props> {
    * /^[a-zA-Z0-9_-]{1,64}$/ to satisfy AI provider tool-name rules.
    */
   agentName?: string;
+
+  /**
+   * Client-bus events this component publishes. Documentation/typing only -
+   * produces the `.events` descriptor; the `emit` attribute does the wiring.
+   */
+  emits?: ReadonlyArray<EventName<string, unknown>>;
+
+  /**
+   * Client-bus events this component subscribes to. Documentation/typing only -
+   * produces the `.events` descriptor; the `on` attribute does the wiring.
+   */
+  consumes?: ReadonlyArray<EventName<string, unknown>>;
 
   /**
    * Handler function that processes the request and returns props.
@@ -194,6 +220,12 @@ export interface HsxComponent<
    * `describe` and `input`. Undefined for components not exposed to agents.
    */
   readonly agent?: AgentDescriptor;
+
+  /**
+   * Client-bus event metadata, present only when the component declared
+   * `emits` and/or `consumes`. Undefined otherwise.
+   */
+  readonly events?: EventsDescriptor;
 }
 
 // =============================================================================
@@ -286,6 +318,8 @@ export function hsxComponent<
     describe,
     input,
     agentName,
+    emits,
+    consumes,
   } = options;
 
   // Precompute path regex and param names (fixed per component, no need to recompute)
@@ -414,6 +448,15 @@ export function hsxComponent<
       }
       : undefined;
 
+  // Events descriptor: pure metadata, only when emits and/or consumes are set.
+  const events: EventsDescriptor | undefined =
+    (emits && emits.length > 0) || (consumes && consumes.length > 0)
+      ? {
+        emits: Object.freeze((emits ?? []).map(String)),
+        consumes: Object.freeze((consumes ?? []).map(String)),
+      }
+      : undefined;
+
   // Create the component object
   const component: HsxComponent<Path, Params, Props> = {
     path,
@@ -423,6 +466,7 @@ export function hsxComponent<
     Component: renderFn,
     methods: Object.freeze([...methods]),
     agent,
+    events,
   };
 
   return component;
