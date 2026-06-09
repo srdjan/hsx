@@ -9,7 +9,7 @@
  */
 
 import type { Widget } from "../../packages/hsx-widgets/widget.ts";
-import { ok, fail } from "../../packages/hsx-widgets/result.ts";
+import { fail, ok } from "../../packages/hsx-widgets/result.ts";
 
 // =============================================================================
 // Types
@@ -43,7 +43,9 @@ const checkResults = new Map<number, CheckResult>();
 let candidateLookup: (id: number) => string | undefined = () => undefined;
 
 /** Wire candidate name resolution from the host app. */
-export function setCandidateLookup(fn: (id: number) => string | undefined): void {
+export function setCandidateLookup(
+  fn: (id: number) => string | undefined,
+): void {
   candidateLookup = fn;
 }
 
@@ -92,7 +94,10 @@ export function initiateCheck(candidateId: number): CheckResult {
   // Advance to passed/failed after 8s (80% pass rate)
   setTimeout(() => {
     const current = checkResults.get(candidateId);
-    if (current && (current.status === "pending" || current.status === "in_progress")) {
+    if (
+      current &&
+      (current.status === "pending" || current.status === "in_progress")
+    ) {
       const passed = Math.random() < 0.8;
       checkResults.set(candidateId, {
         ...current,
@@ -218,7 +223,10 @@ export const bgcheckWidget: Widget<BgCheckProps> = {
 
     const name = candidateLookup(candidateId);
     if (!name) {
-      return fail({ tag: "load_error", message: `Candidate ${candidateId} not found` });
+      return fail({
+        tag: "load_error",
+        message: `Candidate ${candidateId} not found`,
+      });
     }
 
     const result = getCheckResult(candidateId);

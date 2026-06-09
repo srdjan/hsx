@@ -26,49 +26,63 @@ Deno.test({
   sanitizeResources: false,
   sanitizeOps: false,
   fn: async () => {
-  const shimPath = path.join(ROOT, "packages/hsx-widgets/build/shims/hsx-noop.ts");
-  const entryPoint = path.join(ROOT, "packages/hsx-widgets/examples/greeting-widget.tsx");
-  const configPath = path.join(ROOT, "deno.json");
+    const shimPath = path.join(
+      ROOT,
+      "packages/hsx-widgets/build/shims/hsx-noop.ts",
+    );
+    const entryPoint = path.join(
+      ROOT,
+      "packages/hsx-widgets/examples/greeting-widget.tsx",
+    );
+    const configPath = path.join(ROOT, "deno.json");
 
-  const result = await esbuild.build({
-    entryPoints: [entryPoint],
-    bundle: true,
-    format: "esm",
-    target: "es2020",
-    jsx: "automatic",
-    jsxImportSource: "npm:preact@10.25.4",
-    platform: "browser",
-    write: false,
-    plugins: [
-      {
-        name: "hsx-widgets-hsx-redirect",
-        setup(build) {
-          build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
-            path: shimPath,
-          }));
-          build.onResolve({ filter: /^hsx\/jsx-runtime/ }, () => ({
-            path: "npm:preact@10.25.4/jsx-runtime",
-            external: false,
-          }));
+    const result = await esbuild.build({
+      entryPoints: [entryPoint],
+      bundle: true,
+      format: "esm",
+      target: "es2020",
+      jsx: "automatic",
+      jsxImportSource: "npm:preact@10.25.4",
+      platform: "browser",
+      write: false,
+      plugins: [
+        {
+          name: "hsx-widgets-hsx-redirect",
+          setup(build) {
+            build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
+              path: shimPath,
+            }));
+            build.onResolve({ filter: /^hsx\/jsx-runtime/ }, () => ({
+              path: "npm:preact@10.25.4/jsx-runtime",
+              external: false,
+            }));
+          },
         },
-      },
-      ...denoPlugins({ configPath }),
-    ],
-  });
+        ...denoPlugins({ configPath }),
+      ],
+    });
 
-  await esbuild.stop();
+    await esbuild.stop();
 
-  // The core assertion: zero compilation errors
-  assertEquals(result.errors.length, 0, `esbuild errors: ${JSON.stringify(result.errors)}`);
+    // The core assertion: zero compilation errors
+    assertEquals(
+      result.errors.length,
+      0,
+      `esbuild errors: ${JSON.stringify(result.errors)}`,
+    );
 
-  // Verify output was produced
-  assertEquals(result.outputFiles.length > 0, true, "Expected at least one output file");
+    // Verify output was produced
+    assertEquals(
+      result.outputFiles.length > 0,
+      true,
+      "Expected at least one output file",
+    );
 
-  // Verify the output contains Preact JSX runtime references
-  const output = result.outputFiles[0].text;
-  // Preact's jsx-runtime exports jsx/jsxs functions that esbuild inlines
-  // The bundled output will contain preact internals
-  assertEquals(output.length > 0, true, "Output should not be empty");
+    // Verify the output contains Preact JSX runtime references
+    const output = result.outputFiles[0].text;
+    // Preact's jsx-runtime exports jsx/jsxs functions that esbuild inlines
+    // The bundled output will contain preact internals
+    assertEquals(output.length > 0, true, "Output should not be empty");
   },
 });
 

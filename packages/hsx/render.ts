@@ -1,16 +1,28 @@
 import type { Renderable, VNode } from "./jsx-runtime.ts";
 import { Fragment, isVNode } from "./jsx-runtime.ts";
 import {
-  type RenderContext,
-  type Props,
-  normalizeFormProps,
   normalizeAnchorProps,
+  normalizeFormProps,
   normalizeGenericHsxProps,
+  type Props,
+  type RenderContext,
 } from "./hsx-normalize.ts";
 
 const VOID_ELEMENTS = new Set([
-  "area","base","br","col","embed","hr","img","input","link",
-  "meta","param","source","track","wbr"
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
 ]);
 
 /**
@@ -110,8 +122,13 @@ function propsToAttrs(props: Props): string {
       continue;
     }
 
-    if (key === "style" && value && typeof value === "object" && !Array.isArray(value)) {
-      result += ` style="${escapeHtml(styleObjectToCss(value as Record<string, string | number>))}"`;
+    if (
+      key === "style" && value && typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      result += ` style="${
+        escapeHtml(styleObjectToCss(value as Record<string, string | number>))
+      }"`;
       continue;
     }
 
@@ -127,7 +144,7 @@ function propsToAttrs(props: Props): string {
       if (e instanceof TypeError && String(e.message).includes("circular")) {
         throw new Error(
           `Cannot serialize attribute "${attrName}": circular reference detected. ` +
-          `Ensure objects passed to hx-vals, hx-headers, etc. are JSON-serializable.`
+            `Ensure objects passed to hx-vals, hx-headers, etc. are JSON-serializable.`,
         );
       }
       throw e;
@@ -192,11 +209,12 @@ function renderComponent(node: VNode, ctx: RenderContext): string {
     const rendered = component(node.props);
 
     if (rendered instanceof Promise) {
-      const name = (component as { name?: string }).name || "(anonymous component)";
+      const name = (component as { name?: string }).name ||
+        "(anonymous component)";
       throw new Error(
         `Async components are not supported in SSR rendering. ` +
-        `Component "${name}" returned a Promise. ` +
-        `Use synchronous components or fetch data before rendering.`,
+          `Component "${name}" returned a Promise. ` +
+          `Use synchronous components or fetch data before rendering.`,
       );
     }
 
@@ -345,7 +363,11 @@ export interface RenderHtmlOptions {
    * Called for each HTML element during rendering, before its children are rendered.
    * Throw an Error to reject the element. Used by hsxPage for structural validation.
    */
-  onElement?: (tag: string, props: Record<string, unknown>, ancestors: ReadonlyArray<string>) => void;
+  onElement?: (
+    tag: string,
+    props: Record<string, unknown>,
+    ancestors: ReadonlyArray<string>,
+  ) => void;
 }
 
 /**

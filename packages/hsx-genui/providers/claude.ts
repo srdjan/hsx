@@ -38,16 +38,16 @@ type AnthropicMessage = {
 type AnthropicContentBlock =
   | { readonly type: "text"; readonly text: string }
   | {
-      readonly type: "tool_use";
-      readonly id: string;
-      readonly name: string;
-      readonly input: Record<string, unknown>;
-    }
+    readonly type: "tool_use";
+    readonly id: string;
+    readonly name: string;
+    readonly input: Record<string, unknown>;
+  }
   | {
-      readonly type: "tool_result";
-      readonly tool_use_id: string;
-      readonly content: string;
-    };
+    readonly type: "tool_result";
+    readonly tool_use_id: string;
+    readonly content: string;
+  };
 
 type AnthropicTool = {
   readonly name: string;
@@ -56,10 +56,21 @@ type AnthropicTool = {
 };
 
 type AnthropicStreamEvent =
-  | { readonly type: "content_block_start"; readonly index: number; readonly content_block: AnthropicContentBlock }
-  | { readonly type: "content_block_delta"; readonly index: number; readonly delta: AnthropicDelta }
+  | {
+    readonly type: "content_block_start";
+    readonly index: number;
+    readonly content_block: AnthropicContentBlock;
+  }
+  | {
+    readonly type: "content_block_delta";
+    readonly index: number;
+    readonly delta: AnthropicDelta;
+  }
   | { readonly type: "content_block_stop"; readonly index: number }
-  | { readonly type: "message_start"; readonly message: Record<string, unknown> }
+  | {
+    readonly type: "message_start";
+    readonly message: Record<string, unknown>;
+  }
   | { readonly type: "message_delta"; readonly delta: Record<string, unknown> }
   | { readonly type: "message_stop" }
   | { readonly type: "ping" };
@@ -190,7 +201,9 @@ async function* parseSSEStream(
  * });
  * ```
  */
-export function claudeProvider(options: ClaudeProviderOptions = {}): AIProvider {
+export function claudeProvider(
+  options: ClaudeProviderOptions = {},
+): AIProvider {
   const apiKey = options.apiKey ?? Deno.env.get("ANTHROPIC_API_KEY");
   const model = options.model ?? "claude-sonnet-4-6";
   const maxTokens = options.maxTokens ?? 4096;

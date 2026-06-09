@@ -17,8 +17,16 @@ import type { Result } from "./result.ts";
 
 /** Errors that can occur during widget validation or loading. */
 export type WidgetError =
-  | { readonly tag: "validation_error"; readonly message: string; readonly field?: string }
-  | { readonly tag: "load_error"; readonly message: string; readonly cause?: unknown };
+  | {
+    readonly tag: "validation_error";
+    readonly message: string;
+    readonly field?: string;
+  }
+  | {
+    readonly tag: "load_error";
+    readonly message: string;
+    readonly cause?: unknown;
+  };
 
 // =============================================================================
 // Props Validation
@@ -56,7 +64,9 @@ export type Widget<P> = {
   readonly render: (props: P) => Renderable;
 
   /** Optional async data loader. Called server-side to hydrate props from route params. */
-  readonly load?: (params: Record<string, string>) => Promise<Result<P, WidgetError>>;
+  readonly load?: (
+    params: Record<string, string>,
+  ) => Promise<Result<P, WidgetError>>;
 
   /** Shadow DOM mode for client-side rendering. Defaults to "none" in SSR. */
   readonly shadow?: "open" | "closed" | "none";

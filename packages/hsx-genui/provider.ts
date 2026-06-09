@@ -17,16 +17,16 @@ import type { ToolDefinition } from "@srdjan/hsx-widgets";
 export type Message =
   | { readonly role: "user"; readonly content: string }
   | {
-      readonly role: "assistant";
-      readonly content: string;
-      readonly toolCalls?: ReadonlyArray<ToolCall>;
-    }
+    readonly role: "assistant";
+    readonly content: string;
+    readonly toolCalls?: ReadonlyArray<ToolCall>;
+  }
   | { readonly role: "system"; readonly content: string }
   | {
-      readonly role: "tool_result";
-      readonly toolCallId: string;
-      readonly content: string;
-    };
+    readonly role: "tool_result";
+    readonly toolCallId: string;
+    readonly content: string;
+  };
 
 /** A tool call made by the AI model. */
 export type ToolCall = {

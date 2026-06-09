@@ -6,7 +6,7 @@
  */
 
 import type { Widget } from "../widget.ts";
-import { ok, fail } from "../result.ts";
+import { fail, ok } from "../result.ts";
 
 // =============================================================================
 // Props

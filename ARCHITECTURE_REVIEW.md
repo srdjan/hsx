@@ -1,23 +1,25 @@
 # HSX Architecture Review & Analysis
 
-> **Reviewed:** 2025-12-26
-> **Codebase Version:** 1.0.0
-> **Total LOC:** ~1,914 (core) + ~2,120 (examples)
+> **Reviewed:** 2025-12-26 **Codebase Version:** 1.0.0 **Total LOC:** ~1,914
+> (core) + ~2,120 (examples)
 
 ---
 
 ## Executive Summary
 
-HSX is a well-designed, minimal SSR-only JSX renderer for HTMX applications. The architecture is clean and pragmatic, but several issues need attention ranging from **critical security vulnerabilities** to **type system gaps** and **missing infrastructure**.
+HSX is a well-designed, minimal SSR-only JSX renderer for HTMX applications. The
+architecture is clean and pragmatic, but several issues need attention ranging
+from **critical security vulnerabilities** to **type system gaps** and **missing
+infrastructure**.
 
 ### Key Findings by Severity
 
-| Severity | Count | Categories |
-|----------|-------|------------|
-| **Critical** | 2 | Security (CSS injection, unhandled errors) |
-| **High** | 4 | Security, Error Handling, Type Safety |
-| **Medium** | 8 | Edge Cases, Performance, Documentation |
-| **Low** | 6 | Code Quality, Minor Improvements |
+| Severity     | Count | Categories                                 |
+| ------------ | ----- | ------------------------------------------ |
+| **Critical** | 2     | Security (CSS injection, unhandled errors) |
+| **High**     | 4     | Security, Error Handling, Type Safety      |
+| **Medium**   | 8     | Edge Cases, Performance, Documentation     |
+| **Low**      | 6     | Code Quality, Minor Improvements           |
 
 ---
 
@@ -32,24 +34,26 @@ function styleObjectToCss(style: Record<string, string | number>): string {
   return Object.entries(style)
     .map(([k, v]) => {
       const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-      return `${prop}:${v};`;  // Property name 'k' is NOT sanitized
+      return `${prop}:${v};`; // Property name 'k' is NOT sanitized
     })
     .join("");
 }
 ```
 
 **Attack Vector:**
+
 ```tsx
 const userStyle = {
-  "color;background:url(javascript:alert('xss'))": "red"
+  "color;background:url(javascript:alert('xss'))": "red",
 };
-<div style={userStyle}>Injected</div>
+<div style={userStyle}>Injected</div>;
 // Renders: style="color;background:url(javascript:alert('xss')):red;"
 ```
 
 **Impact:** XSS via CSS injection if style objects contain user-controlled keys.
 
 **Recommendation:** Validate and sanitize CSS property names:
+
 ```typescript
 const CSS_PROPERTY_RE = /^[a-zA-Z-]+$/;
 function styleObjectToCss(style: Record<string, string | number>): string {
@@ -57,7 +61,7 @@ function styleObjectToCss(style: Record<string, string | number>): string {
     .filter(([k]) => CSS_PROPERTY_RE.test(k))
     .map(([k, v]) => {
       const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-      return `${prop}:${String(v).replace(/[;{}]/g, '')};`;
+      return `${prop}:${String(v).replace(/[;{}]/g, "")};`;
     })
     .join("");
 }
@@ -86,11 +90,13 @@ const handle = async (req: Request): Promise<Response> => {
 ```
 
 **Impact:** Any error in handler or render function causes:
+
 1. Unhandled promise rejection
 2. Server crash or undefined behavior
 3. No error response to client
 
 **Recommendation:**
+
 ```typescript
 const handle = async (req: Request): Promise<Response> => {
   try {
@@ -136,9 +142,12 @@ type HsxAttrs = {
 a: AnchorAttrs & HsxAttrs & { behavior?: "boost" | "link" } & ExtensibleAttrs;
 ```
 
-**Problem:** Developers can use `target="_blank"` (HTML window targeting) or `target="#list"` (HTMX element targeting) on `<a>` tags, but they're semantically incompatible.
+**Problem:** Developers can use `target="_blank"` (HTML window targeting) or
+`target="#list"` (HTMX element targeting) on `<a>` tags, but they're
+semantically incompatible.
 
 **Recommendation:**
+
 - Rename HTMX target to `hsxTarget` or `swapTarget`
 - Or provide clear documentation on precedence
 
@@ -146,29 +155,34 @@ a: AnchorAttrs & HsxAttrs & { behavior?: "boost" | "link" } & ExtensibleAttrs;
 
 ### 2.2 Input Elements Accept HSX Attributes (Type vs. Runtime Mismatch)
 
-**File:** `packages/hsx/jsx-runtime.ts:342` vs `examples/hsx-components/server.tsx:56-64`
+**File:** `packages/hsx/jsx-runtime.ts:342` vs
+`examples/hsx-components/server.tsx:56-64`
 
 Type definition says no HSX:
+
 ```typescript
-input: InputAttrs & ExtensibleAttrs;  // No HsxAttrs!
+input: InputAttrs & ExtensibleAttrs; // No HsxAttrs!
 ```
 
 But example uses HSX on input:
+
 ```tsx
 <input
   type="checkbox"
-  post={TodoToggle}        // This shouldn't work per types
-  params={{ id: t.id }}    // But ExtensibleAttrs allows it
+  post={TodoToggle} // This shouldn't work per types
+  params={{ id: t.id }} // But ExtensibleAttrs allows it
   target={ids.list}
-/>
+/>;
 ```
 
 **Impact:**
+
 - Types don't match documented/expected behavior
 - `ExtensibleAttrs = Record<string, unknown>` bypasses all type safety
 - Confusing for users
 
 **Recommendation:** Either:
+
 1. Add `HsxAttrs` to `input` if intentional
 2. Fix the example to use proper patterns (wrap in container)
 
@@ -183,19 +197,21 @@ const build = (params: Params): string => {
   let result = path as string;
   if (params && typeof params === "object") {
     for (const [key, value] of Object.entries(params)) {
-      result = result.replace(`:${key}`, String(value));  // No validation!
+      result = result.replace(`:${key}`, String(value)); // No validation!
     }
   }
-  return result;  // Returns "/users/:id" if params.id missing!
+  return result; // Returns "/users/:id" if params.id missing!
 };
 ```
 
 **Problems:**
+
 1. Missing params leave `:param` in URL
 2. No path traversal prevention (`../../../etc/passwd`)
 3. No URL encoding
 
 **Recommendation:**
+
 ```typescript
 const build = (params: Params): string => {
   let result = path as string;
@@ -210,7 +226,7 @@ const build = (params: Params): string => {
   });
 
   if (missing.length > 0) {
-    throw new Error(`Missing required params: ${missing.join(', ')}`);
+    throw new Error(`Missing required params: ${missing.join(", ")}`);
   }
   return result;
 };
@@ -229,14 +245,16 @@ parts.push(
 );
 ```
 
-**Impact:** Circular objects cause uncaught `TypeError: Converting circular structure to JSON`.
+**Impact:** Circular objects cause uncaught
+`TypeError: Converting circular structure to JSON`.
 
 **Recommendation:**
+
 ```typescript
 try {
   parts.push(` ${attrName}="${escapeAttr(JSON.stringify(value))}"`);
 } catch (e) {
-  if (e instanceof TypeError && e.message.includes('circular')) {
+  if (e instanceof TypeError && e.message.includes("circular")) {
     throw new Error(`Circular reference in attribute "${attrName}"`);
   }
   throw e;
@@ -260,9 +278,11 @@ if (typeof node.type === "function") {
 }
 ```
 
-**Impact:** Async components execute during validation and produce Promise objects that fail validation with confusing errors.
+**Impact:** Async components execute during validation and produce Promise
+objects that fail validation with confusing errors.
 
 **Recommendation:** Detect and reject async components:
+
 ```typescript
 if (typeof node.type === "function") {
   const rendered = (node.type as ComponentType)(node.props);
@@ -293,6 +313,7 @@ type PathParams<Path extends string> =
 **Impact:** Routes with 6+ segments won't extract parameters beyond the 5th.
 
 **Recommendation:** Document this limitation prominently:
+
 ```typescript
 /**
  * Extract parameter names from a path template.
@@ -319,7 +340,7 @@ type PathParams<Path extends string> =
 export function hsxPage(renderFn: () => Renderable): HsxPage {
   const Component: ComponentType = (_props) => {
     const tree = renderFn();
-    validateNode(tree);  // Full tree walk every render!
+    validateNode(tree); // Full tree walk every render!
     return tree;
   };
   // ...
@@ -329,10 +350,11 @@ export function hsxPage(renderFn: () => Renderable): HsxPage {
 **Impact:** For complex pages, validation overhead is repeated on every request.
 
 **Recommendation:** Add development-only validation:
+
 ```typescript
 export function hsxPage(
   renderFn: () => Renderable,
-  options: { validateOnce?: boolean } = {}
+  options: { validateOnce?: boolean } = {},
 ): HsxPage {
   let validated = false;
 
@@ -357,17 +379,18 @@ export function hsxPage(
 ```typescript
 interface ButtonAttrs extends GlobalAttrs {
   formAction?: string;
-  formaction?: string;     // lowercase duplicate
+  formaction?: string; // lowercase duplicate
   formMethod?: string;
-  formmethod?: string;     // lowercase duplicate
+  formmethod?: string; // lowercase duplicate
   formNoValidate?: boolean;
   formnovalidate?: boolean; // lowercase duplicate
   formTarget?: string;
-  formtarget?: string;     // lowercase duplicate
+  formtarget?: string; // lowercase duplicate
 }
 ```
 
-**Issue:** Only camelCase versions are handled in `propsToAttrs()`. Lowercase versions are dead code.
+**Issue:** Only camelCase versions are handled in `propsToAttrs()`. Lowercase
+versions are dead code.
 
 **Recommendation:** Remove duplicates or add handling in render.ts.
 
@@ -380,19 +403,24 @@ interface ButtonAttrs extends GlobalAttrs {
 ```typescript
 function matchPath<Params>(pattern: string, pathname: string): Params | null {
   // ...
-  const params: Record<string, string> = {};  // All string values
+  const params: Record<string, string> = {}; // All string values
   names.forEach((name, i) => {
     params[name] = match[i + 1];
   });
-  return params as Params;  // Unsafe cast!
+  return params as Params; // Unsafe cast!
 }
 ```
 
-**Issue:** Actual params are `Record<string, string>` but cast to generic `Params`.
+**Issue:** Actual params are `Record<string, string>` but cast to generic
+`Params`.
 
 **Recommendation:** Use explicit return type:
+
 ```typescript
-function matchPath(pattern: string, pathname: string): Record<string, string> | null
+function matchPath(
+  pattern: string,
+  pathname: string,
+): Record<string, string> | null;
 ```
 
 ---
@@ -408,9 +436,11 @@ type ExtensibleAttrs = Record<string, unknown>;
 button: ButtonAttrs & HsxAttrs & ExtensibleAttrs;
 ```
 
-**Issue:** Any attribute is allowed on any element, defeating type checking for typos.
+**Issue:** Any attribute is allowed on any element, defeating type checking for
+typos.
 
 **Recommendation:** Consider stricter fallback:
+
 ```typescript
 type ExtensibleAttrs = {
   [key: `data-${string}`]: string | number | boolean | undefined;
@@ -425,6 +455,7 @@ type ExtensibleAttrs = {
 **File:** `CLAUDE.md`
 
 > "**Type System:**
+>
 > - `hsx-jsx.d.ts` - Augments JSX.IntrinsicElements..."
 
 **Issue:** File `hsx-jsx.d.ts` doesn't exist. JSX types are in `jsx-runtime.ts`.
@@ -439,20 +470,26 @@ type ExtensibleAttrs = {
 
 ```typescript
 if (key === "style" && value && typeof value === "object") {
-  parts.push(` style="${escapeAttr(styleObjectToCss(value as Record<string, string | number>))}"`);
+  parts.push(
+    ` style="${
+      escapeAttr(styleObjectToCss(value as Record<string, string | number>))
+    }"`,
+  );
 }
 ```
 
 **Issues:**
+
 - `NaN`, `Infinity` produce invalid CSS
 - Very large objects may exceed attribute limits
 - No type validation at runtime
 
 **Recommendation:**
+
 ```typescript
 function isValidStyleValue(v: unknown): v is string | number {
-  if (typeof v === 'string') return true;
-  if (typeof v === 'number') return Number.isFinite(v);
+  if (typeof v === "string") return true;
+  if (typeof v === "number") return Number.isFinite(v);
   return false;
 }
 ```
@@ -466,15 +503,17 @@ function isValidStyleValue(v: unknown): v is string | number {
 **Current State:** `deno task test` outputs "No tests yet"
 
 **Files Needing Tests:**
-| Module | Priority | Test Focus |
-|--------|----------|------------|
-| `render.ts` | Critical | XSS prevention, escaping edge cases |
-| `hsx-normalize.ts` | High | Attribute mapping correctness |
-| `hsx-types.ts` | High | Path param extraction |
-| `hsx-component.ts` | High | Route matching, handler flow |
-| `hsx-page.ts` | Medium | Validation rules |
 
-**Recommendation:** Add test infrastructure with minimum coverage for security-critical paths.
+| Module             | Priority | Test Focus                          |
+| ------------------ | -------- | ----------------------------------- |
+| `render.ts`        | Critical | XSS prevention, escaping edge cases |
+| `hsx-normalize.ts` | High     | Attribute mapping correctness       |
+| `hsx-types.ts`     | High     | Path param extraction               |
+| `hsx-component.ts` | High     | Route matching, handler flow        |
+| `hsx-page.ts`      | Medium   | Validation rules                    |
+
+**Recommendation:** Add test infrastructure with minimum coverage for
+security-critical paths.
 
 ---
 
@@ -483,12 +522,14 @@ function isValidStyleValue(v: unknown): v is string | number {
 **File:** `.github/workflows/publish.yml`
 
 Current pipeline only runs type check:
+
 ```yaml
 - name: Type check
   run: deno task check
 ```
 
 **Recommendation:** Add test step when tests exist:
+
 ```yaml
 - name: Run tests
   run: deno test --allow-read --allow-net
@@ -504,17 +545,21 @@ Current pipeline only runs type check:
 **File:** `packages/hsx/render.ts:155`
 
 ```typescript
-if (node.type === Fragment) {  // Identity comparison
+if (node.type === Fragment) { // Identity comparison
   return renderNode(node.props.children, ctx);
 }
 ```
 
-**Issue:** If `Fragment` is imported/re-exported differently, identity comparison fails.
+**Issue:** If `Fragment` is imported/re-exported differently, identity
+comparison fails.
 
 **Recommendation:** Use function name comparison as fallback:
+
 ```typescript
-if (node.type === Fragment ||
-    (typeof node.type === 'function' && node.type.name === 'Fragment')) {
+if (
+  node.type === Fragment ||
+  (typeof node.type === "function" && node.type.name === "Fragment")
+) {
   return renderNode(node.props.children, ctx);
 }
 ```
@@ -530,7 +575,7 @@ if (node.type === Fragment ||
 export type ComponentType<P = {}> = (props: ComponentProps<P>) => Renderable;
 
 // hsx-component.ts:81
-Props = unknown
+Props = unknown;
 ```
 
 **Issue:** `{}` vs `unknown` as default - inconsistent style.
@@ -560,13 +605,16 @@ throw new Error(
 ```
 
 **Improvement:** Add specific suggestion:
+
 ```typescript
 const suggestions: Record<string, string> = {
-  'hx-get': 'get',
-  'hx-post': 'post',
+  "hx-get": "get",
+  "hx-post": "post",
   // ...
 };
-const suggestion = suggestions[key] ? ` Use "${suggestions[key]}" instead.` : '';
+const suggestion = suggestions[key]
+  ? ` Use "${suggestions[key]}" instead.`
+  : "";
 throw new Error(
   `Manual hx-* props are disallowed. Found "${key}" on <${tag}>.${suggestion}`,
 );
@@ -587,13 +635,13 @@ throw new Error(
 
 ### 5.2 Design Decisions Worth Documenting
 
-| Decision | Rationale | Trade-off |
-|----------|-----------|-----------|
-| No async components | SSR simplicity | Limits composition patterns |
-| Manual hx-* rejection | Enforce HSX pipeline | Less escape hatch flexibility |
-| 5-segment path limit | Prevent infinite type recursion | Limits deep nesting |
-| ExtensibleAttrs everywhere | Allow unknown attributes | Weaker type checking |
-| Semantic tag style ban | Force consistent structure | Less styling flexibility |
+| Decision                   | Rationale                       | Trade-off                     |
+| -------------------------- | ------------------------------- | ----------------------------- |
+| No async components        | SSR simplicity                  | Limits composition patterns   |
+| Manual hx-* rejection      | Enforce HSX pipeline            | Less escape hatch flexibility |
+| 5-segment path limit       | Prevent infinite type recursion | Limits deep nesting           |
+| ExtensibleAttrs everywhere | Allow unknown attributes        | Weaker type checking          |
+| Semantic tag style ban     | Force consistent structure      | Less styling flexibility      |
 
 ### 5.3 Missing Architecture Components
 
@@ -624,7 +672,7 @@ throw new Error(
 
 ### Medium-Term (Future Releases)
 
-1. Remove `ExtensibleAttrs` or restrict to data-*/aria-*
+1. Remove `ExtensibleAttrs` or restrict to data-_/aria-_
 2. Add error boundary component pattern
 3. Implement streaming render option
 4. Add development mode with better error messages
@@ -634,17 +682,17 @@ throw new Error(
 
 ## 7. SECURITY CHECKLIST
 
-| Check | Status | Notes |
-|-------|--------|-------|
-| HTML text escaping | PASS | `escapeHtml()` covers &<>"' |
-| HTML attribute escaping | PASS | Uses `escapeAttr()` |
-| Raw text elements | WARN | `<script>/<style>` not escaped (documented) |
-| CSS property names | FAIL | Not sanitized - injection possible |
-| CSS property values | WARN | Special values not validated |
-| URL parameters | FAIL | No encoding or validation |
-| JSON in attributes | WARN | Circular refs crash |
-| DoS protection | PASS | maxDepth/maxNodes limits exist |
-| Manual hx-* rejection | PASS | Enforced in render |
+| Check                   | Status | Notes                                       |
+| ----------------------- | ------ | ------------------------------------------- |
+| HTML text escaping      | PASS   | `escapeHtml()` covers &<>"'                 |
+| HTML attribute escaping | PASS   | Uses `escapeAttr()`                         |
+| Raw text elements       | WARN   | `<script>/<style>` not escaped (documented) |
+| CSS property names      | FAIL   | Not sanitized - injection possible          |
+| CSS property values     | WARN   | Special values not validated                |
+| URL parameters          | FAIL   | No encoding or validation                   |
+| JSON in attributes      | WARN   | Circular refs crash                         |
+| DoS protection          | PASS   | maxDepth/maxNodes limits exist              |
+| Manual hx-* rejection   | PASS   | Enforced in render                          |
 
 ---
 
@@ -664,15 +712,15 @@ Bundle Size:         ~35KB (minified estimate)
 
 ## Appendix A: File Reference
 
-| File | LOC | Purpose |
-|------|-----|---------|
-| `jsx-runtime.ts` | 545 | JSX factory, VNode types, IntrinsicElements |
-| `render.ts` | 383 | VNode → HTML, escaping, HTMX injection |
-| `hsx-component.ts` | 259 | Co-located route/handler/render pattern |
-| `hsx-page.ts` | 246 | Full-page validation guardrails |
-| `hsx-types.ts` | 215 | Route, Id, HsxSwap, HsxTrigger types |
-| `hsx-normalize.ts` | 213 | HSX → hx-* attribute mapping |
-| `mod.ts` | 53 | Public API exports |
+| File               | LOC | Purpose                                     |
+| ------------------ | --- | ------------------------------------------- |
+| `jsx-runtime.ts`   | 545 | JSX factory, VNode types, IntrinsicElements |
+| `render.ts`        | 383 | VNode → HTML, escaping, HTMX injection      |
+| `hsx-component.ts` | 259 | Co-located route/handler/render pattern     |
+| `hsx-page.ts`      | 246 | Full-page validation guardrails             |
+| `hsx-types.ts`     | 215 | Route, Id, HsxSwap, HsxTrigger types        |
+| `hsx-normalize.ts` | 213 | HSX → hx-* attribute mapping                |
+| `mod.ts`           | 53  | Public API exports                          |
 
 ---
 
@@ -694,4 +742,4 @@ User Input → JSX Props
 
 ---
 
-*End of Architecture Review*
+_End of Architecture Review_

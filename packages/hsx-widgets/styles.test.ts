@@ -12,7 +12,7 @@ import { renderHtml } from "@srdjan/hsx/core";
 import { hsxPage } from "@srdjan/hsx";
 import { jsx } from "hsx/jsx-runtime";
 
-import { ok, fail } from "./result.ts";
+import { fail, ok } from "./result.ts";
 import type { Widget } from "./widget.ts";
 import { collectWidgetStyles, WidgetStyles } from "./styles.ts";
 import { widgetToHsxComponent } from "./ssr-adapter.ts";
@@ -36,7 +36,8 @@ const greetingWidget: Widget<GreetingProps> = {
     },
   },
   styles: ".greeting { color: blue; }",
-  render: (props) => jsx("div", { class: "greeting", children: `Hello, ${props.name}!` }),
+  render: (props) =>
+    jsx("div", { class: "greeting", children: `Hello, ${props.name}!` }),
 };
 
 const counterWidget: Widget<CounterProps> = {
@@ -44,7 +45,9 @@ const counterWidget: Widget<CounterProps> = {
   props: {
     validate(raw: unknown) {
       const obj = raw as Record<string, unknown>;
-      const count = typeof obj.count === "string" ? parseInt(obj.count, 10) : obj.count;
+      const count = typeof obj.count === "string"
+        ? parseInt(obj.count, 10)
+        : obj.count;
       if (typeof count !== "number" || isNaN(count)) {
         return fail({ tag: "validation_error", message: "Count required" });
       }
@@ -52,7 +55,8 @@ const counterWidget: Widget<CounterProps> = {
     },
   },
   styles: ".counter { font-weight: bold; }",
-  render: (props) => jsx("span", { class: "counter", children: String(props.count) }),
+  render: (props) =>
+    jsx("span", { class: "counter", children: String(props.count) }),
 };
 
 const noStyleWidget: Widget<GreetingProps> = {
@@ -72,7 +76,11 @@ Deno.test("collectWidgetStyles returns combined CSS from multiple widgets", () =
 });
 
 Deno.test("collectWidgetStyles deduplicates by widget tag", () => {
-  const css = collectWidgetStyles([greetingWidget, greetingWidget, counterWidget]);
+  const css = collectWidgetStyles([
+    greetingWidget,
+    greetingWidget,
+    counterWidget,
+  ]);
   // greeting CSS should appear exactly once
   const matches = css.match(/\.greeting/g);
   assertEquals(matches?.length, 1);

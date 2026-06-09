@@ -55,7 +55,9 @@ function parseArgs(args: string[]): BuildArgs {
 
   const target = parsed.target as BuildTarget;
   if (!target || !["embeds", "snippet", "all"].includes(target)) {
-    console.error("Usage: --target=embeds|snippet|all [--entry=path] [--export=name] [--outDir=path]");
+    console.error(
+      "Usage: --target=embeds|snippet|all [--entry=path] [--export=name] [--outDir=path]",
+    );
     Deno.exit(1);
   }
 
@@ -70,7 +72,9 @@ function parseArgs(args: string[]): BuildArgs {
 function resolveWidgetTargets(args: BuildArgs): ReadonlyArray<WidgetTarget> {
   if (args.entry || args.exportName) {
     if (!args.entry || !args.exportName) {
-      console.error("When using custom widget build, provide both --entry and --export.");
+      console.error(
+        "When using custom widget build, provide both --entry and --export.",
+      );
       return [];
     }
     return [{ entry: args.entry, exportName: args.exportName }];
@@ -171,7 +175,9 @@ async function buildSingleEmbed(
     return true;
   } finally {
     // Clean up temp file
-    try { await Deno.remove(tmpEntry); } catch { /* ignore */ }
+    try {
+      await Deno.remove(tmpEntry);
+    } catch { /* ignore */ }
   }
 }
 

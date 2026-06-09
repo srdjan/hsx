@@ -8,4 +8,3 @@ export const ids = {
   feed: id("activity-feed"),
   status: id("connection-status"),
 };
-

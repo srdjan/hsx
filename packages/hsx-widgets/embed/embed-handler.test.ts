@@ -31,7 +31,10 @@ function makeWidgets(
 }
 
 function makeHandler(
-  widgets: ReadonlyMap<string, EmbeddableWidget> = makeWidgets(["hsx-test", testWidget]),
+  widgets: ReadonlyMap<string, EmbeddableWidget> = makeWidgets([
+    "hsx-test",
+    testWidget,
+  ]),
   options: { basePath?: string; bundlePath?: string } = {},
 ) {
   return createEmbedHandler(widgets, options);
@@ -157,7 +160,7 @@ Deno.test("widget with empty styles renders without extra CSS", async () => {
 
 Deno.test("special characters in query params are escaped", async () => {
   const handler = makeHandler();
-  const res = handler(req('/embed/hsx-test?name=<script>alert(1)</script>'));
+  const res = handler(req("/embed/hsx-test?name=<script>alert(1)</script>"));
   const html = await res!.text();
 
   // Should be escaped in the data-props attribute

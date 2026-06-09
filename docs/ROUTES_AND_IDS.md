@@ -1,7 +1,6 @@
 # Routes and Branded IDs
 
-HSX provides small helper types for making your templates less
-stringly-typed.
+HSX provides small helper types for making your templates less stringly-typed.
 
 ## Routes
 
@@ -28,8 +27,8 @@ export const routes = {
 ```
 
 HSX attributes like `get` and `post` accept either raw strings or
-`Route<string, Params>` values. During SSR, HSX resolves them into final
-URLs using `build(params)` when provided.
+`Route<string, Params>` values. During SSR, HSX resolves them into final URLs
+using `build(params)` when provided.
 
 ## Branded IDs
 
@@ -44,6 +43,6 @@ export const ids = {
 };
 ```
 
-These are runtime strings (e.g. `"#todo-list"`), but branded types at
-compile time. HSX attributes like `target` accept `Id<string> | string`,
-so you can catch typos earlier and share IDs across templates.
+These are runtime strings (e.g. `"#todo-list"`), but branded types at compile
+time. HSX attributes like `target` accept `Id<string> | string`, so you can
+catch typos earlier and share IDs across templates.

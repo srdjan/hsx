@@ -24,7 +24,7 @@ You write HTML-ish JSX using HSX attributes:
   headers={{ "X-Tenant-Id": "tenant-123" }}
 >
   Show open
-</button>
+</button>;
 ```
 
 ## Normalization (SSR)
@@ -37,41 +37,42 @@ During rendering, HSX:
 
 ### Attribute Mapping
 
-| HSX Attribute | HTMX Attribute | Notes |
-|---------------|----------------|-------|
-| `get` | `hx-get` | URL string or Route |
-| `post` | `hx-post` | URL string or Route |
-| `put` | `hx-put` | URL string or Route |
-| `patch` | `hx-patch` | URL string or Route |
-| `delete` | `hx-delete` | URL string or Route |
-| `target` | `hx-target` | CSS selector or Id |
-| `swap` | `hx-swap` | Swap strategy |
-| `trigger` | `hx-trigger` | Event specification |
-| `vals` | `hx-vals` | JSON-encoded object |
-| `headers` | `hx-headers` | JSON-encoded object |
-| `indicator` | `hx-indicator` | CSS selector or Id; elements that get `htmx-request` during the request |
-| `disable` | `hx-disable` | CSS selector or Id to disable during the request (HTMX 4; replaces v2 `hx-disabled-elt`) |
-| `sync` | `hx-sync` | Request synchronization spec, e.g. `this:abort` |
-| `confirm` | `hx-confirm` | Confirmation prompt before the request |
-| `select` | `hx-select` | CSS selector for the part of the response to swap |
-| `pushUrl` | `hx-push-url` | `true`/`false` or an explicit URL; booleans render as `"true"`/`"false"` |
-| `swapOob` | `hx-swap-oob` | `true` or a swap spec; on returned fragment elements for out-of-band swaps |
-| `behavior="boost"` | `hx-boost="true"` | Anchor boost mode |
+| HSX Attribute      | HTMX Attribute    | Notes                                                                                    |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------- |
+| `get`              | `hx-get`          | URL string or Route                                                                      |
+| `post`             | `hx-post`         | URL string or Route                                                                      |
+| `put`              | `hx-put`          | URL string or Route                                                                      |
+| `patch`            | `hx-patch`        | URL string or Route                                                                      |
+| `delete`           | `hx-delete`       | URL string or Route                                                                      |
+| `target`           | `hx-target`       | CSS selector or Id                                                                       |
+| `swap`             | `hx-swap`         | Swap strategy                                                                            |
+| `trigger`          | `hx-trigger`      | Event specification                                                                      |
+| `vals`             | `hx-vals`         | JSON-encoded object                                                                      |
+| `headers`          | `hx-headers`      | JSON-encoded object                                                                      |
+| `indicator`        | `hx-indicator`    | CSS selector or Id; elements that get `htmx-request` during the request                  |
+| `disable`          | `hx-disable`      | CSS selector or Id to disable during the request (HTMX 4; replaces v2 `hx-disabled-elt`) |
+| `sync`             | `hx-sync`         | Request synchronization spec, e.g. `this:abort`                                          |
+| `confirm`          | `hx-confirm`      | Confirmation prompt before the request                                                   |
+| `select`           | `hx-select`       | CSS selector for the part of the response to swap                                        |
+| `pushUrl`          | `hx-push-url`     | `true`/`false` or an explicit URL; booleans render as `"true"`/`"false"`                 |
+| `swapOob`          | `hx-swap-oob`     | `true` or a swap spec; on returned fragment elements for out-of-band swaps               |
+| `behavior="boost"` | `hx-boost="true"` | Anchor boost mode                                                                        |
 
 ### Loading indicators in HTMX 4
 
-HTMX 4 applies the `htmx-request` class to the triggering element by default, and
-to the element(s) named by `indicator` when it is set. Point `indicator` at a
-separate element (a spinner, a sibling, a region) to drive that element's loading
-state instead of, or in addition to, the trigger:
+HTMX 4 applies the `htmx-request` class to the triggering element by default,
+and to the element(s) named by `indicator` when it is set. Point `indicator` at
+a separate element (a spinner, a sibling, a region) to drive that element's
+loading state instead of, or in addition to, the trigger:
 
 ```tsx
 <button get={routes.search} indicator={ids.spinner}>Search</button>
 <span id="spinner" class="htmx-indicator">Loading...</span>
 ```
 
-Booleans on `pushUrl`/`swapOob` are emitted as the literal strings `"true"`/`"false"`,
-not as bare attributes, because HTMX treats a valueless `hx-push-url` as falsy.
+Booleans on `pushUrl`/`swapOob` are emitted as the literal strings
+`"true"`/`"false"`, not as bare attributes, because HTMX treats a valueless
+`hx-push-url` as falsy.
 
 ### Output HTML
 
@@ -94,18 +95,18 @@ The browser sees:
 
 HSX attributes work on these elements:
 
-| Element | Primary Use |
-|---------|-------------|
-| `form` | Form submissions with POST/GET |
-| `button` | Actions with any HTTP verb |
-| `a` | Links with boost mode |
-| `div` | Generic containers |
-| `span` | Inline containers |
-| `section` | Semantic sections |
-| `article` | Semantic articles |
-| `ul` | Lists |
-| `tbody` | Table bodies |
-| `tr` | Table rows |
+| Element   | Primary Use                    |
+| --------- | ------------------------------ |
+| `form`    | Form submissions with POST/GET |
+| `button`  | Actions with any HTTP verb     |
+| `a`       | Links with boost mode          |
+| `div`     | Generic containers             |
+| `span`    | Inline containers              |
+| `section` | Semantic sections              |
+| `article` | Semantic articles              |
+| `ul`      | Lists                          |
+| `tbody`   | Table bodies                   |
+| `tr`      | Table rows                     |
 
 ## Script Injection (SSR)
 
@@ -120,10 +121,12 @@ just before `</body>`.
 ### Detection Logic
 
 The injection happens when:
+
 - Any HSX attribute (`get`, `post`, `target`, etc.) is used
 - The `injectHtmx` option is explicitly `true`
 
 The injection is skipped when:
+
 - No HSX attributes are used AND `injectHtmx` is not `true`
 - The `injectHtmx` option is explicitly `false`
 
@@ -156,6 +159,7 @@ HSX throws an error if you try to use `hx-*` attributes directly:
 ```
 
 This ensures all HTMX attributes go through HSX normalization, enabling:
+
 - Consistent route resolution
 - Type checking
 - Automatic HTMX detection
@@ -168,4 +172,5 @@ HSX includes vendored HTMX v4 (alpha). The file is located at:
 vendor/htmx/htmx.js
 ```
 
-You can replace this with a different HTMX version if needed, or use `injectHtmx: false` and include your own script tag.
+You can replace this with a different HTMX version if needed, or use
+`injectHtmx: false` and include your own script tag.

@@ -11,7 +11,14 @@
  * @module
  */
 
-import type { Id, HsxSwap, HsxTrigger, HsxExt, Urlish, Params } from "./hsx-types.ts";
+import type {
+  HsxExt,
+  HsxSwap,
+  HsxTrigger,
+  Id,
+  Params,
+  Urlish,
+} from "./hsx-types.ts";
 
 // =============================================================================
 // Core JSX Types
@@ -386,7 +393,11 @@ export namespace JSX {
     // Form elements with HSX support
     form: FormAttrs & HsxAttrs & ExtensibleAttrs;
     button: ButtonAttrs & HsxAttrs & ExtensibleAttrs;
-    a: AnchorAttrs & HsxAttrs & { behavior?: "boost" | "link" } & ExtensibleAttrs;
+    a:
+      & AnchorAttrs
+      & HsxAttrs
+      & { behavior?: "boost" | "link" }
+      & ExtensibleAttrs;
 
     // Div with HSX support (common HTMX target)
     div: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
@@ -397,9 +408,15 @@ export namespace JSX {
     textarea: TextareaAttrs & HsxAttrs & ExtensibleAttrs;
     select: SelectAttrs & HsxAttrs & ExtensibleAttrs;
     option: OptionAttrs & ExtensibleAttrs;
-    optgroup: GlobalAttrs & { label?: string; disabled?: boolean } & ExtensibleAttrs;
+    optgroup:
+      & GlobalAttrs
+      & { label?: string; disabled?: boolean }
+      & ExtensibleAttrs;
     label: LabelAttrs & ExtensibleAttrs;
-    fieldset: GlobalAttrs & { disabled?: boolean; form?: string; name?: string } & ExtensibleAttrs;
+    fieldset:
+      & GlobalAttrs
+      & { disabled?: boolean; form?: string; name?: string }
+      & ExtensibleAttrs;
     legend: GlobalAttrs & ExtensibleAttrs;
 
     // Media
@@ -425,8 +442,21 @@ export namespace JSX {
       muted?: boolean;
       preload?: "none" | "metadata" | "auto";
     } & ExtensibleAttrs;
-    source: GlobalAttrs & { src?: string; type?: string; srcSet?: string; srcset?: string; sizes?: string; media?: string } & ExtensibleAttrs;
-    track: GlobalAttrs & { src?: string; kind?: string; srclang?: string; label?: string; default?: boolean } & ExtensibleAttrs;
+    source: GlobalAttrs & {
+      src?: string;
+      type?: string;
+      srcSet?: string;
+      srcset?: string;
+      sizes?: string;
+      media?: string;
+    } & ExtensibleAttrs;
+    track: GlobalAttrs & {
+      src?: string;
+      kind?: string;
+      srclang?: string;
+      label?: string;
+      default?: boolean;
+    } & ExtensibleAttrs;
     iframe: IframeAttrs & ExtensibleAttrs;
 
     // Document metadata
@@ -463,7 +493,11 @@ export namespace JSX {
     hr: GlobalAttrs & ExtensibleAttrs;
     pre: GlobalAttrs & ExtensibleAttrs;
     blockquote: GlobalAttrs & { cite?: string } & ExtensibleAttrs;
-    ol: GlobalAttrs & HsxAttrs & { reversed?: boolean; start?: number; type?: "1" | "a" | "A" | "i" | "I" } & ExtensibleAttrs;
+    ol: GlobalAttrs & HsxAttrs & {
+      reversed?: boolean;
+      start?: number;
+      type?: "1" | "a" | "A" | "i" | "I";
+    } & ExtensibleAttrs;
     ul: GlobalAttrs & HsxAttrs & ExtensibleAttrs;
     li: GlobalAttrs & HsxAttrs & { value?: number } & ExtensibleAttrs;
     dl: GlobalAttrs & ExtensibleAttrs;
@@ -498,7 +532,10 @@ export namespace JSX {
     bdo: GlobalAttrs & ExtensibleAttrs;
     br: GlobalAttrs & ExtensibleAttrs;
     wbr: GlobalAttrs & ExtensibleAttrs;
-    time: GlobalAttrs & { dateTime?: string; datetime?: string } & ExtensibleAttrs;
+    time:
+      & GlobalAttrs
+      & { dateTime?: string; datetime?: string }
+      & ExtensibleAttrs;
     data: GlobalAttrs & { value?: string } & ExtensibleAttrs;
 
     // Tables
@@ -520,11 +557,26 @@ export namespace JSX {
     menu: GlobalAttrs & ExtensibleAttrs;
 
     // Embedded content
-    object: GlobalAttrs & { data?: string; type?: string; name?: string; width?: number | string; height?: number | string; form?: string } & ExtensibleAttrs;
-    embed: GlobalAttrs & { src?: string; type?: string; width?: number | string; height?: number | string } & ExtensibleAttrs;
+    object: GlobalAttrs & {
+      data?: string;
+      type?: string;
+      name?: string;
+      width?: number | string;
+      height?: number | string;
+      form?: string;
+    } & ExtensibleAttrs;
+    embed: GlobalAttrs & {
+      src?: string;
+      type?: string;
+      width?: number | string;
+      height?: number | string;
+    } & ExtensibleAttrs;
     param: GlobalAttrs & { name?: string; value?: string } & ExtensibleAttrs;
     picture: GlobalAttrs & ExtensibleAttrs;
-    canvas: GlobalAttrs & { width?: number | string; height?: number | string } & ExtensibleAttrs;
+    canvas:
+      & GlobalAttrs
+      & { width?: number | string; height?: number | string }
+      & ExtensibleAttrs;
     svg: SvgAttrs;
 
     // SVG elements
@@ -563,9 +615,21 @@ export namespace JSX {
     slot: GlobalAttrs & { name?: string } & ExtensibleAttrs;
 
     // Output
-    output: GlobalAttrs & { htmlFor?: string; for?: string; form?: string; name?: string } & ExtensibleAttrs;
+    output: GlobalAttrs & {
+      htmlFor?: string;
+      for?: string;
+      form?: string;
+      name?: string;
+    } & ExtensibleAttrs;
     progress: GlobalAttrs & { value?: number; max?: number } & ExtensibleAttrs;
-    meter: GlobalAttrs & { value?: number; min?: number; max?: number; low?: number; high?: number; optimum?: number } & ExtensibleAttrs;
+    meter: GlobalAttrs & {
+      value?: number;
+      min?: number;
+      max?: number;
+      low?: number;
+      high?: number;
+      optimum?: number;
+    } & ExtensibleAttrs;
   }
 }
 

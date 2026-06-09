@@ -8,4 +8,3 @@ export const ids = {
   modalContainer: id("modal-container"),
   notification: id("notification"),
 };
-

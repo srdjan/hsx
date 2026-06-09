@@ -93,7 +93,9 @@ export function renderSSE(
 }
 
 /** Create an HTTP Response with SSE headers from a ReadableStream. */
-export function createSSEResponse(stream: ReadableStream<Uint8Array>): Response {
+export function createSSEResponse(
+  stream: ReadableStream<Uint8Array>,
+): Response {
   return new Response(stream, {
     headers: {
       "content-type": "text/event-stream",

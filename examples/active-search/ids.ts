@@ -9,4 +9,3 @@ export const ids = {
   results: id("search-results"),
   indicator: id("search-indicator"),
 };
-

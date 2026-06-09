@@ -28,7 +28,8 @@ export function wrapWidgetContent(
   const children: Renderable[] = [];
 
   // Include styles when: non-empty AND (shadow DOM mode OR not hoisted)
-  const includeStyles = styles.length > 0 && (shadowMode !== "none" || !hoistStyles);
+  const includeStyles = styles.length > 0 &&
+    (shadowMode !== "none" || !hoistStyles);
   if (includeStyles) {
     children.push(jsx("style", { children: styles }));
   }

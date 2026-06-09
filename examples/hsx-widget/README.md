@@ -22,7 +22,13 @@ deno task example:hsx-widget
 ## Host-Page Snippet
 
 ```html
-<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World&message=Hi!"></div>
-<div data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"></div>
+<div
+  data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World&message=Hi!"
+>
+</div>
+<div
+  data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"
+>
+</div>
 <script src="https://yoursite.com/static/hsx/snippet.js"></script>
 ```

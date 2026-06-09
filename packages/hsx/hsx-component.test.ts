@@ -5,7 +5,11 @@
  * Run with: deno test --allow-read packages/hsx/hsx-component.test.ts
  */
 
-import { assertEquals, assertThrows, assertRejects } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertRejects,
+  assertThrows,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { hsxComponent } from "./hsx-component.ts";
 import { jsx } from "./jsx-runtime.ts";
 
@@ -22,7 +26,7 @@ Deno.test("build() throws error for missing required parameters", () => {
   assertThrows(
     () => component.build({} as { id: string }),
     Error,
-    "Missing required route parameters: id"
+    "Missing required route parameters: id",
   );
 });
 
@@ -35,7 +39,7 @@ Deno.test("build() throws error listing all missing parameters", () => {
   assertThrows(
     () => component.build({} as { userId: string; postId: string }),
     Error,
-    "userId, postId"
+    "userId, postId",
   );
 });
 
@@ -118,7 +122,10 @@ Deno.test("match() extracts multiple parameters", () => {
     render: () => jsx("div", {}),
   });
 
-  assertEquals(component.match("/users/42/posts/99"), { userId: "42", postId: "99" });
+  assertEquals(component.match("/users/42/posts/99"), {
+    userId: "42",
+    postId: "99",
+  });
 });
 
 Deno.test("match() handles static paths", () => {
@@ -334,12 +341,13 @@ Deno.test("handle() allows matching method", async () => {
 
 Deno.test("throws for duplicate path parameters", () => {
   assertThrows(
-    () => hsxComponent("/users/:id/related/:id", {
-      handler: () => ({}),
-      render: () => jsx("div", {}),
-    }),
+    () =>
+      hsxComponent("/users/:id/related/:id", {
+        handler: () => ({}),
+        render: () => jsx("div", {}),
+      }),
     Error,
-    'Duplicate path parameter ":id"'
+    'Duplicate path parameter ":id"',
   );
 });
 

@@ -29,7 +29,12 @@
  */
 
 // Core rendering
-export { render, renderHtml, escapeHtml, type RenderHtmlOptions } from "./render.ts";
+export {
+  escapeHtml,
+  render,
+  renderHtml,
+  type RenderHtmlOptions,
+} from "./render.ts";
 
 // JSX utilities
 export { Fragment } from "./jsx-runtime.ts";
@@ -44,7 +49,12 @@ export type {
 export * from "./hsx-types.ts";
 
 // SSE streaming
-export { renderSSE, encodeSSEFrame, createSSEResponse, type SSEOptions } from "./sse.ts";
+export {
+  createSSEResponse,
+  encodeSSEFrame,
+  renderSSE,
+  type SSEOptions,
+} from "./sse.ts";
 
 // Loading state
 export { Loading, type LoadingProps } from "./loading.ts";

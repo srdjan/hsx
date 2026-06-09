@@ -1,8 +1,6 @@
 # Plan: Upgrade vendored HTMX to v4 (beta4) and make the loading-indicator mechanism reachable
 
-Status: complete (all three workstreams)
-Date: 2026-06-08
-Owner: srdjan
+Status: complete (all three workstreams) Date: 2026-06-08 Owner: srdjan
 
 ## Update 2026-06-09: Workstream C done
 
@@ -26,11 +24,12 @@ Final: `deno task check` green; full suite 219 passed / 0 failed.
 
 Added seven v4 aliases to `HSX_NON_VERB_ATTRS` (`hsx-normalize.ts`) and the
 matching props to `HsxAttrs` (`jsx-runtime.ts`): `indicator`, `disable`, `sync`,
-`confirm`, `select`, `pushUrl`, `swapOob`. `normalizeNonVerb` now coerces boolean
-alias values to their string form so `pushUrl={true}` emits `hx-push-url="true"`
-rather than a bare (HTMX-falsy) attribute. 12 new unit tests in `render.test.ts`;
-full suite 218 passed / 0 failed; `deno task check` green. Docs table and a
-"Loading indicators in HTMX 4" note added to `docs/HTMX_INTEGRATION.md`.
+`confirm`, `select`, `pushUrl`, `swapOob`. `normalizeNonVerb` now coerces
+boolean alias values to their string form so `pushUrl={true}` emits
+`hx-push-url="true"` rather than a bare (HTMX-falsy) attribute. 12 new unit
+tests in `render.test.ts`; full suite 218 passed / 0 failed; `deno task check`
+green. Docs table and a "Loading indicators in HTMX 4" note added to
+`docs/HTMX_INTEGRATION.md`.
 
 ## Update 2026-06-09: Workstream A done, A.2 gate resolved
 
@@ -59,7 +58,8 @@ original alpha3 file. Tracked as a separate finding for the workstream C audit.
 
 ## Problem
 
-Two coupled defects make HTMX loading states structurally impossible in this repo today.
+Two coupled defects make HTMX loading states structurally impossible in this
+repo today.
 
 First, hsx 1.3.0 has no `indicator` alias. The non-verb alias map in
 `packages/hsx/hsx-normalize.ts:21` (`HSX_NON_VERB_ATTRS`) covers only
@@ -75,11 +75,11 @@ changed how the `htmx-request` class is applied. In v2 the triggering element
 always received `htmx-request` for the duration of a request. In v4,
 `#showIndicators` (`vendor/htmx/htmx.js:1634`) only adds the class when
 `hx-indicator` is set on the element: if the indicator selector is empty,
-`indicatorElements` is `[]` and nothing is marked. So with no `indicator`
-alias, `htmx-request` is never applied anywhere.
+`indicatorElements` is `[]` and nothing is marked. So with no `indicator` alias,
+`htmx-request` is never applied anywhere.
 
-The combination is visible in `examples/active-search/server.tsx:116-118`,
-whose CSS (`.htmx-request + .indicator`, `.htmx-request .indicator`,
+The combination is visible in `examples/active-search/server.tsx:116-118`, whose
+CSS (`.htmx-request + .indicator`, `.htmx-request .indicator`,
 `.indicator.htmx-request`) can never match. The spinner is permanently hidden.
 
 ## Goals
@@ -109,15 +109,15 @@ The exact v4 attribute names matter because the "fetchening" renamed several.
 These were verified against the vendored alpha3 source and the v4 migration
 guide (https://four.htmx.org/docs/get-started/migration):
 
-| HSX alias | v4 attribute | Verified at | Notes |
-|-----------|--------------|-------------|-------|
-| `indicator` | `hx-indicator` | `htmx.js:455` | The core fix. Element-scoped selector, mirrors `target`. |
-| `disable` | `hx-disable` | `htmx.js:457` | v4 RENAME of v2's `hx-disabled-elt`. Disables listed elements during the request. (v2's old `hx-disable` "skip processing" role moved to `hx-ignore`.) |
-| `sync` | `hx-sync` | core read | v4 uses this for request queuing; the `queue` modifier on `hx-trigger` was removed. |
-| `confirm` | `hx-confirm` | `htmx.js` core | Unchanged semantics; inheritance now explicit. |
-| `select` | `hx-select` | `htmx.js` core | Unchanged; inheritance now explicit. |
-| `pushUrl` | `hx-push-url` | `htmx.js` core | Unchanged. |
-| `swapOob` | `hx-swap-oob` | `htmx.js:1155` | Response-fragment side. Read during swap, not on the request element. v4 swaps main content first, OOB after. |
+| HSX alias   | v4 attribute   | Verified at    | Notes                                                                                                                                                  |
+| ----------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `indicator` | `hx-indicator` | `htmx.js:455`  | The core fix. Element-scoped selector, mirrors `target`.                                                                                               |
+| `disable`   | `hx-disable`   | `htmx.js:457`  | v4 RENAME of v2's `hx-disabled-elt`. Disables listed elements during the request. (v2's old `hx-disable` "skip processing" role moved to `hx-ignore`.) |
+| `sync`      | `hx-sync`      | core read      | v4 uses this for request queuing; the `queue` modifier on `hx-trigger` was removed.                                                                    |
+| `confirm`   | `hx-confirm`   | `htmx.js` core | Unchanged semantics; inheritance now explicit.                                                                                                         |
+| `select`    | `hx-select`    | `htmx.js` core | Unchanged; inheritance now explicit.                                                                                                                   |
+| `pushUrl`   | `hx-push-url`  | `htmx.js` core | Unchanged.                                                                                                                                             |
+| `swapOob`   | `hx-swap-oob`  | `htmx.js:1155` | Response-fragment side. Read during swap, not on the request element. v4 swaps main content first, OOB after.                                          |
 
 Naming decision: the user picked "disabledElt" in scoping, but v4 renamed the
 attribute to `hx-disable`. hsx aliases follow a strict convention (drop `hx-`,
@@ -160,31 +160,31 @@ Files: `packages/hsx/hsx-normalize.ts`, `packages/hsx/jsx-runtime.ts`,
 `docs/HTMX_INTEGRATION.md`, plus new tests under `packages/hsx/`.
 
 1. Extend `HSX_NON_VERB_ATTRS` (`hsx-normalize.ts:21`) with the seven mappings
-   from the table. No other normalize logic changes: `needsHsxNormalization`
-   and `normalizeNonVerb` already iterate this array, so detection, the
-   `usesHtmx` flag (which drives script injection), and the
-   "don't overwrite an existing target" guard all extend automatically.
-2. Add the seven optional props to the `HsxAttrs` interface in
-   `jsx-runtime.ts` (around lines 50-70) so JSX type-checks:
+   from the table. No other normalize logic changes: `needsHsxNormalization` and
+   `normalizeNonVerb` already iterate this array, so detection, the `usesHtmx`
+   flag (which drives script injection), and the "don't overwrite an existing
+   target" guard all extend automatically.
+2. Add the seven optional props to the `HsxAttrs` interface in `jsx-runtime.ts`
+   (around lines 50-70) so JSX type-checks:
    - `indicator?: Id<string> | string` (selector, mirrors `target`)
    - `disable?: Id<string> | string`
    - `select?: Id<string> | string`
    - `sync?: string`
    - `confirm?: string`
    - `pushUrl?: boolean | string`
-   - `swapOob?: boolean | string`
-   Confirm these flow into the intrinsic elements that already spread
-   `& HsxAttrs` (button, a, form, div, input, textarea, ...). `swapOob` must be
-   available on the elements used in returned fragments.
+   - `swapOob?: boolean | string` Confirm these flow into the intrinsic elements
+     that already spread `& HsxAttrs` (button, a, form, div, input, textarea,
+     ...). `swapOob` must be available on the elements used in returned
+     fragments.
 3. Tests (`packages/hsx/*_test.ts`): for each alias, assert the rendered output
    contains the correct `hx-*` attribute and value; assert the raw `hx-*` form
    still throws via `assertNoManualHxProps`; assert that using any alias flips
    `usesHtmx` so the script is injected. Keep each test under a second.
-4. Docs: add the seven rows to the mapping table in
-   `docs/HTMX_INTEGRATION.md`, and add a short "Loading indicators in HTMX 4"
-   subsection stating that `htmx-request` is only applied to elements named by
-   `indicator`, so a visible loading state requires `indicator` on the
-   triggering element (or a target it points at).
+4. Docs: add the seven rows to the mapping table in `docs/HTMX_INTEGRATION.md`,
+   and add a short "Loading indicators in HTMX 4" subsection stating that
+   `htmx-request` is only applied to elements named by `indicator`, so a visible
+   loading state requires `indicator` on the triggering element (or a target it
+   points at).
 
 Verify: `deno task check` passes (all packages + examples type-check), and
 `deno task test` passes including the new alias tests.

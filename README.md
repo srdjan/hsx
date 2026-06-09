@@ -443,9 +443,9 @@ if (url.pathname === HSX_STYLES_PATH) {
 
 Core tokens include `--primary`, `--primary-hover`, `--primary-subtle`, `--bg`,
 `--surface`, `--surface-raised`, `--border`, `--text`, `--text-muted`, spacing
-(`--space-*`), radius (`--radius-*`), typography (`--font-display`,
-`--text-*`, `--leading-*`),
-shadows (`--shadow-*`), and layout tokens such as `--container-max`.
+(`--space-*`), radius (`--radius-*`), typography (`--font-display`, `--text-*`,
+`--leading-*`), shadows (`--shadow-*`), and layout tokens such as
+`--container-max`.
 
 To force dark mode for a specific page, add `data-theme="dark"` to `<html>`.
 
@@ -728,20 +728,20 @@ const Comp = hsxComponent("/items/:id", {
 
 Run examples with `deno task`:
 
-| Example               | Command                             | Description                                           |
-| --------------------- | ----------------------------------- | ----------------------------------------------------- |
-| **Todos**             | `deno task example:todos`           | Full CRUD with partial updates                        |
-| **Active Search**     | `deno task example:active-search`   | Live search as you type                               |
-| **Lazy Loading**      | `deno task example:lazy-loading`    | Deferred content loading                              |
-| **Form Validation**   | `deno task example:form-validation` | Server-side validation                                |
-| **Polling**           | `deno task example:polling`         | Live dashboard with intervals                         |
+| Example               | Command                             | Description                                                     |
+| --------------------- | ----------------------------------- | --------------------------------------------------------------- |
+| **Todos**             | `deno task example:todos`           | Full CRUD with partial updates                                  |
+| **Active Search**     | `deno task example:active-search`   | Live search as you type                                         |
+| **Lazy Loading**      | `deno task example:lazy-loading`    | Deferred content loading                                        |
+| **Form Validation**   | `deno task example:form-validation` | Server-side validation                                          |
+| **Polling**           | `deno task example:polling`         | Live dashboard with intervals                                   |
 | **Auras Showcase**    | `deno task example:auras-showcase`  | First-impression demo, live scene playground, compact reference |
-| **Tabs & Modal**      | `deno task example:tabs-modal`      | Tab navigation and modals                             |
-| **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                   |
-| **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails            |
-| **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent |
-| **HSX Widget**        | `deno task example:hsx-widget`      | Widget SSR route + iframe embed shell                 |
-| **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                 |
+| **Tabs & Modal**      | `deno task example:tabs-modal`      | Tab navigation and modals                                       |
+| **HSX Components**    | `deno task example:hsx-components`  | Co-located route + handler + render                             |
+| **HSX Page**          | `deno task example:hsx-page`        | Semantic full-page with hsxPage guardrails                      |
+| **Low-Level API**     | `deno task example:low-level-api`   | Manual render/renderHtml without hsxPage/hsxComponent           |
+| **HSX Widget**        | `deno task example:hsx-widget`      | Widget SSR route + iframe embed shell                           |
+| **Index of examples** | `examples/README.md`                | Quick guide to pick the right example                           |
 
 For the HSX widget example, build client assets first:
 

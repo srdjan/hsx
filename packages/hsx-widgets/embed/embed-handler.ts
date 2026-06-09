@@ -59,7 +59,9 @@ function embedShell(
 // Height negotiation: inform parent iframe of content height
 const ro = new ResizeObserver(() => {
   const h = document.documentElement.scrollHeight;
-  window.parent.postMessage({ type: "hsx-resize", tag: ${JSON.stringify(tag)}, height: h }, "*");
+  window.parent.postMessage({ type: "hsx-resize", tag: ${
+    JSON.stringify(tag)
+  }, height: h }, "*");
 });
 ro.observe(document.body);
 </script>

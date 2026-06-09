@@ -8,12 +8,13 @@
  * @module handler
  */
 
-import { encodeSSEFrame, createSSEResponse, escapeHtml } from "@srdjan/hsx/core";
-import type {
-  WidgetCatalog,
-  ToolDefinition,
-} from "@srdjan/hsx-widgets";
-import { formatForAI, createDesignGuidelines } from "@srdjan/hsx-widgets";
+import {
+  createSSEResponse,
+  encodeSSEFrame,
+  escapeHtml,
+} from "@srdjan/hsx/core";
+import type { ToolDefinition, WidgetCatalog } from "@srdjan/hsx-widgets";
+import { createDesignGuidelines, formatForAI } from "@srdjan/hsx-widgets";
 import type { AIProvider, Message, StreamEvent } from "./provider.ts";
 
 // =============================================================================
@@ -83,7 +84,7 @@ export function createGenUIHandler(
   }
   systemParts.push(
     "You are a UI assistant. When appropriate, use the available widget tools to render interactive UI components. " +
-    "Each tool renders a specific widget. Call the tool with the required props and the widget will be displayed to the user.",
+      "Each tool renders a specific widget. Call the tool with the required props and the widget will be displayed to the user.",
   );
   if (includeGuidelines) {
     const guidelines = createDesignGuidelines();
@@ -143,13 +144,15 @@ export function createGenUIHandler(
 
                     if (result.ok) {
                       controller.enqueue(
-                        encodeSSEFrame("message", renderWidgetHtml(result.value)),
+                        encodeSSEFrame(
+                          "message",
+                          renderWidgetHtml(result.value),
+                        ),
                       );
                     } else {
-                      const errorMsg =
-                        result.error.tag === "unknown_widget"
-                          ? `Unknown widget: ${result.error.widgetTag}`
-                          : result.error.message;
+                      const errorMsg = result.error.tag === "unknown_widget"
+                        ? `Unknown widget: ${result.error.widgetTag}`
+                        : result.error.message;
                       controller.enqueue(
                         encodeSSEFrame("message", renderErrorChunk(errorMsg)),
                       );
@@ -183,8 +186,9 @@ export function createGenUIHandler(
               }
             }
           } catch (error) {
-            const message =
-              error instanceof Error ? error.message : String(error);
+            const message = error instanceof Error
+              ? error.message
+              : String(error);
             controller.enqueue(
               encodeSSEFrame("error", JSON.stringify({ error: message })),
             );

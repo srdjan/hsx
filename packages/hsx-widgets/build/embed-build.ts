@@ -74,7 +74,9 @@ function hsxRedirectPlugin(shimPath: string): esbuild.Plugin {
  * Compiles the widget's .tsx file with Preact as the JSX factory,
  * producing a standalone ESM bundle.
  */
-export async function buildEmbed(options: EmbedBuildOptions): Promise<EmbedBuildResult> {
+export async function buildEmbed(
+  options: EmbedBuildOptions,
+): Promise<EmbedBuildResult> {
   const shimPath = options.hsxShimPath
     ? path.resolve(options.hsxShimPath)
     : path.resolve("packages/hsx-widgets/build/shims/hsx-noop.ts");

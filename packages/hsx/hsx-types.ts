@@ -20,15 +20,13 @@
  */
 type PathParams<Path extends string> =
   // Match paths with up to 5 segments to avoid infinite recursion
-  Path extends `/${infer A}/${infer B}/${infer C}/${infer D}/${infer E}`
-    ?
+  Path extends `/${infer A}/${infer B}/${infer C}/${infer D}/${infer E}` ?
       | ExtractSingle<A>
       | ExtractSingle<B>
       | ExtractSingle<C>
       | ExtractSingle<D>
       | ExtractSingle<E>
-    : Path extends `/${infer A}/${infer B}/${infer C}/${infer D}`
-      ?
+    : Path extends `/${infer A}/${infer B}/${infer C}/${infer D}` ?
         | ExtractSingle<A>
         | ExtractSingle<B>
         | ExtractSingle<C>
@@ -228,7 +226,10 @@ export type HsxExt =
  * Uses method syntax for `build` to leverage bivariant checking,
  * allowing any concrete Route<Path, Params> to be assignable.
  */
-export type Urlish = string | { path: string; build(params: Record<string, unknown>): string };
+export type Urlish = string | {
+  path: string;
+  build(params: Record<string, unknown>): string;
+};
 
 /** Parameters for route building */
 export type Params = Record<string, unknown>;

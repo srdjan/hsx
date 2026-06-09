@@ -9,8 +9,10 @@ HSX Widgets lets you define a `Widget<P>` once and use it in two places:
 
 ## Files To Start With
 
-- `packages/hsx-widgets/examples/greeting-widget.tsx` - minimal widget definition
-- `packages/hsx-widgets/examples/status-widget.tsx` - query-driven status widget example
+- `packages/hsx-widgets/examples/greeting-widget.tsx` - minimal widget
+  definition
+- `packages/hsx-widgets/examples/status-widget.tsx` - query-driven status widget
+  example
 - `examples/hsx-widget/server.tsx` - runnable SSR + embed example server
 - `packages/hsx-widgets/ssr-adapter.ts` - `widgetToHsxComponent()` bridge
 - `packages/hsx-widgets/embed/embed-handler.ts` - embed shell handler
@@ -18,11 +20,12 @@ HSX Widgets lets you define a `Widget<P>` once and use it in two places:
 
 ## 1. Define A Widget
 
-A widget is a typed record with validation, styles, pure rendering, and optional loading.
+A widget is a typed record with validation, styles, pure rendering, and optional
+loading.
 
 ```tsx
 import type { Widget } from "jsr:@srdjan/hsx-widgets";
-import { ok, fail } from "jsr:@srdjan/hsx-widgets";
+import { fail, ok } from "jsr:@srdjan/hsx-widgets";
 
 type GreetingProps = {
   readonly name: string;
@@ -39,16 +42,25 @@ export const greetingWidget: Widget<GreetingProps> = {
       }
       const obj = raw as Record<string, unknown>;
       if (typeof obj.name !== "string" || obj.name.length === 0) {
-        return fail({ tag: "validation_error", message: "Name is required", field: "name" });
+        return fail({
+          tag: "validation_error",
+          message: "Name is required",
+          field: "name",
+        });
       }
       if (typeof obj.message !== "string") {
-        return fail({ tag: "validation_error", message: "Message must be a string", field: "message" });
+        return fail({
+          tag: "validation_error",
+          message: "Message must be a string",
+          field: "message",
+        });
       }
       return ok({ name: obj.name, message: obj.message });
     },
   },
 
-  styles: `.hsx-greeting { font-family: system-ui, sans-serif; padding: 1rem; }`,
+  styles:
+    `.hsx-greeting { font-family: system-ui, sans-serif; padding: 1rem; }`,
 
   render(props) {
     return (
@@ -61,13 +73,15 @@ export const greetingWidget: Widget<GreetingProps> = {
 
   load: async (params) => {
     const name = params.name;
-    if (!name) return fail({ tag: "load_error", message: "Missing name parameter" });
+    if (!name) {
+      return fail({ tag: "load_error", message: "Missing name parameter" });
+    }
     return ok({ name, message: `Hello, ${name}!` });
   },
 
   // Optional: Declarative Shadow DOM and observed attributes
-  shadow: "open",                  // "open" | "closed" | "none" (default: none)
-  observed: ["name", "message"],   // attributes to observe for client-side reactivity
+  shadow: "open", // "open" | "closed" | "none" (default: none)
+  observed: ["name", "message"], // attributes to observe for client-side reactivity
 };
 ```
 
@@ -117,7 +131,8 @@ const res = embedHandler(req);
 if (res) return res;
 ```
 
-Each shell includes script URLs like `/static/hsx/hsx-greeting.js` and `/static/hsx/hsx-status.js`.
+Each shell includes script URLs like `/static/hsx/hsx-greeting.js` and
+`/static/hsx/hsx-status.js`.
 
 ## 4. Build Embed Assets
 
@@ -133,23 +148,32 @@ By default this writes assets into `dist/hsx/` for both example widgets:
 - `dist/hsx/hsx-status.js`
 - `dist/hsx/snippet.js`
 
-The example server (`examples/hsx-widget/server.tsx`) serves these files from `/static/hsx/*`.
+The example server (`examples/hsx-widget/server.tsx`) serves these files from
+`/static/hsx/*`.
 
 ## 5. Host Page Integration
 
 On a third-party page, use a placeholder plus snippet script:
 
 ```html
-<div data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World&message=Hi!"></div>
-<div data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"></div>
+<div
+  data-hsx-uri="https://yoursite.com/embed/hsx-greeting?name=World&message=Hi!"
+>
+</div>
+<div
+  data-hsx-uri="https://yoursite.com/embed/hsx-status?label=Build%20Healthy&tone=ok"
+>
+</div>
 <script src="https://yoursite.com/static/hsx/snippet.js"></script>
 ```
 
-The snippet replaces the placeholder with an iframe and listens for resize messages.
+The snippet replaces the placeholder with an iframe and listens for resize
+messages.
 
 ## 6. Optional Style Hoisting For `hsxPage`
 
-If you need styles in `<head>` (instead of inline in each widget wrapper), use `hoistStyles` and `WidgetStyles`.
+If you need styles in `<head>` (instead of inline in each widget wrapper), use
+`hoistStyles` and `WidgetStyles`.
 
 ```tsx
 import { widgetToHsxComponent } from "jsr:@srdjan/hsx-widgets/ssr";
@@ -173,31 +197,43 @@ const page = (
 
 ## 7. Declarative Shadow DOM (SSR)
 
-Widgets can render inside a Declarative Shadow DOM by setting the `shadow` field. This is useful for style isolation: the widget's CSS cannot leak into the host page.
+Widgets can render inside a Declarative Shadow DOM by setting the `shadow`
+field. This is useful for style isolation: the widget's CSS cannot leak into the
+host page.
 
-**Enable it** by setting `shadow: "open"` or `shadow: "closed"` on your widget definition:
+**Enable it** by setting `shadow: "open"` or `shadow: "closed"` on your widget
+definition:
 
 ```ts
 const myWidget: Widget<MyProps> = {
   tag: "hsx-example",
-  shadow: "open",   // or "closed"
+  shadow: "open", // or "closed"
   // ...
 };
 ```
 
-**What SSR produces:** the adapter wraps content in a `<template shadowrootmode="...">` inside the custom element tag. The browser upgrades this to a real shadow root on parse.
+**What SSR produces:** the adapter wraps content in a
+`<template shadowrootmode="...">` inside the custom element tag. The browser
+upgrades this to a real shadow root on parse.
 
 **Key behaviors:**
 
-- The wrapper element is the custom element tag (e.g., `<hsx-example>`) instead of `<div>`.
-- Styles always go inside the shadow root. The `hoistStyles` option is ignored for shadow DOM widgets - scoped styles belong in the shadow root.
-- When `shadow` is omitted or set to `"none"`, behavior is unchanged (light DOM `<div>` wrapper).
+- The wrapper element is the custom element tag (e.g., `<hsx-example>`) instead
+  of `<div>`.
+- Styles always go inside the shadow root. The `hoistStyles` option is ignored
+  for shadow DOM widgets - scoped styles belong in the shadow root.
+- When `shadow` is omitted or set to `"none"`, behavior is unchanged (light DOM
+  `<div>` wrapper).
 
 **Light DOM output** (default):
 
 ```html
 <div data-widget="hsx-example">
-  <style>.example { color: blue; }</style>
+  <style>
+    .example {
+      color: blue;
+    }
+  </style>
   <div class="example">Hello</div>
 </div>
 ```
@@ -207,7 +243,11 @@ const myWidget: Widget<MyProps> = {
 ```html
 <hsx-example data-widget="hsx-example">
   <template shadowrootmode="open">
-    <style>.example { color: blue; }</style>
+    <style>
+      .example {
+        color: blue;
+      }
+    </style>
     <div class="example">Hello</div>
   </template>
 </hsx-example>
@@ -215,8 +255,11 @@ const myWidget: Widget<MyProps> = {
 
 ## Quick Start Checklist
 
-1. Define widgets (`packages/hsx-widgets/examples/greeting-widget.tsx` and `packages/hsx-widgets/examples/status-widget.tsx` as references).
+1. Define widgets (`packages/hsx-widgets/examples/greeting-widget.tsx` and
+   `packages/hsx-widgets/examples/status-widget.tsx` as references).
 2. Build assets: `deno task build:hsx-widgets`.
 3. Run demo server: `deno task example:hsx-widget`.
-4. Test SSR routes: `/widgets/greeting/World` and `/widgets/status/Build%20Healthy?tone=ok`.
-5. Test embed shells: `/embed/hsx-greeting?name=World&message=Hi!` and `/embed/hsx-status?label=Build%20Healthy&tone=ok`.
+4. Test SSR routes: `/widgets/greeting/World` and
+   `/widgets/status/Build%20Healthy?tone=ok`.
+5. Test embed shells: `/embed/hsx-greeting?name=World&message=Hi!` and
+   `/embed/hsx-status?label=Build%20Healthy&tone=ok`.

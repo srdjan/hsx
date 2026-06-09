@@ -183,7 +183,7 @@ export function hsxComponent<
     if (seen.has(name)) {
       throw new Error(
         `Duplicate path parameter ":${name}" in route "${path}". ` +
-        `Each parameter name must be unique.`
+          `Each parameter name must be unique.`,
       );
     }
     seen.add(name);
@@ -201,13 +201,13 @@ export function hsxComponent<
         }
         missing.push(name);
         return `:${name}`;
-      }
+      },
     );
 
     if (missing.length > 0) {
       throw new Error(
         `Missing required route parameters: ${missing.join(", ")}. ` +
-        `Route "${path}" requires these parameters to build a URL.`
+          `Route "${path}" requires these parameters to build a URL.`,
       );
     }
 

@@ -9,8 +9,8 @@
  */
 
 import {
-  hsxComponent,
   type HsxComponent,
+  hsxComponent,
   type HttpMethod,
 } from "@srdjan/hsx/components";
 import type { Renderable } from "@srdjan/hsx/core";
@@ -113,7 +113,10 @@ export function widgetToHsxComponent<P>(
   widget: Widget<P>,
   options: WidgetToHsxOptions,
 ): HsxComponent<string, Record<string, string>, P> {
-  const wrapperRender = createWidgetWrapper(widget, options.hoistStyles ?? false);
+  const wrapperRender = createWidgetWrapper(
+    widget,
+    options.hoistStyles ?? false,
+  );
 
   return hsxComponent(options.path, {
     methods: options.methods ? [...options.methods] : ["GET"],
@@ -126,7 +129,9 @@ export function widgetToHsxComponent<P>(
         // hsxComponent's catch block always returns 500 regardless of error type.
         // Format a descriptive message for the server log.
         const message = error.tag === "validation_error"
-          ? `Validation error: ${error.message}${error.field ? ` (field: ${error.field})` : ""}`
+          ? `Validation error: ${error.message}${
+            error.field ? ` (field: ${error.field})` : ""
+          }`
           : `Load error: ${error.message}`;
 
         throw new Error(message);
@@ -138,4 +143,3 @@ export function widgetToHsxComponent<P>(
     render: wrapperRender,
   });
 }
-

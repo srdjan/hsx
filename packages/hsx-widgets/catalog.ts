@@ -11,14 +11,14 @@
 
 import { renderHtml } from "@srdjan/hsx/core";
 import type { GenUIWidget } from "./genui-widget.ts";
-import { ok, fail, type Result } from "./result.ts";
+import { fail, ok, type Result } from "./result.ts";
 import { wrapWidgetContent } from "./widget-wrapper.ts";
 import {
-  RAW_WIDGET_TAG,
   RAW_WIDGET_DESCRIPTION,
   RAW_WIDGET_SCHEMA,
-  validateRawWidgetProps,
+  RAW_WIDGET_TAG,
   renderRawWidget,
+  validateRawWidgetProps,
 } from "./raw-widget.ts";
 
 // =============================================================================
@@ -28,7 +28,11 @@ import {
 /** Errors from catalog operations. */
 export type GenUIError =
   | { readonly tag: "unknown_widget"; readonly widgetTag: string }
-  | { readonly tag: "validation_error"; readonly message: string; readonly field?: string }
+  | {
+    readonly tag: "validation_error";
+    readonly message: string;
+    readonly field?: string;
+  }
   | { readonly tag: "render_error"; readonly message: string };
 
 /** AI tool definition produced from a GenUIWidget. */
@@ -85,7 +89,11 @@ function widgetToToolDefinition(widget: ErasedGenUIWidget): ToolDefinition {
 // =============================================================================
 
 function toValidationError(
-  error: { readonly tag: string; readonly message: string; readonly field?: string },
+  error: {
+    readonly tag: string;
+    readonly message: string;
+    readonly field?: string;
+  },
 ): GenUIError {
   return {
     tag: "validation_error",
@@ -145,9 +153,9 @@ function generateGuidelines(
 
   sections.push(
     "## Constraints\n\n" +
-    "- Use only the widgets listed above. Do not generate raw HTML unless the raw-widget tool is available.\n" +
-    "- Provide all required props as specified in each widget's parameters schema.\n" +
-    "- Keep data concise - widgets render server-side so large payloads increase response time.",
+      "- Use only the widgets listed above. Do not generate raw HTML unless the raw-widget tool is available.\n" +
+      "- Provide all required props as specified in each widget's parameters schema.\n" +
+      "- Keep data concise - widgets render server-side so large payloads increase response time.",
   );
 
   return sections.join("\n\n");

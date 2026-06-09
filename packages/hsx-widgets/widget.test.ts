@@ -11,7 +11,7 @@ import {
 import { renderHtml } from "@srdjan/hsx/core";
 import { jsx } from "hsx/jsx-runtime";
 
-import { ok, fail, match } from "./result.ts";
+import { fail, match, ok } from "./result.ts";
 import type { Widget } from "./widget.ts";
 import { widgetToHsxComponent } from "./ssr-adapter.ts";
 
@@ -30,11 +30,21 @@ const testWidget: Widget<TestProps> = {
       }
       const obj = raw as Record<string, unknown>;
       if (typeof obj.name !== "string" || obj.name.length === 0) {
-        return fail({ tag: "validation_error", message: "Name required", field: "name" });
+        return fail({
+          tag: "validation_error",
+          message: "Name required",
+          field: "name",
+        });
       }
-      const count = typeof obj.count === "string" ? parseInt(obj.count, 10) : obj.count;
+      const count = typeof obj.count === "string"
+        ? parseInt(obj.count, 10)
+        : obj.count;
       if (typeof count !== "number" || isNaN(count)) {
-        return fail({ tag: "validation_error", message: "Count must be a number", field: "count" });
+        return fail({
+          tag: "validation_error",
+          message: "Count must be a number",
+          field: "count",
+        });
       }
       return ok({ name: obj.name as string, count });
     },
@@ -97,7 +107,10 @@ Deno.test("widget render produces valid VNode serializable by renderHtml", () =>
 });
 
 Deno.test("widget render escapes HTML in props", () => {
-  const vnode = testWidget.render({ name: "<script>alert(1)</script>", count: 0 });
+  const vnode = testWidget.render({
+    name: "<script>alert(1)</script>",
+    count: 0,
+  });
   const html = renderHtml(vnode);
   assertStringIncludes(html, "&lt;script&gt;");
 });
@@ -135,7 +148,10 @@ Deno.test("props validation returns error for non-object input", () => {
 });
 
 Deno.test("props validation returns error for invalid count", () => {
-  const result = testWidget.props.validate({ name: "Bob", count: "notanumber" });
+  const result = testWidget.props.validate({
+    name: "Bob",
+    count: "notanumber",
+  });
   assertEquals(result.ok, false);
   if (!result.ok) {
     assertEquals(result.error.tag, "validation_error");

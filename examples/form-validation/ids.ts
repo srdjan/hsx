@@ -9,4 +9,3 @@ export const ids = {
   passwordError: id("password-error"),
   formResult: id("form-result"),
 };
-

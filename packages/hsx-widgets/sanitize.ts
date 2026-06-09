@@ -13,31 +13,84 @@
 
 const ALLOWED_TAGS = new Set([
   // Structure
-  "div", "span", "p", "br", "hr", "pre", "code", "blockquote",
+  "div",
+  "span",
+  "p",
+  "br",
+  "hr",
+  "pre",
+  "code",
+  "blockquote",
   // Headings
-  "h1", "h2", "h3", "h4", "h5", "h6",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
   // Lists
-  "ul", "ol", "li", "dl", "dt", "dd",
+  "ul",
+  "ol",
+  "li",
+  "dl",
+  "dt",
+  "dd",
   // Tables
-  "table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption", "colgroup", "col",
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "th",
+  "td",
+  "caption",
+  "colgroup",
+  "col",
   // Inline
-  "strong", "em", "b", "i", "u", "s", "sub", "sup", "mark", "small",
+  "strong",
+  "em",
+  "b",
+  "i",
+  "u",
+  "s",
+  "sub",
+  "sup",
+  "mark",
+  "small",
   // Links and media
-  "a", "img",
+  "a",
+  "img",
   // Figures
-  "figure", "figcaption",
+  "figure",
+  "figcaption",
   // Interactive
-  "details", "summary",
+  "details",
+  "summary",
   // SVG (structural only)
-  "svg", "g", "path", "circle", "rect", "ellipse", "line",
-  "polyline", "polygon", "text", "tspan", "defs", "use",
+  "svg",
+  "g",
+  "path",
+  "circle",
+  "rect",
+  "ellipse",
+  "line",
+  "polyline",
+  "polygon",
+  "text",
+  "tspan",
+  "defs",
+  "use",
   // CSS (Shadow DOM isolates it)
   "style",
 ]);
 
 /** Tags whose content (not just the tags) must be stripped entirely. */
 const STRIP_CONTENT_TAGS = new Set([
-  "script", "iframe", "object", "embed", "applet",
+  "script",
+  "iframe",
+  "object",
+  "embed",
+  "applet",
 ]);
 
 /** Attributes that take URIs and need scheme validation. */
@@ -81,7 +134,8 @@ function stripDangerousBlocks(html: string): string {
  * - Group 2: tag name
  * - Group 3: attributes string
  */
-const TAG_RE = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+(?:[^>"']*|"[^"]*"|'[^']*')*)?)\/?\s*>/g;
+const TAG_RE =
+  /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+(?:[^>"']*|"[^"]*"|'[^']*')*)?)\/?\s*>/g;
 
 /**
  * Regex matching individual attributes within a tag.

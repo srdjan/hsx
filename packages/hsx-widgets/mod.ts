@@ -23,27 +23,34 @@
  */
 
 // Result utilities
-export { ok, fail, match, type Result, type Ok, type Fail } from "./result.ts";
+export { type Fail, fail, match, type Ok, ok, type Result } from "./result.ts";
 
 // Widget protocol
-export type { Widget, WidgetError, PropsValidator } from "./widget.ts";
+export type { PropsValidator, Widget, WidgetError } from "./widget.ts";
 
 // SSR adapter
-export { widgetToHsxComponent, type WidgetToHsxOptions } from "./ssr-adapter.ts";
+export {
+  widgetToHsxComponent,
+  type WidgetToHsxOptions,
+} from "./ssr-adapter.ts";
 
 // Style collection (for hsxPage compatibility)
-export { collectWidgetStyles, WidgetStyles, type WidgetStylesProps } from "./styles.ts";
+export {
+  collectWidgetStyles,
+  WidgetStyles,
+  type WidgetStylesProps,
+} from "./styles.ts";
 
 // GenUI: Widget metadata for AI models
 export type { GenUIWidget, WidgetCategory } from "./genui-widget.ts";
 
 // GenUI: Widget catalog and tool definitions
 export {
-  createCatalog,
-  type WidgetCatalog,
-  type ToolDefinition,
-  type GenUIError,
   type CatalogOptions,
+  createCatalog,
+  type GenUIError,
+  type ToolDefinition,
+  type WidgetCatalog,
 } from "./catalog.ts";
 
 // GenUI: Raw widget (AI-generated HTML escape hatch)
@@ -52,6 +59,6 @@ export type { RawWidgetProps } from "./raw-widget.ts";
 // GenUI: Design guidelines for AI system prompts
 export {
   createDesignGuidelines,
-  formatForAI,
   type DesignGuidelines,
+  formatForAI,
 } from "./design-guidelines.ts";

@@ -61,8 +61,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Compose with readable attributes",
     body:
       "Use container, stack, cluster, and grid together instead of utility-class soup.",
-    snippet:
-      `<section data-layout="grid" data-grid-min="md" data-gap="4">\n` +
+    snippet: `<section data-layout="grid" data-grid-min="md" data-gap="4">\n` +
       `  <article data-surface="card">...</article>\n` +
       `</section>`,
   },
@@ -71,8 +70,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Reach hierarchy through cards and notices",
     body:
       "Auras gives containment and status styling without custom component wrappers.",
-    snippet:
-      `<aside data-surface="notice" data-status="warning">\n` +
+    snippet: `<aside data-surface="notice" data-status="warning">\n` +
       `  <strong>Heads up</strong>\n` +
       `</aside>`,
   },
@@ -81,8 +79,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Make text-heavy content readable",
     body:
       "Wrap content in prose mode for measure, spacing, links, quotes, and code blocks.",
-    snippet:
-      `<article data-ui="prose">\n` +
+    snippet: `<article data-ui="prose">\n` +
       `  <h2>Readable by default</h2>\n` +
       `  <p>...</p>\n` +
       `</article>`,
@@ -92,8 +89,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Style native controls, not custom clones",
     body:
       "Inputs, selects, ranges, switches, and button variants inherit the same token system.",
-    snippet:
-      `<label>\n` +
+    snippet: `<label>\n` +
       `  Email\n` +
       `  <input type="email" aria-invalid="true" />\n` +
       `</label>`,
@@ -103,8 +99,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Show progress and tables with HTML",
     body:
       "Progress, meter, and table styling stay semantic and adapt to theme changes automatically.",
-    snippet:
-      `<progress value="68" max="100">68%</progress>\n` +
+    snippet: `<progress value="68" max="100">68%</progress>\n` +
       `<table>...</table>`,
   },
   {
@@ -112,8 +107,7 @@ const REFERENCE_CARDS: ReadonlyArray<ReferenceCard> = [
     title: "Switch axes through attributes and tokens",
     body:
       "Dark mode, contrast, motion, and accent hue all come from a tiny amount of page state.",
-    snippet:
-      `<html data-theme="dark" data-contrast="more">\n` +
+    snippet: `<html data-theme="dark" data-contrast="more">\n` +
       `<style>:root { --hue-primary: 160; }</style>`,
   },
 ];
@@ -137,10 +131,9 @@ function parseConfig(url: URL): PageConfig {
   const accent = url.searchParams.get("accent");
   return {
     theme: url.searchParams.get("theme") === "dark" ? "dark" : "light",
-    accent:
-      accent === "indigo" || accent === "amber" || accent === "rose"
-        ? accent
-        : DEFAULT_ACCENT,
+    accent: accent === "indigo" || accent === "amber" || accent === "rose"
+      ? accent
+      : DEFAULT_ACCENT,
     contrast: url.searchParams.get("contrast") === "more",
     motion: url.searchParams.get("motion") === "reduce",
   };
@@ -834,11 +827,17 @@ function SiteHeader(props: { state: PageState }) {
 
         <nav data-nav="inline" aria-label="Showcase sections">
           <ul>
-            <li><a href="#playground">Playground</a></li>
-            <li><a href="#reference">Reference</a></li>
-            <li><a href={hrefForState(toggledState(state, "theme"))}>
-              {state.config.theme === "dark" ? "Light mode" : "Dark mode"}
-            </a></li>
+            <li>
+              <a href="#playground">Playground</a>
+            </li>
+            <li>
+              <a href="#reference">Reference</a>
+            </li>
+            <li>
+              <a href={hrefForState(toggledState(state, "theme"))}>
+                {state.config.theme === "dark" ? "Light mode" : "Dark mode"}
+              </a>
+            </li>
           </ul>
         </nav>
       </div>
@@ -892,19 +891,30 @@ function Hero() {
         <div data-proof-grid>
           <article data-proof-card>
             <strong>Semantic first</strong>
-            <span>Real sections, articles, forms, notices, tables, and progress.</span>
+            <span>
+              Real sections, articles, forms, notices, tables, and progress.
+            </span>
           </article>
           <article data-proof-card>
             <strong>HSX in the loop</strong>
-            <span>Scene tabs swap fragments from a typed route instead of client state.</span>
+            <span>
+              Scene tabs swap fragments from a typed route instead of client
+              state.
+            </span>
           </article>
           <article data-proof-card>
             <strong>Token-driven styling</strong>
-            <span>Accent hue, theme, contrast, and motion all flow from a small state object.</span>
+            <span>
+              Accent hue, theme, contrast, and motion all flow from a small
+              state object.
+            </span>
           </article>
           <article data-proof-card>
             <strong>Compact reference</strong>
-            <span>The lower section still explains the system without turning the landing area into docs.</span>
+            <span>
+              The lower section still explains the system without turning the
+              landing area into docs.
+            </span>
           </article>
         </div>
       </div>
@@ -932,7 +942,8 @@ function HeroWindow() {
           <div data-layout="stack" data-gap="3">
             <div data-demo-section-label>Launch-ready shell</div>
             <h2 data-scene-heading>
-              Present a product page and its settings UI with the same primitives.
+              Present a product page and its settings UI with the same
+              primitives.
             </h2>
             <p data-scene-summary>
               Hero rhythm, metric cards, supporting surfaces, and inline code
@@ -1014,7 +1025,9 @@ function ThemeLab(props: { state: PageState }) {
         <div data-axis-row>
           <div data-layout="stack" data-gap="1">
             <strong>Higher contrast</strong>
-            <span data-axis-copy>Strengthen borders and secondary text contrast.</span>
+            <span data-axis-copy>
+              Strengthen borders and secondary text contrast.
+            </span>
           </div>
           <a
             href={hrefForState(toggledState(state, "contrast"))}
@@ -1028,7 +1041,9 @@ function ThemeLab(props: { state: PageState }) {
         <div data-axis-row>
           <div data-layout="stack" data-gap="1">
             <strong>Reduced motion</strong>
-            <span data-axis-copy>Disable showcase-only motion while keeping the layout intact.</span>
+            <span data-axis-copy>
+              Disable showcase-only motion while keeping the layout intact.
+            </span>
           </div>
           <a
             href={hrefForState(toggledState(state, "motion"))}
@@ -1048,7 +1063,9 @@ function LaunchScene() {
     <article data-layout="stack" data-gap="5">
       <div data-layout="stack" data-gap="3">
         <div data-demo-section-label>Marketing layout</div>
-        <h3 data-scene-heading>Ship a polished launch page from semantic building blocks.</h3>
+        <h3 data-scene-heading>
+          Ship a polished launch page from semantic building blocks.
+        </h3>
         <p data-scene-summary>
           Use cards for containment, cluster and grid for rhythm, and button
           variants for action hierarchy. Nothing here depends on utilities.
@@ -1081,15 +1098,19 @@ function LaunchScene() {
         <div data-launch-feature>
           <strong>Action rhythm</strong>
           <p>
-            Solid, soft, and ghost buttons give obvious priority without a design
-            token ceremony.
+            Solid, soft, and ghost buttons give obvious priority without a
+            design token ceremony.
           </p>
         </div>
       </div>
 
       <div data-layout="cluster" data-gap="2">
-        <a href="#reference" role="button" data-variant="solid">Inspect patterns</a>
-        <a href="#playground" role="button" data-variant="ghost">Stay in semantic HTML</a>
+        <a href="#reference" role="button" data-variant="solid">
+          Inspect patterns
+        </a>
+        <a href="#playground" role="button" data-variant="ghost">
+          Stay in semantic HTML
+        </a>
       </div>
     </article>
   );
@@ -1124,7 +1145,9 @@ function OpsScene() {
 
       <div data-surface="notice" data-status="warning">
         <strong>Search queue running above target.</strong>
-        <p>Traffic is healthy, but the indexing worker is now the bottleneck.</p>
+        <p>
+          Traffic is healthy, but the indexing worker is now the bottleneck.
+        </p>
       </div>
 
       <div data-layout="stack" data-gap="3">
@@ -1143,9 +1166,21 @@ function OpsScene() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>API gateway</td><td>Healthy</td><td>18 ms</td></tr>
-              <tr><td>Search worker</td><td>Watch</td><td>341 ms</td></tr>
-              <tr><td>Notifications</td><td>Healthy</td><td>26 ms</td></tr>
+              <tr>
+                <td>API gateway</td>
+                <td>Healthy</td>
+                <td>18 ms</td>
+              </tr>
+              <tr>
+                <td>Search worker</td>
+                <td>Watch</td>
+                <td>341 ms</td>
+              </tr>
+              <tr>
+                <td>Notifications</td>
+                <td>Healthy</td>
+                <td>26 ms</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1199,7 +1234,13 @@ function SettingsScene() {
 
           <div>
             <label htmlFor="settings-confidence">Launch confidence</label>
-            <input id="settings-confidence" type="range" min={0} max={100} value={74} />
+            <input
+              id="settings-confidence"
+              type="range"
+              min={0}
+              max={100}
+              value={74}
+            />
           </div>
 
           <div data-layout="cluster" data-gap="2">
@@ -1257,7 +1298,12 @@ function PlaygroundShell(state: PageState) {
       </div>
 
       <div data-playground-body>
-        <section data-scene-panel data-layout="stack" data-gap="4" aria-live="polite">
+        <section
+          data-scene-panel
+          data-layout="stack"
+          data-gap="4"
+          aria-live="polite"
+        >
           {renderScene(state.scene)}
         </section>
 
@@ -1359,8 +1405,12 @@ function SiteFooter() {
         <span>Built with HSX and Auras.</span>
         <nav data-nav="inline" aria-label="Footer links">
           <ul>
-            <li><a href="#playground">Back to playground</a></li>
-            <li><a href="#top">Back to top</a></li>
+            <li>
+              <a href="#playground">Back to playground</a>
+            </li>
+            <li>
+              <a href="#top">Back to top</a>
+            </li>
           </ul>
         </nav>
       </div>

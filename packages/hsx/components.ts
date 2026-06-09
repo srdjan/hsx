@@ -25,9 +25,9 @@
 
 // HSX Component and Page
 export {
-  hsxComponent,
   type HsxComponent,
+  hsxComponent,
   type HsxComponentOptions,
   type HttpMethod,
 } from "./hsx-component.ts";
-export { hsxPage, type HsxPage, type HsxPageOptions } from "./hsx-page.ts";
+export { type HsxPage, hsxPage, type HsxPageOptions } from "./hsx-page.ts";

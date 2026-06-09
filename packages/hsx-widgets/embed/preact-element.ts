@@ -8,7 +8,7 @@
  * @module preact-element
  */
 
-import { render as preactRender, h } from "npm:preact@10.25.4";
+import { h, render as preactRender } from "npm:preact@10.25.4";
 import type { Widget } from "../widget.ts";
 import type { Result } from "../result.ts";
 
@@ -84,7 +84,10 @@ export function toCustomElement<P>(widget: Widget<P>): void {
 
       const result: Result<P, unknown> = widget.props.validate(raw);
       if (!result.ok) {
-        console.error(`[hsx] Validation failed for <${widget.tag}>:`, result.error);
+        console.error(
+          `[hsx] Validation failed for <${widget.tag}>:`,
+          result.error,
+        );
         return;
       }
 
@@ -100,7 +103,9 @@ export function toCustomElement<P>(widget: Widget<P>): void {
       }
 
       // Create a container div for Preact to render into
-      let container = this.mountPoint.querySelector("[data-hsx-root]") as HTMLElement | null;
+      let container = this.mountPoint.querySelector("[data-hsx-root]") as
+        | HTMLElement
+        | null;
       if (!container) {
         container = document.createElement("div");
         container.setAttribute("data-hsx-root", "");
