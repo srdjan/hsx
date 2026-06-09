@@ -32,7 +32,7 @@
     "exclude": ["vendor/", "**/vendor/"]
   },
   "tasks": {
-    "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/",
+    "test": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/ && deno task test:hsx-widgets:build",
     "test:hsx-widgets": "deno test --allow-read --allow-net --ignore=packages/hsx-widgets/build/ packages/hsx-widgets/",
     "test:hsx-widgets:build": "deno test --allow-all packages/hsx-widgets/build/",
     "check": "deno check packages/hsx/mod.ts packages/hsx-styles/mod.ts packages/hsx-widgets/mod.ts packages/hsx-genui/mod.ts && deno task check:examples",

@@ -98,6 +98,20 @@ const URI_ATTRS = new Set(["href", "src", "action", "formaction"]);
 
 const DANGEROUS_URI_RE = /^\s*(javascript|data|vbscript)\s*:/i;
 
+const ATTR_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#x27;",
+};
+
+const ATTR_ESCAPE_RE = /[&<>"']/g;
+
+function escapeAttributeValue(value: string): string {
+  return value.replace(ATTR_ESCAPE_RE, (char) => ATTR_ESCAPE_MAP[char]);
+}
+
 // =============================================================================
 // Pre-processing: Strip dangerous tags with their content
 // =============================================================================
@@ -196,7 +210,7 @@ function sanitizeAttributes(attrsStr: string): string {
 
     // Keep the attribute
     if (value || attrMatch[0].includes("=")) {
-      parts.push(`${name}="${value}"`);
+      parts.push(`${name}="${escapeAttributeValue(value)}"`);
     } else {
       parts.push(name);
     }

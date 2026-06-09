@@ -113,6 +113,17 @@ Deno.test("CSP header is present", () => {
   assertStringIncludes(csp!, "default-src 'self'");
 });
 
+Deno.test("resize messages target parent origin when available", async () => {
+  const handler = makeHandler();
+  const res = handler(req("/embed/hsx-test"));
+  const html = await res!.text();
+
+  assertStringIncludes(html, "document.referrer");
+  assertStringIncludes(html, "hsxResizeTargetOrigin");
+  assertStringIncludes(html, "postMessage");
+  assertEquals(html.includes('}, "*");'), false);
+});
+
 Deno.test("cache-control header is present", () => {
   const handler = makeHandler();
   const res = handler(req("/embed/hsx-test"));

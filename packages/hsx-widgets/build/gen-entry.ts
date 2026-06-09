@@ -23,6 +23,8 @@ export type GenEntryOptions = {
 // Generator
 // =============================================================================
 
+const IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
+
 /**
  * Generate a TypeScript entry file that bootstraps a widget on the client.
  *
@@ -35,9 +37,15 @@ export type GenEntryOptions = {
  * @returns A string of TypeScript source code ready for esbuild compilation.
  */
 export function generateEmbedEntry(options: GenEntryOptions): string {
+  if (!IDENTIFIER_RE.test(options.widgetExportName)) {
+    throw new Error(`Invalid widget export name: ${options.widgetExportName}`);
+  }
+
+  const importPath = JSON.stringify(options.widgetImportPath);
+
   return `// Auto-generated HSX Widgets embed entry point
 import { render, h } from "npm:preact@10.25.4";
-import { ${options.widgetExportName} as widget } from "${options.widgetImportPath}";
+import { ${options.widgetExportName} as widget } from ${importPath};
 
 const root = document.getElementById("root");
 if (root) {

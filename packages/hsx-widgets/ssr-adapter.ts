@@ -11,6 +11,7 @@
 import {
   type HsxComponent,
   hsxComponent,
+  HsxHttpError,
   type HttpMethod,
 } from "@srdjan/hsx/components";
 import type { Renderable } from "@srdjan/hsx/core";
@@ -126,13 +127,18 @@ export function widgetToHsxComponent<P>(
 
       if (!result.ok) {
         const error = result.error;
-        // hsxComponent's catch block always returns 500 regardless of error type.
-        // Format a descriptive message for the server log.
         const message = error.tag === "validation_error"
           ? `Validation error: ${error.message}${
             error.field ? ` (field: ${error.field})` : ""
           }`
           : `Load error: ${error.message}`;
+
+        if (error.tag === "validation_error") {
+          throw new HsxHttpError(400, message, {
+            body: "Invalid widget props",
+            cause: error,
+          });
+        }
 
         throw new Error(message);
       }

@@ -101,6 +101,9 @@ if (GreetingRoute.match(url.pathname)) {
 }
 ```
 
+The SSR adapter returns `400` when widget props fail validation and generic
+`500` responses for loader or render failures.
+
 Try it with:
 
 ```bash

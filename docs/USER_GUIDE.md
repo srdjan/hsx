@@ -420,6 +420,10 @@ The default (`fullPage: false`) returns just the rendered fragment with
 `methods` controls which HTTP verbs the component responds to; it defaults to
 `GET`.
 
+Unexpected handler or render errors return a generic `500` response. Throw
+`HsxHttpError` from a handler for intentional HTTP failures such as invalid
+input.
+
 ---
 
 ## HSX Page
@@ -722,6 +726,9 @@ const GreetingRoute = widgetToHsxComponent(greetingWidget, {
 // In your server:
 if (GreetingRoute.match(url.pathname)) return GreetingRoute.handle(req);
 ```
+
+Invalid widget props return `400` from the SSR adapter, while loader and render
+failures return generic `500` responses through `hsxComponent`.
 
 ### Embed: Iframe Shells for Third-Party Pages
 

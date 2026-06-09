@@ -23,6 +23,47 @@ import type { ParamsFromPath, Route } from "./hsx-types.ts";
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /**
+ * Error type for handlers that need to return an intentional HTTP response.
+ *
+ * Throw this from an `hsxComponent` handler when the failure is a boundary
+ * condition, such as invalid input, rather than an unexpected server error.
+ */
+export class HsxHttpError extends Error {
+  readonly status: number;
+  readonly body: string;
+  readonly headers?: HeadersInit;
+  override readonly cause?: unknown;
+
+  constructor(
+    status: number,
+    message: string,
+    options: {
+      readonly body?: string;
+      readonly headers?: HeadersInit;
+      readonly cause?: unknown;
+    } = {},
+  ) {
+    super(message);
+    this.name = "HsxHttpError";
+    this.status = status;
+    this.body = options.body ?? message;
+    this.headers = options.headers;
+    this.cause = options.cause;
+  }
+}
+
+function responseFromHsxHttpError(error: HsxHttpError): Response {
+  const headers = new Headers(error.headers);
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "text/plain; charset=utf-8");
+  }
+  return new Response(error.body, {
+    status: error.status,
+    headers,
+  });
+}
+
+/**
  * Options for creating an HSX Component.
  *
  * @typeParam Params - Path parameters extracted from the route
@@ -267,6 +308,14 @@ export function hsxComponent<
         },
       });
     } catch (error) {
+      if (error instanceof HsxHttpError) {
+        console.error(
+          `[HSX] Error handling ${req.method} ${req.url}:`,
+          error.cause ?? error,
+        );
+        return responseFromHsxHttpError(error);
+      }
+
       // Log error for debugging (in production, use proper logging)
       console.error(`[HSX] Error handling ${req.method} ${req.url}:`, error);
 

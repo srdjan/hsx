@@ -724,6 +724,10 @@ const Comp = hsxComponent("/items/:id", {
 <button delete={Comp} params={{ id: 42 }} target="#row-42" />;
 ```
 
+Unexpected handler or render errors return a generic `500` response, while
+handlers can throw `HsxHttpError` for intentional boundary failures such as
+invalid input.
+
 ## Examples
 
 Run examples with `deno task`:

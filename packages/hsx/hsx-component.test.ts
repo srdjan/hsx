@@ -10,7 +10,7 @@ import {
   assertRejects,
   assertThrows,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { hsxComponent } from "./hsx-component.ts";
+import { hsxComponent, HsxHttpError } from "./hsx-component.ts";
 import { jsx } from "./jsx-runtime.ts";
 
 // =============================================================================
@@ -184,6 +184,26 @@ Deno.test("handle() returns 500 for async handler errors", async () => {
   const res = await component.handle(req);
 
   assertEquals(res.status, 500);
+});
+
+Deno.test("handle() returns typed HTTP errors from handlers", async () => {
+  const component = hsxComponent("/bad-input", {
+    handler: () => {
+      throw new HsxHttpError(400, "Invalid input", {
+        body: "Bad Request",
+        headers: { "x-error-kind": "validation" },
+      });
+    },
+    render: () => jsx("div", {}),
+  });
+
+  const req = new Request("http://localhost/bad-input");
+  const res = await component.handle(req);
+
+  assertEquals(res.status, 400);
+  assertEquals(res.headers.get("content-type"), "text/plain; charset=utf-8");
+  assertEquals(res.headers.get("x-error-kind"), "validation");
+  assertEquals(await res.text(), "Bad Request");
 });
 
 Deno.test("handle() returns 404 for non-matching paths", async () => {

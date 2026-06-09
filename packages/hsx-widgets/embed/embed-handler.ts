@@ -54,14 +54,24 @@ function embedShell(
 </head>
 <body>
 <div id="root" data-props="${propsJson}"></div>
-<script type="module" src="${bundleUrl}"></script>
+<script type="module" src="${escapeHtml(bundleUrl)}"></script>
 <script>
+function hsxParentOrigin() {
+  try {
+    return document.referrer ? new URL(document.referrer).origin : "*";
+  } catch {
+    return "*";
+  }
+}
+
+const hsxResizeTargetOrigin = hsxParentOrigin();
+
 // Height negotiation: inform parent iframe of content height
 const ro = new ResizeObserver(() => {
   const h = document.documentElement.scrollHeight;
   window.parent.postMessage({ type: "hsx-resize", tag: ${
     JSON.stringify(tag)
-  }, height: h }, "*");
+  }, height: h }, hsxResizeTargetOrigin);
 });
 ro.observe(document.body);
 </script>

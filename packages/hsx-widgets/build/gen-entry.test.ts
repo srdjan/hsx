@@ -6,6 +6,7 @@
 
 import {
   assertStringIncludes,
+  assertThrows,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { generateEmbedEntry } from "./gen-entry.ts";
 
@@ -53,4 +54,25 @@ Deno.test("output imports Preact render", () => {
   });
   assertStringIncludes(src, "import { render");
   assertStringIncludes(src, "preact");
+});
+
+Deno.test("output safely quotes widget import paths", () => {
+  const src = generateEmbedEntry({
+    widgetImportPath: './widgets/"quoted".tsx',
+    widgetExportName: "quotedWidget",
+  });
+
+  assertStringIncludes(src, 'from "./widgets/\\"quoted\\".tsx"');
+});
+
+Deno.test("rejects invalid widget export names", () => {
+  assertThrows(
+    () =>
+      generateEmbedEntry({
+        widgetImportPath: "./w.tsx",
+        widgetExportName: "widget;console.log(1)",
+      }),
+    Error,
+    "Invalid widget export name",
+  );
 });

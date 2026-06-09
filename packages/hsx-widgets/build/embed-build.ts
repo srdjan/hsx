@@ -51,12 +51,12 @@ function hsxRedirectPlugin(shimPath: string): esbuild.Plugin {
     name: "hsx-widgets-hsx-redirect",
     setup(build) {
       // Redirect all @srdjan/hsx imports to the noop shim
-      build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
+      build.onResolve({ filter: /^@srdjan\/hsx/ }, async () => ({
         path: shimPath,
       }));
 
       // Redirect hsx/jsx-runtime to preact/jsx-runtime (Deno loader handles npm: resolution)
-      build.onResolve({ filter: /^hsx\/jsx-runtime/ }, () => ({
+      build.onResolve({ filter: /^hsx\/jsx-runtime/ }, async () => ({
         path: "npm:preact@10.25.4/jsx-runtime",
         external: false,
       }));

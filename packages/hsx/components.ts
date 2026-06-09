@@ -28,6 +28,7 @@ export {
   type HsxComponent,
   hsxComponent,
   type HsxComponentOptions,
+  HsxHttpError,
   type HttpMethod,
 } from "./hsx-component.ts";
 export { type HsxPage, hsxPage, type HsxPageOptions } from "./hsx-page.ts";

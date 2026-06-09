@@ -235,6 +235,16 @@ Deno.test("sanitizeHtml strips onclick from div", () => {
   assertEquals(output.includes("text"), true);
 });
 
+Deno.test("sanitizeHtml escapes preserved attribute values", () => {
+  const output = sanitizeHtml(
+    '<div title=\'x" onclick="steal()\' data-note="<ok>">text</div>',
+  );
+
+  assertEquals(output.includes(' onclick="'), false);
+  assertStringIncludes(output, 'title="x&quot; onclick=&quot;steal()"');
+  assertStringIncludes(output, 'data-note="&lt;ok&gt;"');
+});
+
 Deno.test("sanitizeHtml strips javascript: URIs", () => {
   const output = sanitizeHtml('<a href="javascript:alert(1)">click</a>');
   assertEquals(output.includes("javascript"), false);

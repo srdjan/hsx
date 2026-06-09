@@ -233,7 +233,7 @@ Deno.test("SSR adapter returns 500 for load errors", async () => {
   assertEquals(res.status, 500);
 });
 
-Deno.test("SSR adapter returns 500 for validation errors (hsxComponent catches generically)", async () => {
+Deno.test("SSR adapter returns 400 for validation errors", async () => {
   const component = widgetToHsxComponent(testWidget, {
     path: "/widgets/test",
   });
@@ -242,7 +242,8 @@ Deno.test("SSR adapter returns 500 for validation errors (hsxComponent catches g
   const req = new Request("http://localhost/widgets/test?count=5");
   const res = await component.handle(req);
 
-  assertEquals(res.status, 500);
+  assertEquals(res.status, 400);
+  assertEquals(await res.text(), "Invalid widget props");
 });
 
 Deno.test("SSR adapter match returns null for non-matching paths", () => {

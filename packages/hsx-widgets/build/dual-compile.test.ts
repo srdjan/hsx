@@ -49,10 +49,10 @@ Deno.test({
         {
           name: "hsx-widgets-hsx-redirect",
           setup(build) {
-            build.onResolve({ filter: /^@srdjan\/hsx/ }, () => ({
+            build.onResolve({ filter: /^@srdjan\/hsx/ }, async () => ({
               path: shimPath,
             }));
-            build.onResolve({ filter: /^hsx\/jsx-runtime/ }, () => ({
+            build.onResolve({ filter: /^hsx\/jsx-runtime/ }, async () => ({
               path: "npm:preact@10.25.4/jsx-runtime",
               external: false,
             }));
