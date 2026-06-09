@@ -78,7 +78,7 @@ type HsxAttrs = {
   /** Element(s) to receive the htmx-request class while the request is in flight. Maps to hx-indicator. */
   indicator?: Id<string> | string;
   /** Element(s) to disable for the duration of the request. Maps to hx-disable (HTMX 4; replaces v2 hx-disabled-elt). */
-  disable?: Id<string> | string;
+  disableElt?: Id<string> | string;
   /** Request synchronization/queuing spec, e.g. "this:abort". Maps to hx-sync. */
   sync?: string;
   /** Confirmation prompt shown before issuing the request. Maps to hx-confirm. */

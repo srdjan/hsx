@@ -533,8 +533,8 @@ Deno.test("indicator maps to hx-indicator", () => {
   assertEquals(html.includes(" indicator="), false);
 });
 
-Deno.test("disable maps to hx-disable", () => {
-  const html = renderHtml(jsx("button", { post: "/save", disable: "this" }));
+Deno.test("disableElt maps to hx-disable", () => {
+  const html = renderHtml(jsx("button", { post: "/save", disableElt: "this" }));
   assertEquals(html.includes('hx-disable="this"'), true);
 });
 

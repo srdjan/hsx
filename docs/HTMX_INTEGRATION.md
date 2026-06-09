@@ -50,7 +50,7 @@ During rendering, HSX:
 | `vals`             | `hx-vals`         | JSON-encoded object                                                                      |
 | `headers`          | `hx-headers`      | JSON-encoded object                                                                      |
 | `indicator`        | `hx-indicator`    | CSS selector or Id; elements that get `htmx-request` during the request                  |
-| `disable`          | `hx-disable`      | CSS selector or Id to disable during the request (HTMX 4; replaces v2 `hx-disabled-elt`) |
+| `disableElt`       | `hx-disable`      | CSS selector or Id to disable during the request (HTMX 4; replaces v2 `hx-disabled-elt`) |
 | `sync`             | `hx-sync`         | Request synchronization spec, e.g. `this:abort`                                          |
 | `confirm`          | `hx-confirm`      | Confirmation prompt before the request                                                   |
 | `select`           | `hx-select`       | CSS selector for the part of the response to swap                                        |

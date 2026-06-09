@@ -32,7 +32,7 @@ const HSX_NON_VERB_ATTRS = [
   ["sseConnect", "sse-connect"],
   ["sseSwap", "sse-swap"],
   ["indicator", "hx-indicator"],
-  ["disable", "hx-disable"],
+  ["disableElt", "hx-disable"],
   ["sync", "hx-sync"],
   ["confirm", "hx-confirm"],
   ["select", "hx-select"],
